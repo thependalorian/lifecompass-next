@@ -1,0 +1,507 @@
+{
+  "brand": {
+    "name": "LifeCompass by Old Mutual",
+    "tagline": "Navigate your financial future",
+    "owner": "Old Mutual Namibia",
+    "parentBrand": "Old Mutual Corporate"
+  },
+
+  "colors": {
+    "primary": {
+      "heritage_green": {
+        "hex": "#009677",
+        "rgb": "0, 150, 119",
+        "cmyk": "100, 15, 70, 0",
+        "pantone": "335 C",
+        "usage": "Primary brand color, trust, growth, main CTAs"
+      },
+      "fresh_green": {
+        "hex": "#50b848",
+        "rgb": "80, 184, 72",
+        "cmyk": "70, 0, 100, 0",
+        "pantone": "354 C",
+        "usage": "Secondary brand color, vitality, progress indicators"
+      },
+      "future_green": {
+        "hex": "#8dc63f",
+        "rgb": "141, 198, 63",
+        "cmyk": "50, 0, 100, 0",
+        "pantone": "376 C",
+        "usage": "Accent color, innovation, highlights"
+      }
+    },
+
+    "secondary": {
+      "sky": {
+        "hex": "#00c0e8",
+        "rgb": "0, 192, 232",
+        "cmyk": "70, 0, 5, 0",
+        "pantone": "3115 C",
+        "usage": "Digital elements, links, info states"
+      },
+      "sun": {
+        "hex": "#fff200",
+        "rgb": "255, 242, 0",
+        "cmyk": "0, 0, 100, 0",
+        "pantone": "116 C",
+        "usage": "Warnings, attention, highlights (use sparingly)"
+      },
+      "naartjie": {
+        "hex": "#f37021",
+        "rgb": "243, 112, 33",
+        "cmyk": "0, 70, 100, 0",
+        "pantone": "2018 C",
+        "usage": "CTAs, urgent actions, emphasis"
+      },
+      "cerise": {
+        "hex": "#ed0080",
+        "rgb": "237, 0, 128",
+        "cmyk": "0, 100, 10, 0",
+        "pantone": "213 C",
+        "usage": "Errors, critical alerts, important notices"
+      }
+    },
+
+    "neutrals": {
+      "black": {
+        "hex": "#000000",
+        "rgb": "0, 0, 0",
+        "cmyk": "0, 0, 0, 100",
+        "pantone": "Black",
+        "usage": "Primary text, headings"
+      },
+      "grey_80": {
+        "hex": "#575757",
+        "rgb": "87, 87, 87",
+        "cmyk": "0, 0, 0, 80",
+        "usage": "Secondary text, body copy"
+      },
+      "grey_60": {
+        "hex": "#878787",
+        "rgb": "135, 135, 135",
+        "cmyk": "0, 0, 0, 60",
+        "usage": "Tertiary text, captions"
+      },
+      "grey_40": {
+        "hex": "#b2b2b2",
+        "rgb": "178, 178, 178",
+        "cmyk": "0, 0, 0, 40",
+        "usage": "Borders, dividers"
+      },
+      "grey_15": {
+        "hex": "#e3e3e3",
+        "rgb": "227, 227, 227",
+        "cmyk": "0, 0, 0, 15",
+        "usage": "Backgrounds, cards"
+      },
+      "grey_5": {
+        "hex": "#f6f6f6",
+        "rgb": "246, 246, 246",
+        "cmyk": "0, 0, 0, 5",
+        "usage": "Page backgrounds, subtle fills"
+      },
+      "white": {
+        "hex": "#ffffff",
+        "rgb": "255, 255, 255",
+        "cmyk": "0, 0, 0, 0",
+        "pantone": "White",
+        "usage": "Backgrounds, text on dark"
+      }
+    },
+
+    "gradients": {
+      "primary_vignette": {
+        "angle": "90deg",
+        "stops": [
+          {"color": "#8dc63f", "position": "0%", "weight": "40%"},
+          {"color": "#009677", "position": "100%", "weight": "60%"}
+        ],
+        "usage": "Headers, hero sections, brand moments"
+      },
+      "secondary_vignette": {
+        "angle": "90deg",
+        "stops": [
+          {"color": "#009677", "position": "0%", "weight": "30%"},
+          {"color": "#8dc63f", "position": "55%", "weight": "55%"},
+          {"color": "#f37021", "position": "100%", "weight": "15%"}
+        ],
+        "usage": "Print applications only, when matched to imagery"
+      }
+    }
+  },
+
+  "typography": {
+    "primary": {
+      "family": "Montserrat",
+      "weights": {
+        "bold": 700,
+        "medium": 500,
+        "regular": 400,
+        "light": 300
+      },
+      "usage": {
+        "headings": {
+          "weight": "bold",
+          "sizes": {
+            "h1": "32px",
+            "h2": "28px",
+            "h3": "24px",
+            "h4": "20px"
+          },
+          "lineHeight": "1.2"
+        },
+        "body": {
+          "weight": "regular",
+          "size": "16px",
+          "lineHeight": "1.5"
+        },
+        "captions": {
+          "weight": "regular",
+          "size": "14px",
+          "lineHeight": "1.4"
+        },
+        "cta": {
+          "weight": "bold",
+          "size": "16px",
+          "transform": "uppercase",
+          "letterSpacing": "0.5px"
+        }
+      }
+    },
+
+    "secondary": {
+      "family": "Century Gothic",
+      "weights": {
+        "bold": 700,
+        "regular": 400
+      },
+      "usage": "PowerPoint, Word documents, email signatures only"
+    },
+
+    "fallback": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+  },
+
+  "spacing": {
+    "base": 8,
+    "scale": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px",
+      "2xl": "48px",
+      "3xl": "64px",
+      "4xl": "96px"
+    }
+  },
+
+  "layout": {
+    "grid": {
+      "columns": 12,
+      "gutter": "24px",
+      "margin": {
+        "mobile": "16px",
+        "tablet": "32px",
+        "desktop": "48px"
+      }
+    },
+
+    "breakpoints": {
+      "mobile": "320px",
+      "tablet": "768px",
+      "desktop": "1024px",
+      "wide": "1440px"
+    },
+
+    "maxWidth": {
+      "content": "1200px",
+      "text": "720px"
+    }
+  },
+
+  "components": {
+    "buttons": {
+      "primary": {
+        "background": "#009677",
+        "color": "#ffffff",
+        "hover": "#007d63",
+        "active": "#006952",
+        "disabled": "#b2b2b2",
+        "padding": "12px 24px",
+        "borderRadius": "4px",
+        "fontSize": "16px",
+        "fontWeight": 700,
+        "textTransform": "uppercase",
+        "minHeight": "44px",
+        "minWidth": "120px"
+      },
+
+      "secondary": {
+        "background": "transparent",
+        "color": "#009677",
+        "border": "2px solid #009677",
+        "hover": {
+          "background": "#009677",
+          "color": "#ffffff"
+        },
+        "padding": "10px 24px",
+        "borderRadius": "4px"
+      },
+
+      "tertiary": {
+        "background": "transparent",
+        "color": "#009677",
+        "hover": {
+          "textDecoration": "underline"
+        },
+        "padding": "8px 16px"
+      },
+
+      "danger": {
+        "background": "#ed0080",
+        "color": "#ffffff",
+        "hover": "#d10073",
+        "padding": "12px 24px",
+        "borderRadius": "4px"
+      }
+    },
+
+    "cards": {
+      "default": {
+        "background": "#ffffff",
+        "border": "1px solid #e3e3e3",
+        "borderRadius": "8px",
+        "padding": "24px",
+        "shadow": "0 2px 4px rgba(0, 0, 0, 0.1)",
+        "hover": {
+          "shadow": "0 4px 8px rgba(0, 0, 0, 0.15)",
+          "transform": "translateY(-2px)"
+        }
+      },
+
+      "elevated": {
+        "background": "#ffffff",
+        "border": "none",
+        "borderRadius": "8px",
+        "padding": "24px",
+        "shadow": "0 4px 12px rgba(0, 0, 0, 0.15)"
+      }
+    },
+
+    "inputs": {
+      "default": {
+        "background": "#ffffff",
+        "border": "1px solid #b2b2b2",
+        "borderRadius": "4px",
+        "padding": "12px 16px",
+        "fontSize": "16px",
+        "minHeight": "44px",
+        "focus": {
+          "borderColor": "#009677",
+          "outline": "2px solid rgba(0, 150, 119, 0.2)"
+        },
+        "error": {
+          "borderColor": "#ed0080",
+          "outline": "2px solid rgba(237, 0, 128, 0.2)"
+        },
+        "disabled": {
+          "background": "#f6f6f6",
+          "color": "#b2b2b2",
+          "cursor": "not-allowed"
+        }
+      }
+    },
+
+    "badges": {
+      "active": {
+        "background": "#50b848",
+        "color": "#ffffff",
+        "padding": "4px 12px",
+        "borderRadius": "12px",
+        "fontSize": "12px",
+        "fontWeight": 700
+      },
+      "pending": {
+        "background": "#fff200",
+        "color": "#000000",
+        "padding": "4px 12px",
+        "borderRadius": "12px"
+      },
+      "inactive": {
+        "background": "#b2b2b2",
+        "color": "#ffffff",
+        "padding": "4px 12px",
+        "borderRadius": "12px"
+      },
+      "error": {
+        "background": "#ed0080",
+        "color": "#ffffff",
+        "padding": "4px 12px",
+        "borderRadius": "12px"
+      }
+    },
+
+    "navigation": {
+      "header": {
+        "height": "72px",
+        "background": "#ffffff",
+        "borderBottom": "1px solid #e3e3e3",
+        "padding": "0 24px",
+        "logo": {
+          "height": "40px",
+          "minWidth": "120px"
+        }
+      },
+
+      "footer": {
+        "background": "#000000",
+        "color": "#ffffff",
+        "padding": "48px 24px",
+        "links": {
+          "color": "#ffffff",
+          "hover": "#8dc63f"
+        }
+      }
+    }
+  },
+
+  "logo": {
+    "primary": {
+      "format": "horizontal",
+      "minWidth": "120px",
+      "clearSpace": "equal to height of logo",
+      "placement": "top-left",
+      "background": {
+        "light": "full color on white",
+        "dark": "white version on dark backgrounds"
+      }
+    },
+
+    "lockup": {
+      "vertical": {
+        "usage": "Most communications, stationery",
+        "alignment": "center-aligned to anchor",
+        "spacing": "proportional scaling required"
+      },
+      "horizontal": {
+        "usage": "Word documents, narrow spaces",
+        "alignment": "left-aligned"
+      }
+    },
+
+    "capability": {
+      "format": "CAPABILITY NAME in Montserrat Bold, all caps",
+      "color": "#009677",
+      "placement": "below or beside logo",
+      "examples": [
+        "CORPORATE",
+        "RETIREMENT SOLUTIONS",
+        "GROUP ASSURANCE",
+        "CONSULTING"
+      ]
+    },
+
+    "brandLine": {
+      "text": "DO GREAT THINGS EVERY DAY",
+      "font": "Montserrat Medium",
+      "color": "#009677",
+      "usage": "Above-the-line communications only",
+      "placement": "below capability name"
+    }
+  },
+
+  "accessibility": {
+    "wcag": "2.1 AA",
+    "contrast": {
+      "minimum": "4.5:1 for normal text",
+      "large": "3:1 for large text (18px+)"
+    },
+    "touchTargets": {
+      "minimum": "44x44px",
+      "recommended": "48x48px"
+    },
+    "focusIndicators": {
+      "visible": true,
+      "color": "#009677",
+      "width": "2px",
+      "offset": "2px"
+    }
+  },
+
+  "patterns": {
+    "vignette": {
+      "direction": {
+        "vertical": {
+          "start": "future_green (bottom-left)",
+          "end": "heritage_green (top-right)"
+        },
+        "horizontal": {
+          "start": "future_green (top-left)",
+          "end": "heritage_green (bottom-right)"
+        }
+      },
+      "usage": "Print and digital applications, headers, hero sections"
+    },
+
+    "shweshwe": {
+      "usage": "Cultural pattern for special applications",
+      "colors": "Match to secondary palette",
+      "opacity": "Use at 10-20% for backgrounds"
+    }
+  },
+
+  "imagery": {
+    "treatment": {
+      "tone": "Rich and premium",
+      "contrast": "Increased for depth",
+      "darkening": "Apply to backgrounds for copy space",
+      "gradient": "Multiply overlay for text areas"
+    },
+
+    "subjects": {
+      "people": "Uniquely South African characters",
+      "styling": "Distinct African palette in small touches",
+      "locations": "Architectural features, modern workplaces",
+      "focus": [
+        "Moving through life",
+        "Retirement",
+        "Modern workplace",
+        "Decision makers"
+      ]
+    }
+  },
+
+  "animation": {
+    "duration": {
+      "fast": "150ms",
+      "normal": "300ms",
+      "slow": "500ms"
+    },
+    "easing": {
+      "standard": "cubic-bezier(0.4, 0.0, 0.2, 1)",
+      "decelerate": "cubic-bezier(0.0, 0.0, 0.2, 1)",
+      "accelerate": "cubic-bezier(0.4, 0.0, 1, 1)"
+    },
+    "principles": {
+      "subtle": "Animations should enhance, not distract",
+      "purposeful": "Every animation serves a function",
+      "performant": "Use transform and opacity for smooth 60fps"
+    }
+  },
+
+  "voice": {
+    "tone": "Professional yet approachable",
+    "language": "Clear, jargon-free, plain language",
+    "personality": [
+      "Trustworthy",
+      "Helpful",
+      "Empowering",
+      "Forward-thinking"
+    ],
+    "avoid": [
+      "Financial jargon without explanation",
+      "Overly formal or corporate speak",
+      "Condescending or patronizing language"
+    ]
+  }
+}

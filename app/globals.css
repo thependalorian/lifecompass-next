@@ -1,0 +1,368 @@
+@import "@fontsource/montserrat/400.css";
+@import "@fontsource/montserrat/500.css";
+@import "@fontsource/montserrat/600.css";
+@import "@fontsource/montserrat/700.css";
+@import "@fontsource/montserrat/300.css";
+
+@import "../styles/brand.css";
+@import "../styles/components.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Old Mutual Corporate Primary Colors (2020 Guidelines) */
+    --om-heritage-green: #009677;
+    --om-fresh-green: #50b848;
+    --om-future-green: #8dc63f;
+    /* Secondary Colors */
+    --om-sky: #00c0e8;
+    --om-sun: #fff200;
+    --om-naartjie: #f37021;
+    --om-cerise: #ed0080;
+    /* Neutral Colors */
+    --om-black: #000000;
+    --om-white: #ffffff;
+    --om-grey-80: #575757;
+    --om-grey-60: #878787;
+    --om-grey-40: #b2b2b2;
+    --om-grey-15: #e3e3e3;
+    --om-grey-5: #f6f6f6;
+    /* Legacy compatibility */
+    --om-green: #009677;
+    --om-navy: #003b5c;
+    --om-gold: #f37021;
+    --om-grey: #8c8c8c;
+    --om-light-grey: #f5f5f5;
+  }
+
+  body {
+    @apply bg-base-100 text-base-content font-sans;
+    font-family: "Montserrat", "Century Gothic", system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  /* Base Button Styles - iOS-style rounded buttons */
+  .btn {
+    @apply inline-flex items-center justify-center text-center font-semibold no-underline outline-offset-2 transition-all duration-200 ease-out active:scale-[0.97] border border-transparent;
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    border-radius: 9999px; /* iOS-style fully rounded */
+    min-height: 44px; /* Touch target */
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600; /* Slightly lighter for more human feel */
+    letter-spacing: 0.3px;
+    line-height: 1.5;
+  }
+
+  .btn:focus-visible {
+    @apply outline outline-2 outline-offset-2;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-primary-content border-primary;
+  }
+
+  .btn-primary:hover {
+    @apply opacity-90;
+  }
+
+  .btn-outline {
+    @apply bg-transparent text-current border-current hover:bg-current;
+  }
+
+  .btn-outline:hover {
+    @apply text-white;
+  }
+
+  .btn-lg {
+    @apply min-h-12 px-6 text-lg;
+  }
+
+  /* Card Styles - Old Mutual Corporate */
+  .card {
+    @apply rounded-lg bg-base-100 text-base-content shadow-sm;
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+  }
+
+  .card-body {
+    @apply p-6;
+  }
+
+  .card-title {
+    @apply text-lg font-bold leading-tight;
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+  }
+
+  /* Badge Styles */
+  .badge {
+    @apply inline-flex items-center justify-center rounded-full text-xs font-semibold leading-tight px-2 py-1 min-h-5;
+  }
+
+  /* Input Styles */
+  .input {
+    @apply w-full text-base;
+  }
+
+  .input-bordered {
+    @apply border border-base-content/20 bg-base-100 focus:border-primary focus:outline-none;
+  }
+
+  /* Old Mutual Button Styles - iOS-style rounded */
+  .btn-om-primary {
+    @apply btn bg-om-fresh-green hover:bg-om-heritage-green active:bg-[#007d63] text-white border-none shadow-sm disabled:bg-om-grey-40 disabled:cursor-not-allowed;
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-om-secondary {
+    @apply btn bg-transparent border-2 border-om-fresh-green text-om-fresh-green hover:bg-om-fresh-green hover:text-white font-semibold shadow-sm disabled:border-om-grey-40 disabled:text-om-grey-40 disabled:cursor-not-allowed;
+    padding: 10px 24px;
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-om-outline {
+    @apply btn border-2 border-om-fresh-green text-om-fresh-green hover:bg-om-fresh-green hover:text-white font-semibold bg-transparent shadow-sm disabled:border-om-grey-40 disabled:text-om-grey-40 disabled:cursor-not-allowed;
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-om-accent {
+    @apply btn bg-om-naartjie hover:bg-[#d4631d] active:bg-[#b8551a] text-white border-none font-semibold shadow-sm disabled:bg-om-grey-40 disabled:cursor-not-allowed;
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-om-tertiary {
+    @apply btn bg-transparent text-om-heritage-green hover:underline font-semibold border-none shadow-none active:scale-95 disabled:text-om-grey-40 disabled:cursor-not-allowed;
+    padding: 8px 16px;
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  .btn-om-danger {
+    @apply btn bg-om-cerise hover:bg-[#d10073] active:bg-[#b60066] text-white border-none font-semibold shadow-sm disabled:bg-om-grey-40 disabled:cursor-not-allowed;
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  /* Old Mutual Corporate Card Styles (2020 Guidelines) */
+  /* Brand Guide: 8px border-radius, 1px solid #e3e3e3 border, 24px padding */
+  .card-om {
+    @apply card bg-white border border-om-grey-15 shadow-sm hover:shadow-md transition-shadow duration-300;
+    border-radius: 8px; /* Brand Guide: 8px */
+    padding: 24px; /* Brand Guide: 24px padding */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Brand Guide: Default shadow */
+  }
+
+  .card-om:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Brand Guide: Hover shadow */
+    transform: translateY(-2px); /* Brand Guide: Subtle lift on hover */
+  }
+  
+  /* Premium card with vignette gradient */
+  .card-om-premium {
+    @apply card-om relative overflow-hidden;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
+  }
+  
+  .card-om-premium::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #8dc63f 40%, #009677 60%);
+  }
+
+  /* Old Mutual Corporate Badge Styles (2020 Guidelines) */
+  /* Brand Guide: 12px border-radius, 4px 12px padding, 12px font size, 700 weight */
+  .badge-om-active {
+    @apply badge bg-om-fresh-green text-white font-bold;
+    border-radius: 12px; /* Brand Guide: 12px */
+    padding: 4px 12px; /* Brand Guide: 4px 12px */
+    font-size: 12px; /* Brand Guide: 12px */
+    font-weight: 700; /* Brand Guide: Bold */
+  }
+
+  .badge-om-pending {
+    @apply badge bg-om-sun text-om-black font-bold;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .badge-om-inactive {
+    @apply badge bg-om-grey-40 text-white font-bold;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  
+  .badge-om-success {
+    @apply badge bg-om-fresh-green text-white font-bold;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  
+  .badge-om-info {
+    @apply badge bg-om-sky text-white font-bold;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .badge-om-error {
+    @apply badge bg-om-cerise text-white font-bold;
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* Old Mutual Corporate Input Styles (2020 Guidelines) */
+  /* Brand Guide: 4px border-radius, 1px solid #b2b2b2 border, 12px 16px padding, 44px min-height */
+  .input-om {
+    @apply input input-bordered focus:border-om-heritage-green focus:outline-none;
+    border-radius: 4px; /* Brand Guide: 4px */
+    border: 1px solid #b2b2b2; /* Brand Guide: Grey 40 */
+    padding: 12px 16px; /* Brand Guide: 12px 16px */
+    min-height: 44px; /* Brand Guide: 44px minimum touch target */
+    font-size: 16px; /* Brand Guide: 16px */
+    background: #ffffff; /* Brand Guide: White background */
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+  }
+
+  .input-om:focus {
+    border-color: #009677; /* Brand Guide: Heritage Green on focus */
+    box-shadow: 0 0 0 2px rgba(0, 150, 119, 0.2); /* Brand Guide: 2px outline with 20% opacity */
+    outline: none;
+  }
+
+  .input-om:disabled {
+    background: #f6f6f6; /* Brand Guide: Grey 5 */
+    color: #b2b2b2; /* Brand Guide: Grey 40 */
+    cursor: not-allowed;
+  }
+
+  .input-om.error {
+    border-color: #ed0080; /* Brand Guide: Cerise for errors */
+    box-shadow: 0 0 0 2px rgba(237, 0, 128, 0.2);
+  }
+
+  /* Compass Animation */
+  @keyframes compass-spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .compass-animate {
+    animation: compass-spin 20s linear infinite;
+  }
+
+  /* Old Mutual Corporate Gradient Text (2020 Guidelines) */
+  .text-gradient-om {
+    @apply bg-gradient-to-r from-om-heritage-green to-om-fresh-green bg-clip-text text-transparent;
+  }
+  
+  .text-gradient-om-vignette {
+    @apply bg-gradient-to-r from-om-future-green via-om-heritage-green to-om-fresh-green bg-clip-text text-transparent;
+  }
+  
+  /* Vignette Background Gradients */
+  .bg-vignette-primary {
+    background: linear-gradient(90deg, #8dc63f 40%, #009677 60%);
+  }
+  
+  .bg-vignette-primary-vertical {
+    background: linear-gradient(180deg, #8dc63f 40%, #009677 60%);
+  }
+  
+  .bg-vignette-secondary {
+    background: linear-gradient(90deg, #009677 30%, #8dc63f 55%, #f37021 15%);
+  }
+  
+  /* Premium dark overlay for copy space */
+  .bg-om-dark-overlay {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Typography utilities per brand guide */
+  .text-om-h1 {
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 32px; /* Brand Guide: 32px */
+    line-height: 1.2; /* Brand Guide: 1.2 */
+  }
+
+  .text-om-h2 {
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 28px; /* Brand Guide: 28px */
+    line-height: 1.2;
+  }
+
+  .text-om-h3 {
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 24px; /* Brand Guide: 24px */
+    line-height: 1.2;
+  }
+
+  .text-om-h4 {
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 20px; /* Brand Guide: 20px */
+    line-height: 1.2;
+  }
+
+  .text-om-body {
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 400;
+    font-size: 16px; /* Brand Guide: 16px */
+    line-height: 1.5; /* Brand Guide: 1.5 */
+  }
+
+  .text-om-caption {
+    font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
+    font-weight: 400;
+    font-size: 14px; /* Brand Guide: 14px */
+    line-height: 1.4; /* Brand Guide: 1.4 */
+  }
+
+  /* Spacing utilities per 8px grid (Brand Guide) */
+  .space-om-xs { gap: 4px; } /* 0.5 * 8px */
+  .space-om-sm { gap: 8px; } /* 1 * 8px */
+  .space-om-md { gap: 16px; } /* 2 * 8px */
+  .space-om-lg { gap: 24px; } /* 3 * 8px */
+  .space-om-xl { gap: 32px; } /* 4 * 8px */
+  .space-om-2xl { gap: 48px; } /* 6 * 8px */
+  .space-om-3xl { gap: 64px; } /* 8 * 8px */
+  .space-om-4xl { gap: 96px; } /* 12 * 8px */
+}

@@ -1,0 +1,470 @@
+// app/page.tsx - Competition Pitch Homepage
+// LifeCompass by Old Mutual - Technovation Hackathon Entry
+// Human-first design with custom layouts and intuitive language
+
+"use client";
+
+import Link from "next/link";
+import Image from "next/image";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
+import ChatWidget from "@/components/ChatWidget";
+import { motion } from "framer-motion";
+import { OMButton } from "@/components/atoms/brand";
+import {
+  ChatBubbleLeftRightIcon,
+  ShieldCheckIcon,
+  UserGroupIcon,
+  CheckCircleIcon,
+  LightBulbIcon,
+  RocketLaunchIcon,
+  StarIcon,
+} from "@heroicons/react/24/outline";
+import { HeroSection } from "@/components/templates/HeroSection";
+import { Section, SectionHeader } from "@/components/molecules/Section";
+import { ProblemCard } from "@/components/molecules/ProblemCard";
+import { FeatureCard } from "@/components/molecules/FeatureCard";
+import { MetricCard } from "@/components/molecules/MetricCard";
+import { BriefcaseIcon, ClockIcon } from "@/components/atoms/icons";
+
+export default function HomePage() {
+  return (
+    <div className="min-h-screen bg-base-100">
+      <Navigation type="customer" />
+
+      {/* Custom Hero Layout - Human-First Design */}
+      <HeroSection
+        badge={{
+          icon: <RocketLaunchIcon className="w-5 h-5" />,
+          text: "TECHNOVATION HACKATHON 2025",
+        }}
+        title="WHERE INNOVATION"
+        titleHighlight="MEETS CUSTOMER EXPERIENCE"
+        subtitle="LifeCompass by Old Mutual"
+        description="An intuitive, autonomous platform that makes financial wellbeing feel effortless—for everyone in Namibia."
+        ctaPrimary={{
+          text: "Try Customer Experience",
+          href: "/products",
+        }}
+        ctaSecondary={{
+          text: "Try Advisor Experience",
+          href: "/advisor",
+        }}
+        points={[
+          {
+            icon: <LightBulbIcon className="w-6 h-6" />,
+            text: "AI-assisted self-service, always available",
+          },
+          {
+            icon: <UserGroupIcon className="w-6 h-6" />,
+            text: "Instant access to real advisors when you need them",
+          },
+          {
+            icon: <ShieldCheckIcon className="w-6 h-6" />,
+            text: "Intuitive, secure, and built for real people",
+          },
+        ]}
+      />
+
+      {/* The Problem - Custom Asymmetric Layout */}
+      <Section background="white" pattern>
+        <div className="max-w-5xl mx-auto">
+          <SectionHeader
+            badge="The Challenge"
+            title="What We're Solving"
+          />
+
+          {/* Problem Cards - Custom Layout */}
+          <div className="space-y-6">
+            <ProblemCard
+              icon={<BriefcaseIcon className="w-7 h-7 text-om-heritage-green" />}
+              iconBg="bg-om-heritage-green/10"
+              gradientFrom="from-om-heritage-green/20"
+              gradientTo="to-om-fresh-green/20"
+            >
+              <p className="text-lg md:text-xl text-om-grey-80 leading-relaxed">
+                <strong className="text-om-heritage-green">Namibians struggle</strong> with complex financial products, slow support, and a lack of trust in digital tools. They want answers quickly, in plain language, without the runaround.
+              </p>
+            </ProblemCard>
+
+            <ProblemCard
+              icon={<ClockIcon className="w-7 h-7 text-om-naartjie" />}
+              iconBg="bg-om-naartjie/10"
+              gradientFrom="from-om-naartjie/20"
+              gradientTo="to-om-cerise/20"
+              delay={0.1}
+            >
+              <p className="text-lg md:text-xl text-om-grey-80 leading-relaxed">
+                <strong className="text-om-naartjie">Advisors are overwhelmed</strong> with admin tasks—10 hours per week on paperwork. They want to focus on building relationships, not filling forms.
+              </p>
+            </ProblemCard>
+
+            {/* Impact Callout - Custom Styling */}
+            <div className="mt-8 p-6 bg-gradient-to-r from-om-cerise/10 via-om-naartjie/10 to-om-cerise/10 rounded-2xl border-l-4 border-om-cerise">
+              <p className="text-om-grey-80 font-medium">
+                <strong className="text-om-cerise">The result:</strong> Declining Life & Savings sales (-15% YoY), poor customer experience (NPS 35), and advisors spending more time on admin than helping clients.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* Our Solution - Custom Feature Showcase */}
+      <section className="bg-gradient-to-b from-om-grey-5 to-white py-24 relative">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            {/* Section Header */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <span className="inline-block px-4 py-1.5 rounded-full bg-om-fresh-green/10 text-om-fresh-green font-semibold text-sm mb-4">
+                Our Approach
+              </span>
+              <h2 className="text-4xl md:text-5xl font-bold text-om-navy mb-6">
+                LifeCompass: Where Intuition Meets Innovation
+              </h2>
+              <p className="text-xl text-om-grey-80 max-w-3xl mx-auto leading-relaxed">
+                A seamless, <strong className="text-om-heritage-green">AI-assisted platform</strong> that empowers customers to self-serve autonomously, while advisors focus on what matters most—<strong>real human guidance</strong>.
+              </p>
+            </motion.div>
+
+            {/* Features Grid - Custom Card Layout */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <FeatureCard
+                icon={<StarIcon className="w-14 h-14" />}
+                title="Unified Dashboard"
+                description="All your policies, claims, and documents in one intuitive place. No more hunting through emails or calling multiple departments."
+                iconColor="text-om-heritage-green"
+                gradientFrom="from-om-heritage-green/10"
+                gradientTo="to-om-heritage-green/5"
+              />
+              <FeatureCard
+                icon={<ChatBubbleLeftRightIcon className="w-14 h-14" />}
+                title="Intelligent Assistant"
+                description="Your LifeCompass assistant provides instant answers, 24/7, with seamless escalation to a real advisor when you need human insight."
+                iconColor="text-om-fresh-green"
+                gradientFrom="from-om-fresh-green/10"
+                gradientTo="to-om-fresh-green/5"
+                delay={0.1}
+              />
+              <FeatureCard
+                icon={<UserGroupIcon className="w-14 h-14" />}
+                title="Advisor Command Center"
+                description="Advisors get a complete 360° view of every client, with autonomous segmentation and task management. Focus on people, not paperwork."
+                iconColor="text-om-future-green"
+                gradientFrom="from-om-future-green/10"
+                gradientTo="to-om-future-green/5"
+                delay={0.2}
+              />
+              <FeatureCard
+                icon={<ShieldCheckIcon className="w-14 h-14" />}
+                title="Bank-Grade Security"
+                description="Your data is protected with the highest standards. We take security as seriously as Old Mutual does—because trust matters."
+                iconColor="text-om-sky"
+                gradientFrom="from-om-sky/10"
+                gradientTo="to-om-sky/5"
+                delay={0.3}
+              />
+            </div>
+          </div>
+      </section>
+
+      {/* Interactive Demo - Custom Step-by-Step Layout */}
+      <Section id="demo" background="white">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-12"
+            >
+              <span className="inline-block px-4 py-1.5 rounded-full bg-om-sky/10 text-om-sky font-semibold text-sm mb-4">
+                Try It Yourself
+              </span>
+              <h2 className="text-4xl md:text-5xl font-bold text-om-navy mb-6">
+                See LifeCompass in Action
+              </h2>
+              <p className="text-lg text-om-grey-80 max-w-2xl mx-auto">
+                Experience the platform through a simple, intuitive demo journey
+              </p>
+            </motion.div>
+            
+            {/* Custom Step Cards */}
+            <div className="space-y-4">
+              {[
+                {
+                  step: "1",
+                  label: "Select a Demo Customer",
+                  description: "Choose from 100 realistic Namibian customer profiles representing different life situations",
+                  action: "Try Customer Demo",
+                  href: "/products",
+                  color: "from-om-heritage-green to-om-fresh-green"
+                },
+                {
+                  step: "2",
+                  label: "Explore Your Dashboard",
+                  description: "View policies, claims, and financial tools in one intuitive, autonomous interface",
+                  action: "View Policies",
+                  href: "/policies",
+                  color: "from-om-fresh-green to-om-future-green"
+                },
+                {
+                  step: "3",
+                  label: "Chat with LifeCompass Assistant",
+                  description: "Get instant answers with our intelligent assistant—autonomous, helpful, and always ready",
+                  action: "Start Chat",
+                  href: "/chat",
+                  color: "from-om-future-green to-om-sky"
+                },
+                {
+                  step: "4",
+                  label: "Escalate to an Advisor",
+                  description: "Seamless handoff with complete context—your assistant packages everything for human insight",
+                  action: "Find Advisor",
+                  href: "/advisors",
+                  color: "from-om-sky to-om-heritage-green"
+                }
+              ].map((step, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, x: idx % 2 === 0 ? -30 : 30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  className="group relative"
+                >
+                  <div className={`absolute -inset-0.5 bg-gradient-to-r ${step.color} rounded-2xl blur opacity-0 group-hover:opacity-30 transition-opacity duration-300`} />
+                  <div className="relative bg-white p-6 rounded-2xl border border-om-grey-15 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex items-start gap-6">
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${step.color} text-white flex items-center justify-center font-bold text-xl flex-shrink-0 shadow-lg`}>
+                        {step.step}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-om-navy mb-2">
+                          {step.label}
+                        </h3>
+                        <p className="text-om-grey-60 mb-4 leading-relaxed">
+                          {step.description}
+                        </p>
+                        <Link href={step.href}>
+                          <OMButton variant="outline" size="sm" className="rounded-full">
+                            {step.action}
+                          </OMButton>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Main CTA */}
+            <div className="text-center mt-12">
+              <Link href="/products">
+                <OMButton variant="primary" size="lg" className="px-10 py-5 text-lg shadow-xl hover:shadow-2xl rounded-full">
+                  Try the Full Demo Experience
+                </OMButton>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* Why LifeCompass Wins - Custom Proof Section */}
+      <section className="bg-gradient-to-br from-om-heritage-green via-om-fresh-green to-om-heritage-green text-white py-24 relative overflow-hidden">
+        {/* Custom Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,_white_2px,_transparent_2px)] bg-[length:60px_60px]" />
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                Why LifeCompass Wins
+              </h2>
+              <p className="text-xl text-white/90 max-w-2xl mx-auto">
+                Built with real people in mind, tested with real scenarios, ready for real impact
+              </p>
+            </motion.div>
+            
+            {/* Proof Points - Custom Grid */}
+            <div className="grid md:grid-cols-2 gap-6 mb-12">
+              {[
+                "Built on Old Mutual's trusted brand and visual identity",
+                "Designed for Namibia's real customer journeys—from informal traders to professionals",
+                "Compliant, secure, and production-ready from day one",
+                "Tested with 100 realistic customer profiles and 20 specialized advisors"
+              ].map((bullet, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  className="flex items-start gap-4 bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20"
+                >
+                  <CheckCircleIcon className="w-7 h-7 text-om-future-green flex-shrink-0 mt-0.5" />
+                  <p className="text-lg leading-relaxed">{bullet}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Brand Logos - Custom Layout */}
+            <div className="flex items-center justify-center gap-8 pt-12 border-t border-white/20">
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <Image
+                    src="/logos/OMU.JO.svg"
+                    alt="Old Mutual Logo"
+                    width={140}
+                    height={140}
+                    className="h-14 w-auto filter brightness-0 invert drop-shadow-lg"
+                  />
+                </div>
+                <div className="h-12 w-px bg-white/30"></div>
+                <div>
+                  <p className="font-bold text-2xl mb-1">LifeCompass</p>
+                  <p className="text-sm text-white/80 font-medium">by Old Mutual</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Business Impact - Custom Metrics Layout */}
+      <section className="bg-white py-24 relative">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="inline-block px-4 py-1.5 rounded-full bg-om-heritage-green/10 text-om-heritage-green font-semibold text-sm mb-4">
+                Expected Impact
+              </span>
+              <h2 className="text-4xl md:text-5xl font-bold text-om-navy mb-6">
+                Numbers That Matter
+              </h2>
+              <p className="text-lg text-om-grey-80 max-w-2xl mx-auto">
+                Real metrics for real business outcomes
+              </p>
+            </div>
+
+            {/* Custom Metrics Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <MetricCard
+                metric="25%"
+                label="Increase in advisor-assisted sales"
+                description="Contextual escalation transforms digital intent into sales"
+                gradientFrom="from-om-heritage-green"
+                gradientTo="to-om-fresh-green"
+              />
+              <MetricCard
+                metric="40%"
+                label="Reduction in resolution time"
+                description="Autonomous assistant handles common questions instantly"
+                gradientFrom="from-om-fresh-green"
+                gradientTo="to-om-future-green"
+                delay={0.1}
+              />
+              <MetricCard
+                metric="+15"
+                label="NPS improvement"
+                description="From 35 to 50+ through intuitive self-service and human connection"
+                gradientFrom="from-om-future-green"
+                gradientTo="to-om-sky"
+                delay={0.2}
+              />
+              <MetricCard
+                metric="10 hrs"
+                label="Time saved per advisor per week"
+                description="Autonomous workflows free advisors for client relationships"
+                gradientFrom="from-om-sky"
+                gradientTo="to-om-heritage-green"
+                delay={0.3}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA - Custom Dual Experience Layout */}
+      <section className="bg-gradient-to-b from-om-grey-5 via-white to-om-grey-5 py-24 relative">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-om-navy">
+                Experience LifeCompass Now
+              </h2>
+              <p className="text-xl mb-8 text-om-grey-80 max-w-2xl mx-auto">
+                Explore both customer and advisor experiences with our live demo. No authentication required—immediate, intuitive access to all features.
+              </p>
+            </motion.div>
+
+            {/* Custom Experience Cards */}
+            <div className="grid md:grid-cols-2 gap-8">
+              <Link href="/products" className="group">
+                <div className="relative h-full">
+                  <div className="absolute -inset-1 bg-gradient-to-br from-om-heritage-green/20 to-om-fresh-green/20 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="relative bg-white p-8 rounded-3xl border-2 border-om-grey-15 shadow-lg hover:shadow-2xl transition-all h-full">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white shadow-lg">
+                        <UserGroupIcon className="w-8 h-8" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-om-heritage-green">Customer Experience</h3>
+                    </div>
+                    <p className="mb-6 text-om-grey-80 leading-relaxed">
+                      Try the intuitive self-service portal with AI-assisted guidance, product browsing, and seamless advisor escalation.
+                    </p>
+                    <OMButton variant="primary" className="w-full rounded-full shadow-lg">
+                      Start Customer Demo
+                    </OMButton>
+                  </div>
+                </div>
+              </Link>
+
+              <Link href="/advisor" className="group">
+                <div className="relative h-full">
+                  <div className="absolute -inset-1 bg-gradient-to-br from-om-navy/20 to-om-heritage-green/20 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="relative bg-white p-8 rounded-3xl border-2 border-om-grey-15 shadow-lg hover:shadow-2xl transition-all h-full">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-om-navy to-om-heritage-green flex items-center justify-center text-white shadow-lg">
+                        <StarIcon className="w-8 h-8" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-om-navy">Advisor Experience</h3>
+                    </div>
+                    <p className="mb-6 text-om-grey-80 leading-relaxed">
+                      Explore the autonomous command center with client management, intelligent analytics, and productivity tools.
+                    </p>
+                    <OMButton variant="primary" className="w-full rounded-full shadow-lg">
+                      Start Advisor Demo
+                    </OMButton>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <ChatWidget />
+      <Footer />
+    </div>
+  );
+}
