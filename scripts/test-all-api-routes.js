@@ -124,7 +124,7 @@ async function testAdvisorsAPI(advisor) {
       FROM advisors
       ORDER BY advisor_number
     `;
-    
+
     if (allAdvisors && allAdvisors.length > 0) {
       logSuccess(`GET /api/advisors: ${allAdvisors.length} advisors found`);
     } else {

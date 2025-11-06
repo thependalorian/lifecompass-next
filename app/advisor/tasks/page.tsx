@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
+import { CreateTaskModal } from "@/components/molecules/CreateTaskModal";
 import { motion } from "framer-motion";
 
 interface Task {
@@ -60,6 +61,8 @@ export default function AdvisorTasksPage() {
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
   const [selectedType, setSelectedType] = useState("All Types");
   const [sortBy, setSortBy] = useState("dueDate");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [customers, setCustomers] = useState<Array<{ id: string; customerNumber: string; name: string }>>([]);
 
   useEffect(() => {
     // Check if persona is selected
@@ -69,6 +72,32 @@ export default function AdvisorTasksPage() {
       return;
     }
 
+    // Fetch advisor's clients for the create task modal
+    const fetchClients = async () => {
+      try {
+        const response = await fetch(`/api/advisors/${selectedPersona}/clients`);
+        if (response.ok) {
+          const clientsData = await response.json();
+          setCustomers(
+            clientsData.map((c: any) => ({
+              id: c.id || c.customerId,
+              customerNumber: c.customerNumber,
+              name: c.name || `${c.firstName || ""} ${c.lastName || ""}`.trim(),
+            }))
+          );
+        }
+      } catch (err) {
+        console.error("Error fetching clients:", err);
+      }
+    };
+
+    fetchClients();
+  }, [router]);
+
+  useEffect(() => {
+    const selectedPersona = sessionStorage.getItem("selectedAdvisorPersona");
+    if (!selectedPersona) return;
+
     // Fetch tasks from API
     const fetchTasks = async () => {
       setLoading(true);
@@ -76,16 +105,25 @@ export default function AdvisorTasksPage() {
         // Get tasks with optional filters
         let url = `/api/tasks?advisorId=${selectedPersona}`;
         if (selectedStatus !== "All Statuses") {
+          // Filter client-side for "In Progress" since API returns both Open and In Progress for "open"
+          // We'll filter after fetching
           const statusMap: Record<string, string> = {
             "Open": "open",
-            "In Progress": "open",
             "Completed": "completed",
             "Cancelled": "cancelled",
           };
-          url += `&status=${statusMap[selectedStatus] || ""}`;
+          if (statusMap[selectedStatus]) {
+            url += `&status=${statusMap[selectedStatus]}`;
+          }
         }
         if (selectedPriority !== "All Priorities") {
-          url += `&priority=${selectedPriority.toLowerCase()}`;
+          const priorityMap: Record<string, string> = {
+            "High": "high",
+            "Medium": "medium",
+            "Low": "low",
+            "Urgent": "urgent",
+          };
+          url += `&priority=${priorityMap[selectedPriority] || selectedPriority.toLowerCase()}`;
         }
 
         const response = await fetch(url);
@@ -101,10 +139,10 @@ export default function AdvisorTasksPage() {
     };
 
     fetchTasks();
-  }, [router, selectedStatus, selectedPriority]);
+  }, [selectedStatus, selectedPriority]);
 
-  // Refetch when filters change
-  useEffect(() => {
+  const handleTaskCreated = () => {
+    // Refetch tasks after creation
     const selectedPersona = sessionStorage.getItem("selectedAdvisorPersona");
     if (!selectedPersona) return;
 
@@ -121,7 +159,13 @@ export default function AdvisorTasksPage() {
           url += `&status=${statusMap[selectedStatus] || ""}`;
         }
         if (selectedPriority !== "All Priorities") {
-          url += `&priority=${selectedPriority.toLowerCase()}`;
+          const priorityMap: Record<string, string> = {
+            "High": "high",
+            "Medium": "medium",
+            "Low": "low",
+            "Urgent": "urgent",
+          };
+          url += `&priority=${priorityMap[selectedPriority] || selectedPriority.toLowerCase()}`;
         }
 
         const response = await fetch(url);
@@ -134,7 +178,7 @@ export default function AdvisorTasksPage() {
     };
 
     fetchTasks();
-  }, [selectedStatus, selectedPriority]);
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -214,6 +258,12 @@ export default function AdvisorTasksPage() {
         heroTitle="Task Management"
         heroSubtitle="Loading..."
         pageType="advisor"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Advisor", href: "/advisor/select" },
+          { label: "Dashboard", href: "/advisor" },
+          { label: "Tasks", href: "/advisor/tasks" },
+        ]}
       >
         <div className="container mx-auto px-4 py-12 text-center">
           <div className="loading loading-spinner loading-lg text-om-green"></div>
@@ -228,6 +278,12 @@ export default function AdvisorTasksPage() {
         heroTitle="Task Management"
         heroSubtitle="Error"
         pageType="advisor"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Advisor", href: "/advisor/select" },
+          { label: "Dashboard", href: "/advisor" },
+          { label: "Tasks", href: "/advisor/tasks" },
+        ]}
       >
         <div className="container mx-auto px-4 py-12 text-center">
           <div className="alert alert-error">{error}</div>
@@ -241,6 +297,12 @@ export default function AdvisorTasksPage() {
       heroTitle="Task Management"
       heroSubtitle="Track and manage your client tasks and follow-ups"
       pageType="advisor"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Advisor", href: "/advisor/select" },
+        { label: "Dashboard", href: "/advisor" },
+        { label: "Tasks", href: "/advisor/tasks" },
+      ]}
     >
       {/* Filters & Stats */}
 
@@ -339,7 +401,12 @@ export default function AdvisorTasksPage() {
               <option value="client">Sort by Client</option>
               <option value="createdDate">Sort by Created Date</option>
             </select>
-            <button className="btn-om-primary">Create Task</button>
+            <button 
+              className="btn-om-primary"
+              onClick={() => setIsCreateModalOpen(true)}
+            >
+              Create Task
+            </button>
           </div>
         </div>
       </section>
@@ -469,6 +536,22 @@ export default function AdvisorTasksPage() {
           )}
         </div>
       </section>
+
+      {/* Create Task Modal */}
+      {(() => {
+        const selectedPersona = sessionStorage.getItem("selectedAdvisorPersona");
+        if (!selectedPersona) return null;
+        
+        return (
+          <CreateTaskModal
+            isOpen={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            advisorId={selectedPersona}
+            onTaskCreated={handleTaskCreated}
+            customers={customers}
+          />
+        );
+      })()}
 
     </CorporateLayout>
   );

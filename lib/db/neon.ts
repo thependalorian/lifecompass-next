@@ -365,14 +365,15 @@ export async function getCustomerByNumber(customerNumber: string) {
 
 export async function getAdvisorTasks(
   advisorId: string,
-  status?: "open" | "completed" | "cancelled",
-  priority?: "high" | "medium" | "low"
+  status?: "open" | "completed" | "cancelled" | "in_progress",
+  priority?: "high" | "medium" | "low" | "urgent"
 ) {
   const client = getSqlClient();
   
   // Map lowercase API values to database values (case-insensitive)
   const statusMap: Record<string, string[]> = {
-    "open": ["Open", "In Progress"], // "open" matches both "Open" and "In Progress"
+    "open": ["Open"], // "open" matches only "Open" status
+    "in_progress": ["In Progress"], // "in_progress" matches "In Progress" status
     "completed": ["Completed"],
     "cancelled": ["Cancelled"],
   };
@@ -390,6 +391,8 @@ export async function getAdvisorTasks(
   
   // Build query with proper parameterization
   if (dbStatuses && dbStatuses.length > 0 && dbPriority) {
+    // Build status condition - handle single element array
+    const statusValue = dbStatuses[0];
     const tasks = await client`
       SELECT
         t.id::text,
@@ -411,12 +414,14 @@ export async function getAdvisorTasks(
       FROM tasks t
       LEFT JOIN customers c ON t.customer_id = c.id
       WHERE t.advisor_id = ${advisorId}::uuid
-        AND (t.status = ${dbStatuses[0]} OR t.status = ${dbStatuses[1] || dbStatuses[0]})
+        AND t.status = ${statusValue}
         AND LOWER(t.priority) = LOWER(${dbPriority})
       ORDER BY t.due_date ASC NULLS LAST, t.priority DESC
     `;
     return tasks;
   } else if (dbStatuses && dbStatuses.length > 0) {
+    // Build status condition - handle single element array
+    const statusValue = dbStatuses[0];
     const tasks = await client`
       SELECT
         t.id::text,
@@ -438,7 +443,7 @@ export async function getAdvisorTasks(
       FROM tasks t
       LEFT JOIN customers c ON t.customer_id = c.id
       WHERE t.advisor_id = ${advisorId}::uuid
-        AND (t.status = ${dbStatuses[0]} OR t.status = ${dbStatuses[1] || dbStatuses[0]})
+        AND t.status = ${statusValue}
       ORDER BY t.due_date ASC NULLS LAST, t.priority DESC
     `;
     return tasks;
@@ -734,4 +739,72 @@ export async function searchPolicies(query: string, limit = 20) {
   `;
 
   return policies;
+}
+
+export async function createTask(
+  advisorId: string,
+  taskData: {
+    title: string;
+    description?: string;
+    taskType: string;
+    priority: "Low" | "Medium" | "High" | "Urgent";
+    status?: string;
+    dueDate?: string;
+    customerId?: string;
+    estimatedHours?: number;
+  }
+) {
+  const client = getSqlClient();
+  
+  // Generate task number (format: TSK-YYYY-NNNNNN)
+  const year = new Date().getFullYear();
+  const taskCount = await client`
+    SELECT COUNT(*)::int as count FROM tasks WHERE task_number LIKE ${`TSK-${year}-%`}
+  `;
+  const nextNumber = (taskCount[0]?.count || 0) + 1;
+  const taskNumber = `TSK-${year}-${String(nextNumber).padStart(6, "0")}`;
+  
+  // Insert task
+  const [task] = await client`
+    INSERT INTO tasks (
+      task_number,
+      title,
+      description,
+      customer_id,
+      advisor_id,
+      task_type,
+      priority,
+      status,
+      due_date,
+      estimated_hours,
+      created_by
+    ) VALUES (
+      ${taskNumber},
+      ${taskData.title},
+      ${taskData.description || null},
+      ${taskData.customerId || null}::uuid,
+      ${advisorId}::uuid,
+      ${taskData.taskType},
+      ${taskData.priority},
+      ${taskData.status || "Open"},
+      ${taskData.dueDate || null}::date,
+      ${taskData.estimatedHours || null},
+      ${advisorId}::uuid
+    )
+    RETURNING
+      id::text,
+      task_number,
+      advisor_id::text,
+      customer_id::text,
+      task_type,
+      title,
+      description,
+      priority,
+      status,
+      due_date,
+      estimated_hours,
+      created_at
+  `;
+  
+  return task;
 }

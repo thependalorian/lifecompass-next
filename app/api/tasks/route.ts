@@ -2,7 +2,7 @@
 // API endpoint for fetching tasks from database
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAdvisorTasks, getAdvisorByNumber } from "@/lib/db/neon";
+import { getAdvisorTasks, getAdvisorByNumber, createTask } from "@/lib/db/neon";
 
 // Force dynamic rendering since we use request.url
 export const dynamic = 'force-dynamic';
@@ -41,10 +41,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Get tasks from database using the UUID
+    // Normalize priority to match expected type
+    const normalizedPriority = priority 
+      ? (priority.toLowerCase() as "high" | "medium" | "low" | "urgent" | undefined)
+      : undefined;
+    
     const tasks = await getAdvisorTasks(
       advisorId,
       status || undefined,
-      priority || undefined
+      normalizedPriority
     );
 
     // Transform to match frontend expected format
@@ -74,6 +79,90 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         error: "Failed to fetch tasks",
+        message: errorMessage,
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { advisorId, title, description, taskType, priority, status, dueDate, customerId, estimatedHours } = body;
+
+    // Validate required fields
+    if (!advisorId || !title || !taskType || !priority) {
+      return NextResponse.json(
+        { error: "Missing required fields: advisorId, title, taskType, and priority are required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if advisorId is a UUID or advisor number
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(advisorId);
+    
+    let advisorIdResolved: string;
+    if (isUUID) {
+      advisorIdResolved = advisorId;
+    } else {
+      // It's an advisor number, look up the UUID
+      const advisor = await getAdvisorByNumber(advisorId);
+      if (!advisor) {
+        return NextResponse.json(
+          { error: `Advisor not found: ${advisorId}` },
+          { status: 404 }
+        );
+      }
+      advisorIdResolved = advisor.id;
+    }
+
+    // Validate and normalize priority to match database format
+    const validPriorities = ["Low", "Medium", "High", "Urgent"];
+    const normalizedPriority = validPriorities.includes(priority) 
+      ? (priority as "Low" | "Medium" | "High" | "Urgent")
+      : "Medium";
+
+    // Create task
+    const newTask = await createTask(advisorIdResolved, {
+      title,
+      description,
+      taskType,
+      priority: normalizedPriority,
+      status,
+      dueDate,
+      customerId,
+      estimatedHours,
+    });
+
+    // Transform to match frontend expected format
+    const transformedTask = {
+      id: newTask.task_number || newTask.id,
+      taskNumber: newTask.task_number,
+      title: newTask.title,
+      description: newTask.description,
+      type: newTask.task_type,
+      priority: newTask.priority,
+      status: newTask.status,
+      dueDate: newTask.due_date,
+      completedDate: null,
+      customerId: newTask.customer_id,
+      customerNumber: null,
+      customerName: null,
+      advisorId: newTask.advisor_id,
+      estimatedHours: newTask.estimated_hours ? parseFloat(newTask.estimated_hours.toString()) : null,
+      actualHours: null,
+      createdAt: newTask.created_at,
+    };
+
+    return NextResponse.json(transformedTask, { status: 201 });
+  } catch (error) {
+    console.error("Error creating task:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json(
+      { 
+        error: "Failed to create task",
         message: errorMessage,
         timestamp: new Date().toISOString(),
       },
