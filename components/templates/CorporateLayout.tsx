@@ -11,6 +11,7 @@ import { ReactNode } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ChatWidget from "@/components/ChatWidget";
+import { Breadcrumbs } from "@/components/molecules/Breadcrumbs";
 
 interface CorporateLayoutProps {
   children: ReactNode;
@@ -21,6 +22,8 @@ interface CorporateLayoutProps {
   showVignette?: boolean;
   vignetteDirection?: "horizontal" | "vertical";
   pageType?: "customer" | "advisor";
+  showBreadcrumbs?: boolean;
+  breadcrumbItems?: Array<{ label: string; href: string }>;
 }
 
 export function CorporateLayout({
@@ -32,10 +35,17 @@ export function CorporateLayout({
   showVignette = true,
   vignetteDirection = "horizontal",
   pageType = "customer",
+  showBreadcrumbs = false,
+  breadcrumbItems,
 }: CorporateLayoutProps) {
   return (
     <div className="min-h-screen bg-base-100">
       <Navigation type={pageType} />
+
+      {/* Breadcrumbs - Show after persona selection */}
+      {showBreadcrumbs && (
+        <Breadcrumbs items={breadcrumbItems} showBackButton={true} />
+      )}
 
       {/* Primary Vignette Line - Top of page */}
       {showVignette && (

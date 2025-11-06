@@ -5,7 +5,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon, HomeIcon } from "@heroicons/react/24/outline";
 
 interface NavLink {
   name: string;
@@ -27,20 +27,33 @@ export default function Navigation({
     <nav className="bg-base-100 shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
-          <Link
-            href={type === "advisor" ? "/advisor" : "/"}
-            className="flex items-center"
-          >
-            <Image
-              src="/logos/om_lifecompass_logo.jpg"
-              alt="Old Mutual Life Compass Logo"
-              width={250}
-              height={50}
-              className="h-10 md:h-14 w-auto"
-              priority
-            />
-          </Link>
+          {/* Logo and Home Icon */}
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* Home Icon - Always goes to landing page */}
+            <Link
+              href="/"
+              className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-om-heritage-green/10 hover:bg-om-heritage-green/20 text-om-heritage-green flex items-center justify-center transition-all duration-200 active:scale-95 flex-shrink-0"
+              title="Home"
+              aria-label="Go to home page"
+            >
+              <HomeIcon className="w-4 h-4 md:w-5 md:h-5" />
+            </Link>
+            
+            {/* Logo */}
+            <Link
+              href={type === "advisor" ? "/advisor" : "/"}
+              className="flex items-center"
+            >
+              <Image
+                src="/logos/om_lifecompass_logo.jpg"
+                alt="Old Mutual Life Compass Logo"
+                width={250}
+                height={50}
+                className="h-10 md:h-14 w-auto"
+                priority
+              />
+            </Link>
+          </div>
 
           {/* Desktop Navigation - CTAs Only */}
           <div className="hidden md:flex items-center space-x-3">
@@ -133,6 +146,16 @@ export default function Navigation({
         {/* Mobile Navigation - CTAs Only */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t space-y-2 px-2">
+            {/* Home Link in Mobile Menu */}
+            <Link
+              href="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2 px-4 py-3 rounded-full text-xs sm:text-sm font-semibold bg-om-grey-5 text-om-heritage-green hover:bg-om-grey-10 active:scale-95 transition-all duration-200"
+            >
+              <HomeIcon className="w-5 h-5" />
+              <span>Home</span>
+            </Link>
+            
             {type === "customer" ? (
               <>
               <Link

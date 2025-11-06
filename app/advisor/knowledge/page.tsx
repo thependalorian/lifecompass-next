@@ -115,6 +115,12 @@ export default function AdvisorKnowledgePage() {
       heroTitle="Knowledge Base"
       heroSubtitle="Access product information, processes, and training resources"
       pageType="advisor"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Advisor", href: "/advisor/select" },
+        { label: "Dashboard", href: "/advisor" },
+        { label: "Knowledge", href: "/advisor/knowledge" },
+      ]}
     >
       {/* Search & Categories */}
       <section className="container mx-auto px-4 py-6">

@@ -79,7 +79,15 @@ export default function CustomerProfilePage() {
 
   if (loading) {
     return (
-      <CorporateLayout heroTitle="Loading..." pageType="customer">
+      <CorporateLayout
+        heroTitle="Loading..."
+        pageType="customer"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Customer", href: "/customer/select" },
+          { label: "Profile", href: `/customer/profile/${personaId}` },
+        ]}
+      >
         <div className="container mx-auto px-4 py-12 text-center">
           <div className="loading loading-spinner loading-lg text-om-heritage-green"></div>
           <p className="mt-4 text-om-grey">Loading customer profile...</p>
@@ -90,7 +98,15 @@ export default function CustomerProfilePage() {
 
   if (error || !persona) {
     return (
-      <CorporateLayout heroTitle="Error" pageType="customer">
+      <CorporateLayout
+        heroTitle="Error"
+        pageType="customer"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Customer", href: "/customer/select" },
+          { label: "Profile", href: `/customer/profile/${personaId}` },
+        ]}
+      >
         <div className="container mx-auto px-4 py-12 text-center">
           <div className="alert alert-error">
             <span>{error || "Customer not found"}</span>
@@ -112,6 +128,11 @@ export default function CustomerProfilePage() {
       heroTitle={`${persona.name}'s Profile`}
       heroSubtitle={persona.role}
       pageType="customer"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: persona.name || "Profile", href: `/customer/profile/${personaId}` },
+      ]}
     >
       <section className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">

@@ -85,6 +85,12 @@ export default function AdvisorClientsPage() {
         heroTitle="Client Management"
         heroSubtitle="Loading..."
         pageType="advisor"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Advisor", href: "/advisor/select" },
+          { label: "Dashboard", href: "/advisor" },
+          { label: "Clients", href: "/advisor/clients" },
+        ]}
       >
         <div className="container mx-auto px-4 py-12 text-center">
           <div className="loading loading-spinner loading-lg text-om-green"></div>
@@ -99,6 +105,12 @@ export default function AdvisorClientsPage() {
         heroTitle="Client Management"
         heroSubtitle="Error"
         pageType="advisor"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Advisor", href: "/advisor/select" },
+          { label: "Dashboard", href: "/advisor" },
+          { label: "Clients", href: "/advisor/clients" },
+        ]}
       >
         <div className="container mx-auto px-4 py-12 text-center">
           <div className="alert alert-error">{error}</div>
@@ -112,6 +124,12 @@ export default function AdvisorClientsPage() {
       heroTitle="Client Management"
       heroSubtitle="Search, segment, and manage your client book"
       pageType="advisor"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Advisor", href: "/advisor/select" },
+        { label: "Dashboard", href: "/advisor" },
+        { label: "Clients", href: "/advisor/clients" },
+      ]}
     >
       {/* Search & Filters */}
       <section className="container mx-auto px-4 py-6">

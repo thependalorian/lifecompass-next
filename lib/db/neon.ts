@@ -158,6 +158,7 @@ export async function getCustomerClaims(customerId: string) {
       id::text,
       claim_number,
       policy_id::text,
+      customer_id::text,
       claim_type,
       status,
       incident_date,
@@ -167,6 +168,30 @@ export async function getCustomerClaims(customerId: string) {
     FROM claims
     WHERE customer_id = ${customerId}::uuid
     ORDER BY created_at DESC
+  `;
+
+  return claims;
+}
+
+export async function getAllClaims(limit = 100) {
+  const client = getSqlClient();
+  const claims = await client`
+    SELECT
+      c.id::text,
+      c.claim_number,
+      c.policy_id::text,
+      c.customer_id::text,
+      cust.customer_number,
+      c.claim_type,
+      c.status,
+      c.incident_date,
+      c.approved_amount,
+      c.paid_amount,
+      c.processing_time_days
+    FROM claims c
+    LEFT JOIN customers cust ON c.customer_id = cust.id
+    ORDER BY c.created_at DESC
+    LIMIT ${limit}
   `;
 
   return claims;

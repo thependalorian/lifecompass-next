@@ -2,7 +2,7 @@
 // API endpoint for fetching claims from database
 
 import { NextRequest, NextResponse } from "next/server";
-import { getCustomerClaims, getCustomerByNumber } from "@/lib/db/neon";
+import { getCustomerClaims, getAllClaims, getCustomerByNumber } from "@/lib/db/neon";
 
 // Force dynamic rendering since we use request.url
 export const dynamic = 'force-dynamic';
@@ -31,11 +31,8 @@ export async function GET(request: NextRequest) {
       claims = await getCustomerClaims(customerId);
     } else {
       // Get all claims (for admin/advisor view)
-      // Note: This requires a new helper function - for now return empty
-      return NextResponse.json(
-        { error: "customerNumber or customerId parameter is required" },
-        { status: 400 }
-      );
+      const limit = parseInt(searchParams.get("limit") || "100");
+      claims = await getAllClaims(limit);
     }
 
     // Transform to match frontend expected format
@@ -50,6 +47,7 @@ export async function GET(request: NextRequest) {
       processingTimeDays: claim.processing_time_days,
       policyId: claim.policy_id,
       customerId: claim.customer_id,
+      customerNumber: claim.customer_number || null,
     }));
 
     return NextResponse.json(transformedClaims);

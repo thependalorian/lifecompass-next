@@ -135,6 +135,11 @@ export default function AdvisorDashboard() {
         heroTitle="Adviser Command Center"
         heroSubtitle="Loading..."
         pageType="advisor"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Advisor", href: "/advisor/select" },
+          { label: "Dashboard", href: "/advisor" },
+        ]}
       >
         <div className="container mx-auto px-4 sm:px-6 py-12 text-center">
           <div className="loading loading-spinner loading-lg text-om-green"></div>
@@ -149,6 +154,11 @@ export default function AdvisorDashboard() {
         heroTitle="Adviser Command Center"
         heroSubtitle="Error"
         pageType="advisor"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Advisor", href: "/advisor/select" },
+          { label: "Dashboard", href: "/advisor" },
+        ]}
       >
         <div className="container mx-auto px-4 sm:px-6 py-12 text-center">
           <div className="alert alert-error">{error}</div>
@@ -166,6 +176,11 @@ export default function AdvisorDashboard() {
       heroTitle="Adviser Command Center"
       heroSubtitle={`Welcome back, ${selectedAdvisor.name}`}
       pageType="advisor"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Advisor", href: "/advisor/select" },
+        { label: "Dashboard", href: "/advisor" },
+      ]}
     >
       {/* Advisor Selector */}
       <section className="bg-om-heritage-green text-white py-3 sm:py-4">
