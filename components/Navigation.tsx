@@ -48,13 +48,13 @@ export default function Navigation({
               <>
                 <Link
                   href="/customer/select"
-                  className="px-6 py-2.5 rounded-full text-sm font-semibold bg-om-heritage-green text-white hover:bg-om-fresh-green active:scale-95 transition-all duration-200 shadow-sm"
+                  className="px-4 lg:px-6 py-2.5 rounded-full text-xs lg:text-sm font-semibold bg-om-heritage-green text-white hover:bg-om-fresh-green active:scale-95 transition-all duration-200 shadow-sm whitespace-nowrap"
                 >
                   Customer Experience
                 </Link>
                 <Link
                   href="/advisor/select"
-                  className="px-6 py-2.5 rounded-full text-sm font-semibold bg-white text-om-heritage-green border-2 border-om-heritage-green hover:bg-om-grey-5 active:scale-95 transition-all duration-200"
+                  className="px-4 lg:px-6 py-2.5 rounded-full text-xs lg:text-sm font-semibold bg-white text-om-heritage-green border-2 border-om-heritage-green hover:bg-om-grey-5 active:scale-95 transition-all duration-200 whitespace-nowrap"
                 >
                   Advisor Experience
                 </Link>
@@ -63,13 +63,13 @@ export default function Navigation({
               <>
                 <Link
                   href="/customer/select"
-                  className="px-6 py-2.5 rounded-full text-sm font-semibold bg-white text-om-heritage-green border-2 border-om-heritage-green hover:bg-om-grey-5 active:scale-95 transition-all duration-200"
+                  className="px-4 lg:px-6 py-2.5 rounded-full text-xs lg:text-sm font-semibold bg-white text-om-heritage-green border-2 border-om-heritage-green hover:bg-om-grey-5 active:scale-95 transition-all duration-200 whitespace-nowrap"
                 >
                   Customer Experience
                 </Link>
               <Link
                   href="/advisor/select"
-                  className="px-6 py-2.5 rounded-full text-sm font-semibold bg-om-heritage-green text-white hover:bg-om-fresh-green active:scale-95 transition-all duration-200 shadow-sm"
+                  className="px-4 lg:px-6 py-2.5 rounded-full text-xs lg:text-sm font-semibold bg-om-heritage-green text-white hover:bg-om-fresh-green active:scale-95 transition-all duration-200 shadow-sm whitespace-nowrap"
               >
                   Advisor Experience
               </Link>
@@ -132,20 +132,20 @@ export default function Navigation({
 
         {/* Mobile Navigation - CTAs Only */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t space-y-2">
+          <div className="md:hidden py-4 border-t space-y-2 px-2">
             {type === "customer" ? (
               <>
               <Link
                   href="/customer/select"
                   onClick={() => setMobileMenuOpen(false)}
-                className="block px-5 py-3 rounded-full text-sm font-semibold bg-om-heritage-green text-white hover:bg-om-fresh-green active:scale-95 transition-all duration-200 shadow-sm text-center"
+                className="block px-4 py-3 rounded-full text-xs sm:text-sm font-semibold bg-om-heritage-green text-white hover:bg-om-fresh-green active:scale-95 transition-all duration-200 shadow-sm text-center break-words"
                 >
                   Customer Experience
                 </Link>
                 <Link
                   href="/advisor/select"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-5 py-3 rounded-full text-sm font-semibold bg-white text-om-heritage-green border-2 border-om-heritage-green hover:bg-om-grey-5 active:scale-95 transition-all duration-200 text-center"
+                  className="block px-4 py-3 rounded-full text-xs sm:text-sm font-semibold bg-white text-om-heritage-green border-2 border-om-heritage-green hover:bg-om-grey-5 active:scale-95 transition-all duration-200 text-center break-words"
                 >
                   Advisor Experience
                 </Link>
@@ -155,14 +155,14 @@ export default function Navigation({
                 <Link
                   href="/customer/select"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-5 py-3 rounded-full text-sm font-semibold bg-white text-om-heritage-green border-2 border-om-heritage-green hover:bg-om-grey-5 active:scale-95 transition-all duration-200 text-center"
+                  className="block px-4 py-3 rounded-full text-xs sm:text-sm font-semibold bg-white text-om-heritage-green border-2 border-om-heritage-green hover:bg-om-grey-5 active:scale-95 transition-all duration-200 text-center break-words"
                 >
                   Customer Experience
                 </Link>
                 <Link
                   href="/advisor/select"
                 onClick={() => setMobileMenuOpen(false)}
-                  className="block px-5 py-3 rounded-full text-sm font-semibold bg-om-heritage-green text-white hover:bg-om-fresh-green active:scale-95 transition-all duration-200 shadow-sm text-center"
+                  className="block px-4 py-3 rounded-full text-xs sm:text-sm font-semibold bg-om-heritage-green text-white hover:bg-om-fresh-green active:scale-95 transition-all duration-200 shadow-sm text-center break-words"
               >
                   Advisor Experience
               </Link>

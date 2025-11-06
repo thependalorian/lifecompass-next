@@ -39,6 +39,8 @@ yarn-error.log*
 
 # export scripts with secrets
 export_env.sh
+vercel-env-export.txt
+VERCEL_ENV_SUMMARY.md
 
 # vercel
 .vercel

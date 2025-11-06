@@ -63,6 +63,7 @@ export default function AdvisorPersonaSelection() {
         heroTitle="Loading Advisors..."
         heroSubtitle="Please wait while we load advisor information"
         pageType="advisor"
+        showChat={false}
       >
         <section className="container mx-auto px-4 py-12">
           <div className="max-w-6xl mx-auto text-center">
@@ -80,6 +81,7 @@ export default function AdvisorPersonaSelection() {
         heroTitle="Error Loading Advisors"
         heroSubtitle={error}
         pageType="advisor"
+        showChat={false}
       >
         <section className="container mx-auto px-4 py-12">
           <div className="max-w-6xl mx-auto text-center">
@@ -97,6 +99,7 @@ export default function AdvisorPersonaSelection() {
       heroTitle="Select Your Advisor Persona"
       heroSubtitle="Choose an advisor persona to explore the LifeCompass advisor experience"
       pageType="advisor"
+      showChat={false}
     >
       <section className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">

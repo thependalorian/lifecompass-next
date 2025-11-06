@@ -2,6 +2,7 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { motion } from "framer-motion";
@@ -12,33 +13,49 @@ import {
   ShieldCheckIcon,
 } from "@/components/atoms/icons";
 
+interface Claim {
+  id: string;
+  claimNumber: string;
+  type: string;
+  status: string;
+  incidentDate: string;
+  approvedAmount: number | null;
+  paidAmount: number | null;
+  processingTimeDays: number | null;
+}
+
 export default function ClaimsPage() {
-  const claims = [
-    {
-      id: "DTH-2025-001",
-      type: "Death Claim - OMP Funeral Insurance",
-      status: "Approved",
-      date: "2025-10-15",
-      amount: "N$50,000",
-      description: "Funeral benefit payout for policyholder Maria Shikongo - Final expenses benefit paid within 48 hours",
-    },
-    {
-      id: "DIS-2025-002",
-      type: "Disability Income Claim",
-      status: "Under Review",
-      date: "2025-11-01",
-      amount: "N$8,500/month",
-      description: "OMP Disability Income Cover - Occupational disability claim for John-Paul !Gaeb, 75% of income replacement",
-    },
-    {
-      id: "MTR-2025-003",
-      type: "Motor Theft Claim",
-      status: "Processing",
-      date: "2025-10-28",
-      amount: "N$350,000",
-      description: "Toyota Hilux stolen from farm premises - Police report submitted, awaiting salvage recovery assessment",
-    },
-  ];
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get selected customer persona
+    const selectedPersona = sessionStorage.getItem("selectedCustomerPersona");
+    if (!selectedPersona) {
+      setError("Please select a customer persona first");
+      setLoading(false);
+      return;
+    }
+
+    // Fetch claims from API
+    const fetchClaims = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/claims?customerNumber=${selectedPersona}`);
+        if (!response.ok) throw new Error("Failed to fetch claims");
+        const data = await response.json();
+        setClaims(data);
+      } catch (err) {
+        console.error("Error fetching claims:", err);
+        setError("Failed to load claims. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClaims();
+  }, []);
 
   const claimTypes = [
     {
@@ -130,6 +147,37 @@ export default function ClaimsPage() {
       ],
     },
   ];
+
+  if (loading) {
+    return (
+      <CorporateLayout
+        heroTitle="File a Claim"
+        heroSubtitle="Loading..."
+        pageType="customer"
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="loading loading-spinner loading-lg text-om-green"></div>
+        </div>
+      </CorporateLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <CorporateLayout
+        heroTitle="File a Claim"
+        heroSubtitle="Error"
+        pageType="customer"
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="alert alert-error">{error}</div>
+          <Link href="/customer/select" className="btn btn-om-primary mt-4">
+            Select Customer Persona
+          </Link>
+        </div>
+      </CorporateLayout>
+    );
+  }
 
   return (
     <CorporateLayout
@@ -263,24 +311,32 @@ export default function ClaimsPage() {
                         <div>
                           <span className="text-om-grey">Claim Number:</span>
                           <div className="font-semibold text-om-navy">
-                            {claim.id}
+                            {claim.claimNumber || claim.id}
                           </div>
                         </div>
                         <div>
-                          <span className="text-om-grey">Date Filed:</span>
+                          <span className="text-om-grey">Incident Date:</span>
                           <div className="font-semibold text-om-navy">
-                            {claim.date}
+                            {claim.incidentDate ? new Date(claim.incidentDate).toLocaleDateString() : "N/A"}
                           </div>
                         </div>
                         <div>
                           <span className="text-om-grey">Claim Amount:</span>
                           <div className="font-semibold text-om-navy">
-                            {claim.amount}
+                            {claim.paidAmount 
+                              ? `N$${claim.paidAmount.toLocaleString()}` 
+                              : claim.approvedAmount 
+                              ? `N$${claim.approvedAmount.toLocaleString()} (Approved)` 
+                              : "Pending"}
                           </div>
                         </div>
                       </div>
 
-                      <p className="text-om-grey mt-3 text-om-body">{claim.description}</p>
+                      {claim.processingTimeDays && (
+                        <p className="text-om-grey mt-3 text-sm">
+                          Processed in {claim.processingTimeDays} days
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex gap-2 mt-4 lg:mt-0 lg:flex-col lg:gap-2">

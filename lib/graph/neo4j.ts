@@ -6,13 +6,24 @@ let driver: Driver | null = null;
 
 export function getNeo4jDriver(): Driver {
   if (!driver) {
-    driver = neo4j.driver(
-      process.env.NEO4J_URI!,
-      neo4j.auth.basic(
-        process.env.NEO4J_USERNAME!,
-        process.env.NEO4J_PASSWORD!,
-      ),
-    );
+    const uri = process.env.NEO4J_URI;
+    const username = process.env.NEO4J_USERNAME || process.env.NEO4J_USER;
+    const password = process.env.NEO4J_PASSWORD;
+    
+    if (!uri || !username || !password) {
+      throw new Error(
+        "Neo4j configuration missing. Required: NEO4J_URI, NEO4J_USERNAME (or NEO4J_USER), and NEO4J_PASSWORD"
+      );
+    }
+    
+    try {
+      driver = neo4j.driver(
+        uri,
+        neo4j.auth.basic(username, password),
+      );
+    } catch (error) {
+      throw new Error(`Failed to create Neo4j driver: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
   return driver;
 }
@@ -21,10 +32,19 @@ export async function runGraphQuery(
   query: string,
   params: Record<string, any> = {},
 ): Promise<any[]> {
-  const driver = getNeo4jDriver();
-  const session: Session = driver.session();
-
+  // Check if Neo4j is configured before attempting connection
+  if (!process.env.NEO4J_URI || !process.env.NEO4J_PASSWORD) {
+    console.warn("Neo4j not configured. Skipping graph query.");
+    return [];
+  }
+  
+  let driver: Driver;
+  let session: Session | null = null;
+  
   try {
+    driver = getNeo4jDriver();
+    session = driver.session();
+
     const result = await session.run(query, params);
     return result.records.map((record) => {
       const obj: any = {};
@@ -33,8 +53,21 @@ export async function runGraphQuery(
       });
       return obj;
     });
+  } catch (error: any) {
+    // Handle authentication errors gracefully
+    if (error.code === "Neo.ClientError.Security.Unauthorized" || 
+        error.message?.includes("authentication failure") ||
+        error.message?.includes("Access denied")) {
+      console.error("Neo4j authentication failed. Check NEO4J_USERNAME and NEO4J_PASSWORD.");
+      console.error("Neo4j error:", error.message);
+      return []; // Return empty array instead of crashing
+    }
+    console.error("Neo4j query error:", error.message);
+    return []; // Return empty array for any other errors
   } finally {
-    await session.close();
+    if (session) {
+      await session.close();
+    }
   }
 }
 

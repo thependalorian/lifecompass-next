@@ -42,11 +42,11 @@ export function OMButton({
   };
 
   const sizeClasses = {
-    xs: "btn-xs",
-    sm: "btn-sm",
-    md: "btn-md",
-    lg: "btn-lg",
-    xl: "h-14 px-8 text-xl",
+    xs: "btn-xs text-xs sm:text-sm",
+    sm: "btn-sm text-xs sm:text-sm",
+    md: "btn-md text-sm sm:text-base",
+    lg: "btn-lg text-base sm:text-lg",
+    xl: "h-12 sm:h-14 px-4 sm:px-8 text-base sm:text-xl",
   };
 
   return (
@@ -64,7 +64,7 @@ export function OMButton({
       {...props}
     >
       {icon && iconPosition === "left" && icon}
-      <span>{children}</span>
+      <span className="whitespace-normal break-words">{children}</span>
       {icon && iconPosition === "right" && icon}
     </button>
   );

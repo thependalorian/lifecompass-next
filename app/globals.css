@@ -51,11 +51,21 @@
     font-family: "Montserrat", "Century Gothic", system-ui, sans-serif;
     border-radius: 9999px; /* iOS-style fully rounded */
     min-height: 44px; /* Touch target */
-    padding: 12px 24px;
-    font-size: 16px;
+    padding: 12px 16px;
+    font-size: 14px;
     font-weight: 600; /* Slightly lighter for more human feel */
     letter-spacing: 0.3px;
-    line-height: 1.5;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Responsive button sizes */
+  @media (min-width: 640px) {
+    .btn {
+      padding: 12px 24px;
+      font-size: 16px;
+    }
   }
 
   .btn:focus-visible {

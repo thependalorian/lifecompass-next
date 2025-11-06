@@ -125,6 +125,9 @@ export default function CustomerPersonaSelection() {
     }
   };
 
+  // Note: Persona selection page is always accessible for switching personas
+  // No auto-redirect needed as users may want to switch personas
+
   // Reset carousel index when filters change
   useEffect(() => {
     setCarouselIndex(0);
@@ -136,6 +139,7 @@ export default function CustomerPersonaSelection() {
         heroTitle="Loading Customers..."
         heroSubtitle="Please wait while we load customer information"
         pageType="customer"
+        showChat={false}
       >
         <section className="container mx-auto px-4 py-12">
           <div className="max-w-6xl mx-auto text-center">
@@ -153,6 +157,7 @@ export default function CustomerPersonaSelection() {
         heroTitle="Error Loading Customers"
         heroSubtitle={error}
         pageType="customer"
+        showChat={false}
       >
         <section className="container mx-auto px-4 py-12">
           <div className="max-w-6xl mx-auto text-center">
@@ -170,6 +175,7 @@ export default function CustomerPersonaSelection() {
       heroTitle="Select Your Customer Persona"
       heroSubtitle="Choose a persona to explore the LifeCompass customer experience"
       pageType="customer"
+      showChat={false}
     >
       <section className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">

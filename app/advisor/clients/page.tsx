@@ -2,98 +2,110 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { motion } from "framer-motion";
 import { OMButton } from "@/components/atoms/brand";
 
-const sampleClients = [
-  {
-    id: "CUST-001",
-    name: "Maria Shikongo",
-    initials: "MS",
-    segment: "Informal",
-    location: "Katutura, Windhoek",
-    policies: 3,
-    totalPremium: 870,
-    lifetimeValue: 150000,
-    lastInteraction: "2 days ago",
-    status: "Active",
-    riskProfile: "Conservative",
-  },
-  {
-    id: "CUST-002",
-    name: "John-Paul !Gaeb",
-    initials: "JG",
-    segment: "SMB",
-    location: "Walvis Bay",
-    policies: 2,
-    totalPremium: 1200,
-    lifetimeValue: 85000,
-    lastInteraction: "1 week ago",
-    status: "Active",
-    riskProfile: "Moderate",
-  },
-  {
-    id: "CUST-003",
-    name: "Fatima Isaacks",
-    initials: "FI",
-    segment: "Informal",
-    location: "Oshakati",
-    policies: 2,
-    totalPremium: 450,
-    lifetimeValue: 95000,
-    lastInteraction: "3 days ago",
-    status: "Active",
-    riskProfile: "Conservative",
-  },
-  {
-    id: "CUST-004",
-    name: "David Ndjavera",
-    initials: "DN",
-    segment: "SMB",
-    location: "Tsumeb",
-    policies: 1,
-    totalPremium: 650,
-    lifetimeValue: 45000,
-    lastInteraction: "5 days ago",
-    status: "Pending",
-    riskProfile: "Moderate",
-  },
-  {
-    id: "CUST-005",
-    name: "Helvi Bezuidenhout",
-    initials: "HB",
-    segment: "Professional",
-    location: "Windhoek CBD",
-    policies: 5,
-    totalPremium: 3200,
-    lifetimeValue: 450000,
-    lastInteraction: "1 day ago",
-    status: "Active",
-    riskProfile: "Aggressive",
-  },
-];
+interface Client {
+  id: string;
+  customerNumber: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  segment: string;
+  engagementScore: number;
+  lifetimeValue: number;
+  advisorId?: string;
+}
 
 export default function AdvisorClientsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSegment, setSelectedSegment] = useState("All");
-  const [selectedClient, setSelectedClient] = useState<
-    (typeof sampleClients)[0] | null
-  >(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check if persona is selected
+    const selectedPersona = sessionStorage.getItem("selectedAdvisorPersona");
+    if (!selectedPersona) {
+      router.push("/advisor/select");
+      return;
+    }
+
+    // Fetch clients from API
+    const fetchClients = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/advisors/${selectedPersona}/clients`);
+        if (!response.ok) throw new Error("Failed to fetch clients");
+        const data = await response.json();
+        setClients(data);
+      } catch (err) {
+        console.error("Error fetching clients:", err);
+        setError("Failed to load clients. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClients();
+  }, [router]);
 
   const segments = ["All", "Informal", "SMB", "Professional", "Corporate"];
 
-  const filteredClients = sampleClients.filter((client) => {
+  const filteredClients = clients.filter((client) => {
     const matchesSearch =
       client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.id.toLowerCase().includes(searchQuery.toLowerCase());
+      client.customerNumber.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSegment =
       selectedSegment === "All" || client.segment === selectedSegment;
 
     return matchesSearch && matchesSegment;
   });
+
+  // Helper to get initials from name
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  if (loading) {
+    return (
+      <CorporateLayout
+        heroTitle="Client Management"
+        heroSubtitle="Loading..."
+        pageType="advisor"
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="loading loading-spinner loading-lg text-om-green"></div>
+        </div>
+      </CorporateLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <CorporateLayout
+        heroTitle="Client Management"
+        heroSubtitle="Error"
+        pageType="advisor"
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="alert alert-error">{error}</div>
+        </div>
+      </CorporateLayout>
+    );
+  }
 
   return (
     <CorporateLayout
@@ -146,20 +158,27 @@ export default function AdvisorClientsPage() {
           </div>
           <div className="card-om bg-om-navy/10">
             <div className="card-body">
-              <div className="text-sm text-om-grey">Total Policies</div>
+              <div className="text-sm text-om-grey">Avg Engagement</div>
               <div className="text-3xl font-bold text-om-navy">
-                {filteredClients.reduce((sum, c) => sum + c.policies, 0)}
+                {filteredClients.length > 0
+                  ? Math.round(
+                      filteredClients.reduce((sum, c) => sum + c.engagementScore, 0) /
+                        filteredClients.length,
+                    )
+                  : 0}
+                %
               </div>
             </div>
           </div>
           <div className="card-om bg-om-gold/10">
             <div className="card-body">
-              <div className="text-sm text-om-grey">Monthly Premium</div>
+              <div className="text-sm text-om-grey">Total LTV</div>
               <div className="text-3xl font-bold text-om-gold">
                 N$
-                {filteredClients
-                  .reduce((sum, c) => sum + c.totalPremium, 0)
-                  .toLocaleString()}
+                {Math.round(
+                  filteredClients.reduce((sum, c) => sum + c.lifetimeValue, 0) / 1000,
+                ).toLocaleString()}
+                K
               </div>
             </div>
           </div>
@@ -205,27 +224,25 @@ export default function AdvisorClientsPage() {
                   </div>
                   <div className="flex-1">
                     <div className="font-bold text-om-navy">{client.name}</div>
-                    <div className="text-xs text-om-grey">{client.id}</div>
+                    <div className="text-xs text-om-grey">{client.customerNumber}</div>
                   </div>
-                  <div
-                    className={`badge ${client.status === "Active" ? "badge-om-active" : "badge-om-pending"}`}
-                  >
-                    {client.status}
+                  <div className="badge badge-om-active">
+                    Active
                   </div>
                 </div>
 
                 {/* Client Stats */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div>
-                    <div className="text-xs text-om-grey">Policies</div>
+                    <div className="text-xs text-om-grey">Engagement</div>
                     <div className="text-lg font-bold text-om-navy">
-                      {client.policies}
+                      {Math.round(client.engagementScore)}%
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-om-grey">Premium</div>
+                    <div className="text-xs text-om-grey">Lifetime Value</div>
                     <div className="text-lg font-bold text-om-green">
-                      N${client.totalPremium}
+                      N${Math.round(client.lifetimeValue / 1000)}K
                     </div>
                   </div>
                 </div>
@@ -237,18 +254,14 @@ export default function AdvisorClientsPage() {
                     <span className="badge badge-sm">{client.segment}</span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-om-grey w-24">Location:</span>
-                    <span>{client.location}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-om-grey w-24">Last Contact:</span>
-                    <span>{client.lastInteraction}</span>
+                    <span className="text-om-grey w-24">Engagement:</span>
+                    <span>{Math.round(client.engagementScore)}/100</span>
                   </div>
                 </div>
 
                 {/* Actions */}
                 <div className="flex gap-2 mt-4">
-                  <Link href={`/advisor/client/${client.id}`} className="flex-1">
+                  <Link href={`/advisor/client/${client.customerNumber}`} className="flex-1">
                     <OMButton variant="primary" size="sm" className="w-full">
                       View 360° Profile
                     </OMButton>
@@ -281,17 +294,17 @@ export default function AdvisorClientsPage() {
             <div className="flex items-center space-x-4 mb-6">
               <div className="avatar">
                 <div className="w-20 rounded-full bg-om-green text-white flex items-center justify-center text-2xl font-bold">
-                  {selectedClient.initials}
+                  {getInitials(selectedClient.name)}
                 </div>
               </div>
               <div className="flex-1">
                 <h4 className="text-xl font-bold text-om-navy">
                   {selectedClient.name}
                 </h4>
-                <p className="text-om-grey">{selectedClient.id}</p>
+                <p className="text-om-grey">{selectedClient.customerNumber}</p>
                 <div className="flex gap-2 mt-2">
                   <span className="badge">{selectedClient.segment}</span>
-                  <span className="badge">{selectedClient.riskProfile}</span>
+                  <span className="badge">Engagement: {Math.round(selectedClient.engagementScore)}%</span>
                 </div>
               </div>
             </div>
@@ -302,23 +315,23 @@ export default function AdvisorClientsPage() {
                 <div className="card-body p-4">
                   <div className="text-sm text-om-grey">Lifetime Value</div>
                   <div className="text-2xl font-bold text-om-green">
-                    N${selectedClient.lifetimeValue.toLocaleString()}
+                    N${Math.round(selectedClient.lifetimeValue).toLocaleString()}
                   </div>
                 </div>
               </div>
               <div className="card-om bg-om-navy/10">
                 <div className="card-body p-4">
-                  <div className="text-sm text-om-grey">Active Policies</div>
+                  <div className="text-sm text-om-grey">Engagement Score</div>
                   <div className="text-2xl font-bold text-om-navy">
-                    {selectedClient.policies}
+                    {Math.round(selectedClient.engagementScore)}%
                   </div>
                 </div>
               </div>
               <div className="card-om bg-om-gold/10">
                 <div className="card-body p-4">
-                  <div className="text-sm text-om-grey">Monthly Premium</div>
+                  <div className="text-sm text-om-grey">Segment</div>
                   <div className="text-2xl font-bold text-om-gold">
-                    N${selectedClient.totalPremium}
+                    {selectedClient.segment}
                   </div>
                 </div>
               </div>
@@ -341,7 +354,9 @@ export default function AdvisorClientsPage() {
 
             {/* Actions */}
             <div className="modal-action">
-              <Link href={`/advisors/ADV001/book`} className="btn btn-om-primary">Schedule Meeting</Link>
+              <Link href={`/advisor/client/${selectedClient.customerNumber}`} className="btn btn-om-primary">
+                View Full Profile
+              </Link>
               <button className="btn btn-om-outline">Send Message</button>
               <button className="btn btn-ghost">Add Note</button>
             </div>

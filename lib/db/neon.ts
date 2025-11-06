@@ -345,88 +345,127 @@ export async function getAdvisorTasks(
 ) {
   const client = getSqlClient();
   
-  if (status && priority) {
+  // Map lowercase API values to database values (case-insensitive)
+  const statusMap: Record<string, string[]> = {
+    "open": ["Open", "In Progress"], // "open" matches both "Open" and "In Progress"
+    "completed": ["Completed"],
+    "cancelled": ["Cancelled"],
+  };
+  
+  const priorityMap: Record<string, string> = {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "urgent": "Urgent",
+  };
+  
+  // Convert status to database format
+  const dbStatuses = status ? statusMap[status.toLowerCase()] || [] : null;
+  const dbPriority = priority ? priorityMap[priority.toLowerCase()] : null;
+  
+  // Build query with proper parameterization
+  if (dbStatuses && dbStatuses.length > 0 && dbPriority) {
     const tasks = await client`
       SELECT
-        id::text,
-        task_number,
-        advisor_id::text,
-        customer_id::text,
-        task_type,
-        title,
-        description,
-        priority,
-        status,
-        due_date,
-        completed_date,
-        created_at
-      FROM tasks
-      WHERE advisor_id = ${advisorId}::uuid
-        AND status = ${status}
-        AND priority = ${priority}
-      ORDER BY due_date ASC NULLS LAST, priority DESC
+        t.id::text,
+        t.task_number,
+        t.advisor_id::text,
+        t.customer_id::text,
+        c.customer_number,
+        c.first_name || ' ' || c.last_name AS customer_name,
+        t.task_type,
+        t.title,
+        t.description,
+        t.priority,
+        t.status,
+        t.due_date,
+        t.completed_date,
+        t.estimated_hours,
+        t.actual_hours,
+        t.created_at
+      FROM tasks t
+      LEFT JOIN customers c ON t.customer_id = c.id
+      WHERE t.advisor_id = ${advisorId}::uuid
+        AND (t.status = ${dbStatuses[0]} OR t.status = ${dbStatuses[1] || dbStatuses[0]})
+        AND LOWER(t.priority) = LOWER(${dbPriority})
+      ORDER BY t.due_date ASC NULLS LAST, t.priority DESC
     `;
     return tasks;
-  } else if (status) {
+  } else if (dbStatuses && dbStatuses.length > 0) {
     const tasks = await client`
       SELECT
-        id::text,
-        task_number,
-        advisor_id::text,
-        customer_id::text,
-        task_type,
-        title,
-        description,
-        priority,
-        status,
-        due_date,
-        completed_date,
-        created_at
-      FROM tasks
-      WHERE advisor_id = ${advisorId}::uuid
-        AND status = ${status}
-      ORDER BY due_date ASC NULLS LAST, priority DESC
+        t.id::text,
+        t.task_number,
+        t.advisor_id::text,
+        t.customer_id::text,
+        c.customer_number,
+        c.first_name || ' ' || c.last_name AS customer_name,
+        t.task_type,
+        t.title,
+        t.description,
+        t.priority,
+        t.status,
+        t.due_date,
+        t.completed_date,
+        t.estimated_hours,
+        t.actual_hours,
+        t.created_at
+      FROM tasks t
+      LEFT JOIN customers c ON t.customer_id = c.id
+      WHERE t.advisor_id = ${advisorId}::uuid
+        AND (t.status = ${dbStatuses[0]} OR t.status = ${dbStatuses[1] || dbStatuses[0]})
+      ORDER BY t.due_date ASC NULLS LAST, t.priority DESC
     `;
     return tasks;
-  } else if (priority) {
+  } else if (dbPriority) {
     const tasks = await client`
       SELECT
-        id::text,
-        task_number,
-        advisor_id::text,
-        customer_id::text,
-        task_type,
-        title,
-        description,
-        priority,
-        status,
-        due_date,
-        completed_date,
-        created_at
-      FROM tasks
-      WHERE advisor_id = ${advisorId}::uuid
-        AND priority = ${priority}
-      ORDER BY due_date ASC NULLS LAST, priority DESC
+        t.id::text,
+        t.task_number,
+        t.advisor_id::text,
+        t.customer_id::text,
+        c.customer_number,
+        c.first_name || ' ' || c.last_name AS customer_name,
+        t.task_type,
+        t.title,
+        t.description,
+        t.priority,
+        t.status,
+        t.due_date,
+        t.completed_date,
+        t.estimated_hours,
+        t.actual_hours,
+        t.created_at
+      FROM tasks t
+      LEFT JOIN customers c ON t.customer_id = c.id
+      WHERE t.advisor_id = ${advisorId}::uuid
+        AND LOWER(t.priority) = LOWER(${dbPriority})
+      ORDER BY t.due_date ASC NULLS LAST, t.priority DESC
     `;
     return tasks;
   } else {
     const tasks = await client`
       SELECT
-        id::text,
-        task_number,
-        advisor_id::text,
-        customer_id::text,
-        task_type,
-        title,
-        description,
-        priority,
-        status,
-        due_date,
-        completed_date,
-        created_at
-      FROM tasks
-      WHERE advisor_id = ${advisorId}::uuid
-      ORDER BY due_date ASC NULLS LAST, priority DESC
+        t.id::text,
+        t.task_number,
+        t.advisor_id::text,
+        t.customer_id::text,
+        c.customer_number,
+        c.first_name || ' ' || c.last_name AS customer_name,
+        t.task_type,
+        t.title,
+        t.description,
+        t.priority,
+        t.status,
+        t.due_date,
+        t.completed_date,
+        t.estimated_hours,
+        t.actual_hours,
+        t.created_at
+      FROM tasks t
+      LEFT JOIN customers c ON t.customer_id = c.id
+      WHERE t.advisor_id = ${advisorId}::uuid
+      ORDER BY t.due_date ASC NULLS LAST, t.priority DESC
     `;
     return tasks;
   }

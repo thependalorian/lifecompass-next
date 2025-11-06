@@ -4,7 +4,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { motion } from "framer-motion";
@@ -22,130 +22,141 @@ import {
 } from "@heroicons/react/24/outline";
 import { OMButton } from "@/components/atoms/brand";
 
-// Sample client data - in production, fetch from API using [id]
-const sampleClient = {
-  id: "CLI001",
-  name: "Maria Shikongo",
-  email: "maria.shikongo@oldmutual.na",
-  phone: "+264811234567",
-  dateOfBirth: "1982-05-15",
-  occupation: "Small Business Owner",
-  location: "Katutura, Windhoek",
-  segment: "SME",
-  riskProfile: "Moderate",
-  totalPolicies: 3,
-  totalPremium: 2550,
-  lifetimeValue: 76500,
-  engagementScore: 82,
-  churnRisk: "Low",
-  lastContact: "2025-11-01",
-  nextReview: "2026-04-15",
-  primaryAdvisor: "Thomas Shikongo",
-  advisorId: "ADV001",
-  products: ["OMP Funeral Insurance", "OMP Severe Illness Cover", "Unit Trusts"],
-  lastPolicyUpdate: "2025-10-15",
-};
+interface Client {
+  id: string;
+  customerNumber: string;
+  name: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  occupation: string;
+  city: string;
+  region: string;
+  segment: string;
+  engagementScore: number;
+  lifetimeValue: number;
+  churnRisk: string;
+}
 
-const policies = [
-  {
-    id: "OMP-FUN-001",
-    type: "OMP Funeral Insurance",
-    number: "OMP-FUN-2023-001",
-    status: "Active",
-    premium: 350,
-    coverage: 50000,
-    renewalDate: "2025-03-15",
-    description: "Comprehensive+ Plan - Extended family coverage with cashback benefits",
-  },
-  {
-    id: "OMP-SIC-002",
-    type: "OMP Severe Illness Cover",
-    number: "OMP-SIC-2023-045",
-    status: "Active",
-    premium: 1200,
-    coverage: 200000,
-    renewalDate: "2025-06-01",
-    description: "Coverage for 68 severe illnesses with lump sum payments",
-  },
-  {
-    id: "UT-INCOME-003",
-    type: "Old Mutual Namibia Income Fund",
-    number: "UT-INC-2024-012",
-    status: "Active",
-    premium: 1000,
-    coverage: 0,
-    renewalDate: "2025-12-31",
-    description: "Monthly investment - Professional management with 7.2% annual returns",
-  },
-];
+interface Policy {
+  id: string;
+  policyNumber: string;
+  type: string;
+  subtype: string;
+  status: string;
+  coverageAmount: number | null;
+  premiumAmount: number | null;
+  premiumFrequency: string;
+  startDate: string;
+  endDate: string | null;
+  renewalDate: string | null;
+}
 
-const interactions = [
-  {
-    id: "INT001",
-    date: "2025-11-01",
-    type: "Chat",
-    channel: "Web",
-    subject: "OMP Severe Illness Cover claim inquiry",
-    outcome: "Resolved",
-    sentiment: "Positive",
-    notes: "Client inquired about claim process for severe illness coverage",
-  },
-  {
-    id: "INT002",
-    date: "2025-10-28",
-    type: "Call",
-    channel: "Phone",
-    subject: "Unit Trust investment review",
-    outcome: "Follow-up Scheduled",
-    sentiment: "Positive",
-    notes: "Discussed Old Mutual Income Fund performance and additional contributions",
-  },
-  {
-    id: "INT003",
-    date: "2025-10-15",
-    type: "Meeting",
-    channel: "In-Person",
-    subject: "Annual review",
-    outcome: "Follow-up Needed",
-    sentiment: "Neutral",
-  },
-];
-
-const notes = [
-  {
-    id: "NOTE001",
-    date: "2024-10-20",
-    content: "Interested in education savings for 3 children. Good opportunity for upsell.",
-    pinned: true,
-  },
-  {
-    id: "NOTE002",
-    date: "2024-09-28",
-    content: "Stable income from food vending business. Reliable premium payments.",
-    pinned: false,
-  },
-];
+interface Interaction {
+  id: string;
+  interactionNumber: string;
+  type: string;
+  channel: string;
+  direction: string;
+  subject: string;
+  content: string;
+  sentiment: string;
+  intent: string;
+  outcome: string;
+  createdAt: string;
+}
 
 export default function Client360Page() {
   const params = useParams();
-  const clientId = params.id as string;
+  const customerNumber = params.id as string;
+  const [client, setClient] = useState<Client | null>(null);
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "policies" | "interactions" | "notes">("overview");
-  const [newNote, setNewNote] = useState("");
 
-  // In production, fetch client data based on clientId
-  const client = sampleClient;
+  useEffect(() => {
+    if (!customerNumber) return;
+
+    const fetchClientData = async () => {
+      setLoading(true);
+      try {
+        // Fetch client data
+        const clientResponse = await fetch(`/api/customers?number=${customerNumber}`);
+        if (!clientResponse.ok) throw new Error("Failed to fetch client");
+        const clientData = await clientResponse.json();
+        setClient(clientData);
+
+        // Fetch policies
+        const policiesResponse = await fetch(`/api/policies?customerNumber=${customerNumber}`);
+        if (policiesResponse.ok) {
+          const policiesData = await policiesResponse.json();
+          setPolicies(policiesData);
+        }
+
+        // Fetch interactions
+        const interactionsResponse = await fetch(`/api/interactions?customerNumber=${customerNumber}&limit=10`);
+        if (interactionsResponse.ok) {
+          const interactionsData = await interactionsResponse.json();
+          setInteractions(interactionsData);
+        }
+      } catch (err) {
+        console.error("Error fetching client data:", err);
+        setError("Failed to load client data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClientData();
+  }, [customerNumber]);
+
+  if (loading) {
+    return (
+      <CorporateLayout
+        heroTitle="Client 360° View"
+        heroSubtitle="Loading..."
+        pageType="advisor"
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="loading loading-spinner loading-lg text-om-green"></div>
+        </div>
+      </CorporateLayout>
+    );
+  }
+
+  if (error || !client) {
+    return (
+      <CorporateLayout
+        heroTitle="Client 360° View"
+        heroSubtitle="Error"
+        pageType="advisor"
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="alert alert-error">{error || "Client not found"}</div>
+        </div>
+      </CorporateLayout>
+    );
+  }
+
+  // Calculate totals from policies
+  const totalPolicies = policies.length;
+  const totalPremium = policies
+    .filter((p) => p.status === "Active")
+    .reduce((sum, p) => sum + (p.premiumAmount || 0), 0);
 
   return (
     <CorporateLayout
       heroTitle={client.name}
-      heroSubtitle={`Client ID: ${client.id} | ${client.segment} Segment`}
+      heroSubtitle={`${client.customerNumber} | ${client.segment} Segment`}
       pageType="advisor"
     >
       {/* Action Buttons */}
       <section className="bg-om-heritage-green text-white py-4">
         <div className="container mx-auto px-4">
           <div className="flex justify-end gap-3">
-            <Link href={`/advisors/${client.advisorId}/book`}>
+            <Link href={`/advisors`}>
               <OMButton variant="outline" size="sm" className="border-white text-white hover:bg-white hover:text-om-heritage-green">
                 Schedule Meeting
               </OMButton>
@@ -198,25 +209,25 @@ export default function Client360Page() {
                     <div>
                       <div className="text-sm text-om-grey-60 mb-1">Total Policies</div>
                       <div className="text-2xl font-bold text-om-heritage-green">
-                        {client.totalPolicies}
+                        {totalPolicies}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-om-grey-60 mb-1">Total Premium</div>
                       <div className="text-2xl font-bold text-om-heritage-green">
-                        N$ {client.totalPremium.toLocaleString()}
+                        N$ {totalPremium.toLocaleString()}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-om-grey-60 mb-1">Lifetime Value</div>
                       <div className="text-2xl font-bold text-om-heritage-green">
-                        N$ {(client.lifetimeValue / 1000).toFixed(0)}K
+                        N$ {Math.round(client.lifetimeValue / 1000)}K
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-om-grey-60 mb-1">Engagement Score</div>
                       <div className="text-2xl font-bold text-om-heritage-green">
-                        {client.engagementScore}
+                        {Math.round(client.engagementScore)}%
                       </div>
                     </div>
                   </div>
@@ -232,16 +243,16 @@ export default function Client360Page() {
                     <div>
                       <div className="flex justify-between mb-2">
                         <span className="text-om-grey-80">Monthly Premium</span>
-                        <span className="font-bold text-om-navy">N$ {client.totalPremium.toLocaleString()}</span>
+                        <span className="font-bold text-om-navy">N$ {totalPremium.toLocaleString()}</span>
                       </div>
                       <div className="w-full bg-om-grey-15 rounded-full h-2">
-                        <div className="bg-om-heritage-green h-2 rounded-full" style={{ width: "85%" }} />
+                        <div className="bg-om-heritage-green h-2 rounded-full" style={{ width: `${Math.min(client.engagementScore, 100)}%` }} />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-om-grey-15">
                       <div>
-                        <div className="text-sm text-om-grey-60">Risk Profile</div>
-                        <div className="font-bold text-om-navy">{client.riskProfile}</div>
+                        <div className="text-sm text-om-grey-60">Segment</div>
+                        <div className="font-bold text-om-navy">{client.segment}</div>
                       </div>
                       <div>
                         <div className="text-sm text-om-grey-60">Churn Risk</div>
@@ -260,63 +271,88 @@ export default function Client360Page() {
 
             {activeTab === "policies" && (
               <div className="space-y-4">
-                {policies.map((policy) => (
-                  <div key={policy.id} className="card-om p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-om-navy">{policy.type}</h3>
-                        <p className="text-sm text-om-grey-60">{policy.number}</p>
+                {policies.length > 0 ? (
+                  policies.map((policy) => (
+                    <div key={policy.id} className="card-om p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-om-navy">{policy.type} {policy.subtype ? `- ${policy.subtype}` : ""}</h3>
+                          <p className="text-sm text-om-grey-60">{policy.policyNumber}</p>
+                        </div>
+                        <span className={`badge ${
+                          policy.status === "Active" ? "badge-om-active" : "badge-om-inactive"
+                        }`}>
+                          {policy.status}
+                        </span>
                       </div>
-                      <span className={`badge ${
-                        policy.status === "Active" ? "badge-om-active" : "badge-om-inactive"
-                      }`}>
-                        {policy.status}
-                      </span>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div>
+                          <div className="text-sm text-om-grey-60">Premium</div>
+                          <div className="font-bold text-om-navy">
+                            N$ {policy.premiumAmount ? policy.premiumAmount.toLocaleString() : "0"} / {policy.premiumFrequency || "Monthly"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-om-grey-60">Coverage</div>
+                          <div className="font-bold text-om-navy">
+                            N$ {policy.coverageAmount ? policy.coverageAmount.toLocaleString() : "N/A"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-om-grey-60">Renewal Date</div>
+                          <div className="font-bold text-om-navy">
+                            {policy.renewalDate ? new Date(policy.renewalDate).toLocaleDateString() : "N/A"}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div>
-                        <div className="text-sm text-om-grey-60">Premium</div>
-                        <div className="font-bold text-om-navy">N$ {policy.premium.toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-om-grey-60">Coverage</div>
-                        <div className="font-bold text-om-navy">N$ {policy.coverage.toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-om-grey-60">Renewal Date</div>
-                        <div className="font-bold text-om-navy">{policy.renewalDate}</div>
-                      </div>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-om-grey">
+                    No policies found
                   </div>
-                ))}
+                )}
               </div>
             )}
 
             {activeTab === "interactions" && (
               <div className="space-y-4">
-                {interactions.map((interaction) => (
-                  <div key={interaction.id} className="card-om p-6">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-bold text-om-navy">{interaction.subject}</h3>
-                        <p className="text-sm text-om-grey-60">{interaction.date}</p>
+                {interactions.length > 0 ? (
+                  interactions.map((interaction) => (
+                    <div key={interaction.id} className="card-om p-6">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-bold text-om-navy">{interaction.subject || "No subject"}</h3>
+                          <p className="text-sm text-om-grey-60">
+                            {new Date(interaction.createdAt).toLocaleDateString()} at {new Date(interaction.createdAt).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <span className={`badge ${
+                          interaction.sentiment === "Positive" ? "badge-om-success" :
+                          interaction.sentiment === "Negative" ? "badge-om-error" : "badge-om-info"
+                        }`}>
+                          {interaction.sentiment || "Neutral"}
+                        </span>
                       </div>
-                      <span className={`badge ${
-                        interaction.sentiment === "Positive" ? "badge-om-success" :
-                        interaction.sentiment === "Negative" ? "badge-om-error" : "badge-om-info"
-                      }`}>
-                        {interaction.sentiment}
-                      </span>
+                      <div className="flex gap-4 text-sm text-om-grey-60 mb-2">
+                        <span>{interaction.type}</span>
+                        <span>•</span>
+                        <span>{interaction.channel}</span>
+                        <span>•</span>
+                        <span>{interaction.direction}</span>
+                        <span>•</span>
+                        <span className="font-semibold text-om-heritage-green">{interaction.outcome || "N/A"}</span>
+                      </div>
+                      {interaction.content && (
+                        <p className="text-sm text-om-grey-80 mt-2">{interaction.content}</p>
+                      )}
                     </div>
-                    <div className="flex gap-4 text-sm text-om-grey-60">
-                      <span>{interaction.type}</span>
-                      <span>•</span>
-                      <span>{interaction.channel}</span>
-                      <span>•</span>
-                      <span className="font-semibold text-om-heritage-green">{interaction.outcome}</span>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-om-grey">
+                    No interactions found
                   </div>
-                ))}
+                )}
               </div>
             )}
 
@@ -326,8 +362,6 @@ export default function Client360Page() {
                 <div className="card-om p-6">
                   <h3 className="font-bold text-om-navy mb-4">Add Private Note</h3>
                   <textarea
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
                     placeholder="Add a note about this client..."
                     className="textarea textarea-bordered w-full input-om mb-3"
                     rows={4}
@@ -336,27 +370,16 @@ export default function Client360Page() {
                     <OMButton variant="primary" size="sm">
                       Save Note
                     </OMButton>
-                    <OMButton variant="outline" size="sm" onClick={() => setNewNote("")}>
+                    <OMButton variant="outline" size="sm">
                       Clear
                     </OMButton>
                   </div>
                 </div>
 
                 {/* Existing Notes */}
-                {notes.map((note) => (
-                  <div key={note.id} className="card-om p-6">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        {note.pinned && <BookmarkIcon className="w-5 h-5 text-om-naartjie" />}
-                        <span className="text-sm text-om-grey-60">{note.date}</span>
-                      </div>
-                      <button className="btn btn-ghost btn-sm">
-                        <PencilIcon className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <p className="text-om-grey-80">{note.content}</p>
-                  </div>
-                ))}
+                <div className="text-center py-12 text-om-grey">
+                  <p>Notes feature coming soon. Notes will be stored in the database.</p>
+                </div>
               </div>
             )}
           </div>
@@ -381,7 +404,7 @@ export default function Client360Page() {
                 </div>
                 <div className="flex items-center gap-2 text-om-grey-80">
                   <ClockIcon className="w-4 h-4" />
-                  {client.location}
+                  {client.city}, {client.region}
                 </div>
               </div>
             </div>
@@ -405,30 +428,23 @@ export default function Client360Page() {
               </div>
             </div>
 
-            {/* Key Dates */}
+            {/* Account Information */}
             <div className="card-om p-6">
               <h3 className="font-bold text-om-navy mb-4 flex items-center gap-2">
                 <CalendarDaysIcon className="w-5 h-5 text-om-heritage-green" />
-                Key Dates
+                Account Information
               </h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <div className="text-om-grey-60">Last Contact</div>
-                  <div className="font-semibold text-om-navy">{client.lastContact}</div>
+                  <div className="text-om-grey-60">Customer Number</div>
+                  <div className="font-semibold text-om-navy">{client.customerNumber}</div>
                 </div>
                 <div>
-                  <div className="text-om-grey-60">Next Review</div>
-                  <div className="font-semibold text-om-heritage-green">{client.nextReview}</div>
+                  <div className="text-om-grey-60">Date of Birth</div>
+                  <div className="font-semibold text-om-navy">
+                    {client.dateOfBirth ? new Date(client.dateOfBirth).toLocaleDateString() : "N/A"}
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Primary Advisor */}
-            <div className="card-om p-6">
-              <h3 className="font-bold text-om-navy mb-4">Primary Advisor</h3>
-              <div className="text-sm">
-                <div className="font-semibold text-om-heritage-green">{client.primaryAdvisor}</div>
-                <div className="text-om-grey-60">Informal Sector Specialist</div>
               </div>
             </div>
           </div>

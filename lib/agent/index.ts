@@ -63,7 +63,11 @@ export class LifeCompassAgent {
     const validatedUserId = this.validateUserAccess(userId, metadata);
 
     // Create or use existing session
-    const activeSessionId = sessionId || (await createSession(validatedUserId));
+    // Validate sessionId is a valid UUID format, otherwise create new session
+    const isValidUUID = sessionId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId);
+    const activeSessionId = isValidUUID && sessionId 
+      ? sessionId 
+      : (await createSession(validatedUserId));
 
     // Get selected persona from metadata (auto-populated from sessionStorage)
     const selectedCustomerPersona = metadata?.selectedCustomerPersona;
@@ -502,11 +506,17 @@ export class LifeCompassAgent {
     // Security: Validate user access
     const validatedUserId = this.validateUserAccess(userId, metadata);
 
+    // Create or use existing session
+    // Validate sessionId is a valid UUID format, otherwise create new session
+    const isValidUUID = sessionId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId);
+    const activeSessionId = isValidUUID && sessionId 
+      ? sessionId 
+      : (await createSession(validatedUserId));
+
     // Get selected persona from metadata
     const selectedCustomerPersona = metadata?.selectedCustomerPersona;
     const selectedAdvisorPersona = metadata?.selectedAdvisorPersona;
 
-    const activeSessionId = sessionId || (await createSession(validatedUserId));
     await addMessage(activeSessionId, "user", message, metadata);
 
     // Build CRM context automatically

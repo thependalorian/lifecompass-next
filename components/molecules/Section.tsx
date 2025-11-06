@@ -36,12 +36,12 @@ export function Section({
   return (
     <section
       id={id}
-      className={`relative py-24 overflow-hidden ${bgClasses[background]} ${className}`}
+      className={`relative py-12 sm:py-16 md:py-24 overflow-hidden ${bgClasses[background]} ${className}`}
     >
       {pattern && (
         <div className="absolute inset-0 opacity-[0.02] bg-[radial-gradient(circle_at_50%_50%,_#009677_2px,_transparent_2px)] bg-[length:40px_40px]" />
       )}
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
         {children}
       </div>
     </section>
@@ -67,18 +67,18 @@ export function SectionHeader({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className={`text-center mb-12 ${className}`}
+      className={`text-center mb-8 sm:mb-10 md:mb-12 ${className}`}
     >
       {badge && (
-        <span className="inline-block px-4 py-1.5 rounded-full bg-om-cerise/10 text-om-cerise font-semibold text-sm mb-4">
+        <span className="inline-block px-3 sm:px-4 py-1.5 rounded-full bg-om-cerise/10 text-om-cerise font-semibold text-xs sm:text-sm mb-3 sm:mb-4">
           {badge}
         </span>
       )}
-      <h2 className="text-4xl md:text-5xl font-bold text-om-navy mb-6">
+      <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-om-navy mb-4 sm:mb-6">
         {title}
       </h2>
       {subtitle && (
-        <p className="text-lg md:text-xl text-om-grey-80 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-sm sm:text-base md:text-lg lg:text-xl text-om-grey-80 max-w-3xl mx-auto leading-relaxed px-4">
           {subtitle}
         </p>
       )}

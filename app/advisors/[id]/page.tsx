@@ -11,8 +11,9 @@ import { StarIcon, CheckCircleIcon } from "@/components/atoms/icons";
 import { OMButton } from "@/components/atoms/brand";
 
 // Mock advisor data - in production, fetch from API using [id]
+// Note: [id] parameter should be advisor_number (e.g., "ADV-001")
 const advisorData = {
-  id: "ADV001",
+  id: "ADV-003", // Default to Thomas Shikongo - will be fetched from API using advisorId param
   name: "Thomas Shikongo",
   specialization: "Informal Sector Specialist",
   region: "Windhoek",

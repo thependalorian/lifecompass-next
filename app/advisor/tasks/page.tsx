@@ -2,122 +2,47 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { motion } from "framer-motion";
 
-const tasks = [
-  {
-    id: "TSK001",
-    title: "Follow-up with Maria Shikongo - OMP Severe Illness Cover",
-    client: "Maria Shikongo",
-    type: "Product Consultation",
-    priority: "High",
-    status: "Pending",
-    dueDate: "2025-11-15",
-    description:
-      "Discuss OMP Severe Illness Cover options. Client interested in coverage for 68 severe illnesses with lump sum benefits.",
-    assignedTo: "Thomas Shikongo",
-    createdDate: "2025-11-01",
-    estimatedTime: "45 min",
-  },
-  {
-    id: "TSK002",
-    title: "Process Disability Income Claim for John-Paul !Gaeb",
-    client: "John-Paul !Gaeb",
-    type: "Claims Processing",
-    priority: "High",
-    status: "In Progress",
-    dueDate: "2025-11-10",
-    description:
-      "Review OMP Disability Income Cover claim. Client unable to perform material duties of occupation for 6+ months.",
-    assignedTo: "Thomas Shikongo",
-    createdDate: "2025-10-28",
-    estimatedTime: "60 min",
-  },
-  {
-    id: "TSK003",
-    title: "Review Fatima Isaacks Unit Trust Application",
-    client: "Fatima Isaacks",
-    type: "Investment Review",
-    priority: "Medium",
-    status: "Pending",
-    dueDate: "2025-11-05",
-    description:
-      "Review Old Mutual Namibia Income Fund application. Client wants regular income with capital stability.",
-    assignedTo: "Thomas Shikongo",
-    createdDate: "2025-10-30",
-    estimatedTime: "45 min",
-  },
-  {
-    id: "TSK004",
-    title: "Funeral Insurance Quote for Helena Garoeb",
-    client: "Helena Garoeb",
-    type: "Product Quote",
-    priority: "Medium",
-    status: "Pending",
-    dueDate: "2025-11-08",
-    description:
-      "Provide OMP Funeral Care Comprehensive+ quote (N$80/month, N$50,000 coverage). Client needs extended family coverage.",
-    assignedTo: "Thomas Shikongo",
-    createdDate: "2025-10-25",
-    estimatedTime: "30 min",
-  },
-  {
-    id: "TSK005",
-    title: "Business Unit Trust Consultation - Kazenambo Group",
-    client: "Kazenambo Group",
-    type: "Business Consultation",
-    priority: "High",
-    status: "In Progress",
-    dueDate: "2025-11-12",
-    description:
-      "Present business unit trust options for company retirement fund. Minimum N$1,000 lump sum investment.",
-    assignedTo: "Thomas Shikongo",
-    createdDate: "2025-10-28",
-    estimatedTime: "90 min",
-  },
-  {
-    id: "TSK006",
-    title: "KPF Business Life Insurance Renewal",
-    client: "Construction Company Ltd",
-    type: "Policy Renewal",
-    priority: "Medium",
-    status: "Pending",
-    dueDate: "2025-11-20",
-    description:
-      "Renew KPF Key Person Insurance policy. Review coverage for business continuity and succession planning.",
-    assignedTo: "Thomas Shikongo",
-    createdDate: "2025-11-01",
-    estimatedTime: "45 min",
-  },
-  {
-    id: "TSK007",
-    title: "OMP Disability Income Cover Application",
-    client: "Joseph !Hoebes",
-    type: "New Application",
-    priority: "High",
-    status: "Pending",
-    dueDate: "2025-11-15",
-    description:
-      "Process OMP Disability Income Cover application. Client is self-employed farmer seeking income protection.",
-    assignedTo: "Thomas Shikongo",
-    createdDate: "2025-11-02",
-    estimatedTime: "60 min",
-  },
-];
+interface Task {
+  id: string;
+  taskNumber: string;
+  title: string;
+  description: string;
+  type: string;
+  priority: string;
+  status: string;
+  dueDate: string;
+  completedDate: string | null;
+  customerId: string | null;
+  customerNumber: string | null;
+  customerName: string | null;
+  advisorId: string;
+  estimatedHours: number | null;
+  actualHours: number | null;
+  createdAt: string;
+}
 
-const priorities = ["All Priorities", "High", "Medium", "Low"];
+const priorities = ["All Priorities", "High", "Medium", "Low", "Urgent"];
 const statuses = [
   "All Statuses",
-  "Pending",
+  "Open",
   "In Progress",
   "Completed",
-  "Overdue",
+  "Cancelled",
 ];
 const types = [
   "All Types",
-  "Product Consultation",
+  "Follow-up",
+  "Escalation",
+  "Review",
+  "Sale",
+  "Onboarding",
+  "Renewal",
+  "Claim Processing",
   "Claims Processing",
   "Investment Review",
   "Product Quote",
@@ -127,10 +52,89 @@ const types = [
 ];
 
 export default function AdvisorTasksPage() {
+  const router = useRouter();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedPriority, setSelectedPriority] = useState("All Priorities");
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
   const [selectedType, setSelectedType] = useState("All Types");
   const [sortBy, setSortBy] = useState("dueDate");
+
+  useEffect(() => {
+    // Check if persona is selected
+    const selectedPersona = sessionStorage.getItem("selectedAdvisorPersona");
+    if (!selectedPersona) {
+      router.push("/advisor/select");
+      return;
+    }
+
+    // Fetch tasks from API
+    const fetchTasks = async () => {
+      setLoading(true);
+      try {
+        // Get tasks with optional filters
+        let url = `/api/tasks?advisorId=${selectedPersona}`;
+        if (selectedStatus !== "All Statuses") {
+          const statusMap: Record<string, string> = {
+            "Open": "open",
+            "In Progress": "open",
+            "Completed": "completed",
+            "Cancelled": "cancelled",
+          };
+          url += `&status=${statusMap[selectedStatus] || ""}`;
+        }
+        if (selectedPriority !== "All Priorities") {
+          url += `&priority=${selectedPriority.toLowerCase()}`;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch tasks");
+        const data = await response.json();
+        setTasks(data);
+      } catch (err) {
+        console.error("Error fetching tasks:", err);
+        setError("Failed to load tasks. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, [router, selectedStatus, selectedPriority]);
+
+  // Refetch when filters change
+  useEffect(() => {
+    const selectedPersona = sessionStorage.getItem("selectedAdvisorPersona");
+    if (!selectedPersona) return;
+
+    const fetchTasks = async () => {
+      try {
+        let url = `/api/tasks?advisorId=${selectedPersona}`;
+        if (selectedStatus !== "All Statuses") {
+          const statusMap: Record<string, string> = {
+            "Open": "open",
+            "In Progress": "open",
+            "Completed": "completed",
+            "Cancelled": "cancelled",
+          };
+          url += `&status=${statusMap[selectedStatus] || ""}`;
+        }
+        if (selectedPriority !== "All Priorities") {
+          url += `&priority=${selectedPriority.toLowerCase()}`;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch tasks");
+        const data = await response.json();
+        setTasks(data);
+      } catch (err) {
+        console.error("Error fetching tasks:", err);
+      }
+    };
+
+    fetchTasks();
+  }, [selectedStatus, selectedPriority]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -162,32 +166,25 @@ export default function AdvisorTasksPage() {
 
   const filteredTasks = tasks
     .filter((task) => {
-      const matchesPriority =
-        selectedPriority === "All Priorities" ||
-        task.priority === selectedPriority;
-      const matchesStatus =
-        selectedStatus === "All Statuses" || task.status === selectedStatus;
       const matchesType =
         selectedType === "All Types" || task.type === selectedType;
-
-      return matchesPriority && matchesStatus && matchesType;
+      return matchesType;
     })
     .sort((a, b) => {
       switch (sortBy) {
         case "dueDate":
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
         case "priority":
-          const priorityOrder = { High: 3, Medium: 2, Low: 1 };
+          const priorityOrder: Record<string, number> = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
           return (
-            priorityOrder[b.priority as keyof typeof priorityOrder] -
-            priorityOrder[a.priority as keyof typeof priorityOrder]
+            (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0)
           );
-        case "client":
-          return a.client.localeCompare(b.client);
         case "createdDate":
           return (
-            new Date(b.createdDate).getTime() -
-            new Date(a.createdDate).getTime()
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
           );
         default:
           return 0;
@@ -196,18 +193,48 @@ export default function AdvisorTasksPage() {
 
   const pendingTasks = filteredTasks.filter(
     (task) =>
-      task.status === "Pending" ||
-      task.status === "In Progress" ||
-      task.status === "Overdue",
+      task.status === "Open" || task.status === "In Progress",
   ).length;
   const overdueTasks = filteredTasks.filter(
-    (task) => task.status === "Overdue",
+    (task) => {
+      if (!task.dueDate) return false;
+      return new Date(task.dueDate) < new Date() && task.status !== "Completed";
+    },
   ).length;
   const completedToday = filteredTasks.filter(
     (task) =>
       task.status === "Completed" &&
-      new Date(task.createdDate).toDateString() === new Date().toDateString(),
+      task.completedDate &&
+      new Date(task.completedDate).toDateString() === new Date().toDateString(),
   ).length;
+
+  if (loading) {
+    return (
+      <CorporateLayout
+        heroTitle="Task Management"
+        heroSubtitle="Loading..."
+        pageType="advisor"
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="loading loading-spinner loading-lg text-om-green"></div>
+        </div>
+      </CorporateLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <CorporateLayout
+        heroTitle="Task Management"
+        heroSubtitle="Error"
+        pageType="advisor"
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="alert alert-error">{error}</div>
+        </div>
+      </CorporateLayout>
+    );
+  }
 
   return (
     <CorporateLayout
@@ -248,12 +275,14 @@ export default function AdvisorTasksPage() {
             <div className="card-om bg-white">
               <div className="card-body p-4 text-center">
                 <div className="text-2xl font-bold text-om-navy">
-                  {Math.round(
-                    (filteredTasks.filter((t) => t.status === "Completed")
-                      .length /
-                      tasks.length) *
-                      100,
-                  )}
+                  {tasks.length > 0
+                    ? Math.round(
+                        (filteredTasks.filter((t) => t.status === "Completed")
+                          .length /
+                          tasks.length) *
+                          100,
+                      )
+                    : 0}
                   %
                 </div>
                 <div className="text-sm text-om-grey">Completion Rate</div>
@@ -358,40 +387,51 @@ export default function AdvisorTasksPage() {
                       </div>
                     </div>
 
-                    <p className="text-om-grey mb-3">{task.description}</p>
+                    <p className="text-om-grey mb-3">{task.description || task.title}</p>
 
                     <div className="grid md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-om-grey">Client:</span>
-                        <div className="font-semibold text-om-navy">
-                          {task.client}
+                      {task.customerNumber && (
+                        <div>
+                          <span className="text-om-grey">Client:</span>
+                          <div className="font-semibold text-om-navy">
+                            {task.customerName || task.customerNumber}
+                          </div>
+                          {task.customerNumber && (
+                            <div className="text-xs text-om-grey-60">
+                              {task.customerNumber}
+                            </div>
+                          )}
                         </div>
-                      </div>
+                      )}
                       <div>
                         <span className="text-om-grey">Type:</span>
                         <div className="font-semibold text-om-navy">
                           {task.type}
                         </div>
                       </div>
-                      <div>
-                        <span className="text-om-grey">Due Date:</span>
-                        <div
-                          className={`font-semibold ${
-                            new Date(task.dueDate) < new Date() &&
-                            task.status !== "Completed"
-                              ? "text-error"
-                              : "text-om-navy"
-                          }`}
-                        >
-                          {task.dueDate}
+                      {task.dueDate && (
+                        <div>
+                          <span className="text-om-grey">Due Date:</span>
+                          <div
+                            className={`font-semibold ${
+                              new Date(task.dueDate) < new Date() &&
+                              task.status !== "Completed"
+                                ? "text-error"
+                                : "text-om-navy"
+                            }`}
+                          >
+                            {new Date(task.dueDate).toLocaleDateString()}
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <span className="text-om-grey">Estimated Time:</span>
-                        <div className="font-semibold text-om-navy">
-                          {task.estimatedTime}
+                      )}
+                      {task.estimatedHours && (
+                        <div>
+                          <span className="text-om-grey">Estimated Time:</span>
+                          <div className="font-semibold text-om-navy">
+                            {task.estimatedHours} hours
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
 

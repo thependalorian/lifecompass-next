@@ -61,7 +61,7 @@ export default function HomePage() {
 
       {/* The Problem - Custom Asymmetric Layout */}
       <Section background="white" pattern>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <SectionHeader
             badge="The Challenge"
             title="What We're Solving"
@@ -75,7 +75,7 @@ export default function HomePage() {
               gradientFrom="from-om-heritage-green/20"
               gradientTo="to-om-fresh-green/20"
             >
-              <p className="text-lg md:text-xl text-om-grey-80 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-om-grey-80 leading-relaxed">
                 <strong className="text-om-heritage-green">Namibians struggle</strong> with complex financial products, slow support, and a lack of trust in digital tools. They want answers quickly, in plain language, without the runaround.
               </p>
             </ProblemCard>
@@ -87,17 +87,17 @@ export default function HomePage() {
               gradientTo="to-om-cerise/20"
               delay={0.1}
             >
-              <p className="text-lg md:text-xl text-om-grey-80 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-om-grey-80 leading-relaxed">
                 <strong className="text-om-naartjie">Advisors are overwhelmed</strong> with admin tasks—10 hours per week on paperwork. They want to focus on building relationships, not filling forms.
               </p>
             </ProblemCard>
 
             {/* Impact Callout - Custom Styling */}
-            <div className="mt-8 p-6 bg-gradient-to-r from-om-cerise/10 via-om-naartjie/10 to-om-cerise/10 rounded-2xl border-l-4 border-om-cerise">
-              <p className="text-om-grey-80 font-medium">
+            <div className="mt-8 p-4 sm:p-6 bg-gradient-to-r from-om-cerise/10 via-om-naartjie/10 to-om-cerise/10 rounded-2xl border-l-4 border-om-cerise">
+              <p className="text-sm sm:text-base text-om-grey-80 font-medium">
                 <strong className="text-om-cerise">The result:</strong> New business profitability down 50%, value of new business margin at 1.3% (below 2-3% target), poor customer experience (NPS 35), and advisors spending more time on admin than helping clients.
               </p>
-              <p className="text-sm text-om-grey-60 mt-3 italic">
+              <p className="text-xs sm:text-sm text-om-grey-60 mt-3 italic">
                 Source: Old Mutual Group Interim Results for the six months ended 30 June 2025
               </p>
             </div>
@@ -106,8 +106,8 @@ export default function HomePage() {
       </Section>
 
       {/* Our Solution - Custom Feature Showcase */}
-      <section className="bg-gradient-to-b from-om-grey-5 to-white py-24 relative">
-        <div className="container mx-auto px-4">
+      <section className="bg-gradient-to-b from-om-grey-5 to-white py-12 sm:py-16 md:py-24 relative">
+        <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-6xl mx-auto">
             {/* Section Header */}
             <motion.div
@@ -115,21 +115,21 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center mb-16"
+              className="text-center mb-8 sm:mb-12 md:mb-16"
             >
-              <span className="inline-block px-4 py-1.5 rounded-full bg-om-fresh-green/10 text-om-fresh-green font-semibold text-sm mb-4">
+              <span className="inline-block px-3 sm:px-4 py-1.5 rounded-full bg-om-fresh-green/10 text-om-fresh-green font-semibold text-xs sm:text-sm mb-3 sm:mb-4">
                 Our Approach
               </span>
-              <h2 className="text-4xl md:text-5xl font-bold text-om-navy mb-6">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-om-navy mb-4 sm:mb-6">
                 How We Solve It
               </h2>
-              <p className="text-xl text-om-grey-80 max-w-3xl mx-auto leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl text-om-grey-80 max-w-3xl mx-auto leading-relaxed px-4">
                 Three powerful innovations working together to transform financial services in Namibia.
               </p>
             </motion.div>
 
             {/* Features Grid - 3 Main Highlights */}
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
               <FeatureCard
                 icon={<UserGroupIcon className="w-14 h-14" />}
                 title="Complete CRM System"
@@ -162,33 +162,33 @@ export default function HomePage() {
       </section>
 
       {/* Knowledge Graph - Why LifeCompass Wins */}
-      <section id="knowledge-graph" className="bg-gradient-to-br from-om-heritage-green via-om-fresh-green to-om-heritage-green text-white py-24 relative overflow-hidden">
+      <section id="knowledge-graph" className="bg-gradient-to-br from-om-heritage-green via-om-fresh-green to-om-heritage-green text-white py-12 sm:py-16 md:py-24 relative overflow-hidden">
         {/* Custom Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,_white_2px,_transparent_2px)] bg-[length:60px_60px]" />
         </div>
         
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center mb-12"
+              className="text-center mb-8 sm:mb-12"
             >
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
                 Our Knowledge Graph Strategy
               </h2>
-              <p className="text-xl text-white/90 max-w-2xl mx-auto mb-4">
+              <p className="text-base sm:text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-3 sm:mb-4 px-4">
                 Transforming financial services through intelligent knowledge mapping
               </p>
-              <div className="mb-8">
-                <span className="inline-block px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white font-semibold text-sm">
+              <div className="mb-6 sm:mb-8">
+                <span className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white font-semibold text-xs sm:text-sm">
                   Powered by Knowledge Graphs
                 </span>
               </div>
-              <p className="text-lg text-white/80 max-w-3xl mx-auto mb-8">
+              <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto mb-6 sm:mb-8 px-4">
                 Our knowledge graph technology creates an interconnected understanding of financial products, 
                 customer relationships, and regulatory requirements. By mapping how everything connects, 
                 our AI assistant can provide instant, accurate answers that understand context, not just keywords.
@@ -201,13 +201,13 @@ export default function HomePage() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-white/5 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl"
+              className="bg-white/5 backdrop-blur-sm rounded-3xl p-4 sm:p-6 md:p-8 border border-white/20 shadow-2xl"
             >
-              <div className="mb-6 text-center">
-                <h3 className="text-2xl font-bold text-white mb-2">
+              <div className="mb-4 sm:mb-6 text-center">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-2">
                   Interactive Knowledge Graph
                 </h3>
-                <p className="text-white/70 text-sm">
+                <p className="text-white/70 text-xs sm:text-sm px-2">
                   Explore connected entities, relationships, and facts extracted from Old Mutual documentation
                 </p>
               </div>
@@ -215,21 +215,21 @@ export default function HomePage() {
             </motion.div>
 
             {/* Brand Logos - Custom Layout */}
-            <div className="flex items-center justify-center gap-8 pt-12 mt-8 border-t border-white/20">
-              <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 pt-8 sm:pt-12 mt-6 sm:mt-8 border-t border-white/20">
+              <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                 <div className="relative">
                   <Image
                     src="/logos/OMU.JO.svg"
                     alt="Old Mutual Logo"
                     width={140}
                     height={140}
-                    className="h-14 w-auto filter brightness-0 invert drop-shadow-lg"
+                    className="h-10 sm:h-14 w-auto filter brightness-0 invert drop-shadow-lg"
                   />
                 </div>
-                <div className="h-12 w-px bg-white/30"></div>
-                <div>
-                  <p className="font-bold text-2xl mb-1">LifeCompass</p>
-                  <p className="text-sm text-white/80 font-medium">by Old Mutual</p>
+                <div className="h-px sm:h-12 w-12 sm:w-px bg-white/30"></div>
+                <div className="text-center sm:text-left">
+                  <p className="font-bold text-xl sm:text-2xl mb-1">LifeCompass</p>
+                  <p className="text-xs sm:text-sm text-white/80 font-medium">by Old Mutual</p>
                 </div>
               </div>
             </div>
@@ -239,27 +239,27 @@ export default function HomePage() {
 
       {/* Interactive Demo - Custom Step-by-Step Layout */}
       <Section id="demo" background="white">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-12"
           >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-om-sky/10 text-om-sky font-semibold text-sm mb-4">
+            <span className="inline-block px-3 sm:px-4 py-1.5 rounded-full bg-om-sky/10 text-om-sky font-semibold text-xs sm:text-sm mb-3 sm:mb-4">
               Try It Yourself
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-om-navy mb-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-om-navy mb-4 sm:mb-6">
               See LifeCompass in Action
             </h2>
-            <p className="text-lg text-om-grey-80 max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg text-om-grey-80 max-w-2xl mx-auto px-4">
               Experience the platform through a simple, intuitive demo journey
             </p>
           </motion.div>
           
           {/* Custom Step Cards */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {[
               {
                 step: "1",
@@ -274,7 +274,7 @@ export default function HomePage() {
                 label: "View Your Profile",
                 description: "Access complete profiles with policies, claims, interactions, and CRM data—all seamlessly integrated and instantly available",
                 action: "View Profile",
-                href: "/customer/select",
+                href: "/customer/select", // Will redirect to profile if persona already selected
                 color: "from-om-fresh-green to-om-future-green"
               },
               {
@@ -303,20 +303,20 @@ export default function HomePage() {
                 className="group relative"
               >
                 <div className={`absolute -inset-0.5 bg-gradient-to-r ${step.color} rounded-2xl blur opacity-0 group-hover:opacity-30 transition-opacity duration-300`} />
-                <div className="relative bg-white p-6 rounded-2xl border border-om-grey-15 shadow-sm hover:shadow-md transition-all">
-                  <div className="flex items-start gap-6">
-                    <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${step.color} text-white flex items-center justify-center font-bold text-xl flex-shrink-0 shadow-lg`}>
+                <div className="relative bg-white p-4 sm:p-6 rounded-2xl border border-om-grey-15 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+                    <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br ${step.color} text-white flex items-center justify-center font-bold text-lg sm:text-xl flex-shrink-0 shadow-lg mx-auto sm:mx-0`}>
                       {step.step}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-om-navy mb-2">
+                    <div className="flex-1 text-center sm:text-left">
+                      <h3 className="text-lg sm:text-xl font-bold text-om-navy mb-2">
                         {step.label}
                       </h3>
-                      <p className="text-om-grey-60 mb-4 leading-relaxed">
+                      <p className="text-sm sm:text-base text-om-grey-60 mb-4 leading-relaxed">
                         {step.description}
                       </p>
-                      <Link href={step.href}>
-                        <OMButton variant="outline" size="sm" className="rounded-full text-center">
+                      <Link href={step.href} className="inline-block">
+                        <OMButton variant="outline" size="sm" className="rounded-full text-center w-full sm:w-auto">
                           {step.action}
                         </OMButton>
                       </Link>
@@ -328,14 +328,14 @@ export default function HomePage() {
           </div>
 
           {/* Main CTAs */}
-          <div className="text-center mt-12 flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/customer/select" className="inline-flex">
-              <OMButton variant="primary" size="lg" className="px-10 py-5 text-lg shadow-xl hover:shadow-2xl rounded-full w-full sm:w-auto justify-center">
+          <div className="text-center mt-8 sm:mt-12 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
+            <Link href="/customer/select" className="w-full sm:w-auto inline-flex">
+              <OMButton variant="primary" size="lg" className="px-6 sm:px-10 py-4 sm:py-5 text-base sm:text-lg shadow-xl hover:shadow-2xl rounded-full w-full sm:w-auto justify-center">
                 Try Customer Experience
               </OMButton>
             </Link>
-            <Link href="/advisor/select" className="inline-flex">
-              <OMButton variant="outline" size="lg" className="px-10 py-5 text-lg shadow-xl hover:shadow-2xl rounded-full w-full sm:w-auto border-2 border-om-heritage-green justify-center">
+            <Link href="/advisor/select" className="w-full sm:w-auto inline-flex">
+              <OMButton variant="outline" size="lg" className="px-6 sm:px-10 py-4 sm:py-5 text-base sm:text-lg shadow-xl hover:shadow-2xl rounded-full w-full sm:w-auto border-2 border-om-heritage-green justify-center">
                 Try Advisor Experience
               </OMButton>
             </Link>
@@ -344,23 +344,23 @@ export default function HomePage() {
       </Section>
 
       {/* Business Impact - Custom Metrics Layout */}
-      <section className="bg-white py-24 relative">
-        <div className="container mx-auto px-4">
+      <section className="bg-white py-12 sm:py-16 md:py-24 relative">
+        <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-16">
-              <span className="inline-block px-4 py-1.5 rounded-full bg-om-heritage-green/10 text-om-heritage-green font-semibold text-sm mb-4">
+            <div className="text-center mb-8 sm:mb-12 md:mb-16">
+              <span className="inline-block px-3 sm:px-4 py-1.5 rounded-full bg-om-heritage-green/10 text-om-heritage-green font-semibold text-xs sm:text-sm mb-3 sm:mb-4">
                 Expected Impact
               </span>
-              <h2 className="text-4xl md:text-5xl font-bold text-om-navy mb-6">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-om-navy mb-4 sm:mb-6">
                 Numbers That Matter
               </h2>
-              <p className="text-lg text-om-grey-80 max-w-2xl mx-auto">
+              <p className="text-sm sm:text-base md:text-lg text-om-grey-80 max-w-2xl mx-auto">
                 Real metrics for real business outcomes
               </p>
             </div>
 
             {/* Custom Metrics Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <MetricCard
                 metric="25%"
                 label="Increase in advisor-assisted sales"

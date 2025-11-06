@@ -166,26 +166,54 @@ export async function graphSearchTool(
   try {
     const { query } = input;
 
-    // Neo4j search query (adapt based on your graph schema)
-    const cypherQuery = `
-      MATCH (n)
-      WHERE n.name CONTAINS $query OR n.description CONTAINS $query
-      RETURN n.fact as fact,
-             n.uuid as uuid,
-             n.valid_at as validAt,
-             n.invalid_at as invalidAt
-      LIMIT 10
-    `;
+    // Option 1: Use Python Graphiti API if available (semantic search)
+    const graphApiUrl = process.env.GRAPH_API_URL;
+    if (graphApiUrl) {
+      try {
+        const response = await fetch(`${graphApiUrl}/search/graph`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query, limit: 10 }),
+        });
 
-    const results = await runGraphQuery(cypherQuery, { query });
+        if (response.ok) {
+          const data = await response.json();
+          // Handle both {graph_results: [...]} and direct array formats
+          const results = data.graph_results || data;
+          
+          if (Array.isArray(results) && results.length > 0) {
+            return results.map((r: any) => ({
+              fact: r.fact || r.fact_text || "",
+              uuid: r.uuid || r.id || "",
+              validAt: r.valid_at || r.validAt || null,
+              invalidAt: r.invalid_at || r.invalidAt || null,
+              sourceNodeUuid: r.source_node_uuid || r.sourceNodeUuid || r.uuid || null,
+            }));
+          }
+        }
+      } catch (apiError) {
+        console.warn("Graphiti API unavailable, using semantic search:", apiError);
+        // Fall through to semantic search
+      }
+    }
 
-    return results.map((r: any) => ({
+    // Option 2: Use semantic search (enhanced text matching + relationship traversal)
+    // This provides better results than basic text matching
+    const { getSemanticGraphSearch } = await import("../graph/semantic-search");
+    const semanticSearch = getSemanticGraphSearch();
+    
+    const results = await semanticSearch.search(query, 10);
+    
+    // Map to GraphSearchResult format (compatible with existing interface)
+    return results.map((r) => ({
       fact: r.fact,
       uuid: r.uuid,
-      validAt: r.validAt,
-      invalidAt: r.invalidAt,
-      sourceNodeUuid: r.uuid,
-    }));
+      validAt: r.validAt ?? undefined, // Convert null to undefined
+      invalidAt: r.invalidAt ?? undefined, // Convert null to undefined
+      sourceNodeUuid: r.uuid, // Use same uuid as source
+    })).filter((r) => r.fact); // Filter out empty results
   } catch (error) {
     console.error("Graph search failed:", error);
     return [];

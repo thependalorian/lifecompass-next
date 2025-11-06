@@ -6,7 +6,7 @@ import { ChatRequest } from "@/lib/agent/models";
 import { rateLimit, getClientIdentifier } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
@@ -123,8 +123,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Chat API error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    // Always show error details for debugging (can be removed in production later)
     return NextResponse.json(
-      { error: "Failed to process chat request" },
+      { 
+        error: "Failed to process chat request",
+        message: errorMessage,
+        stack: process.env.NODE_ENV === "development" ? errorStack : undefined,
+        timestamp: new Date().toISOString(),
+      },
       { status: 500 }
     );
   }

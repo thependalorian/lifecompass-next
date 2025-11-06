@@ -2,6 +2,7 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { PolicySummaryTile } from "@/components/molecules/PolicySummaryTile";
@@ -14,65 +15,92 @@ import {
   DocumentTextIcon,
 } from "@/components/atoms/icons";
 
+interface Policy {
+  id: string;
+  policyNumber: string;
+  type: string;
+  subtype: string;
+  status: string;
+  coverageAmount: number | null;
+  premiumAmount: number | null;
+  premiumFrequency: string;
+  startDate: string;
+  endDate: string | null;
+  renewalDate: string | null;
+}
+
 export default function PoliciesPage() {
-  // Real policy data from consolidated documents
-  const policies = [
-    {
-      id: "OMP-SIC-001",
-      name: "Policyholder",
-      type: "OMP Severe Illness Cover",
-      status: "Active",
-      coverage: "N$5,000,000",
-      premium: "N$2,500/month",
-      renewalDate: "2025-12-01",
-      advisor: "Old Mutual Advisor",
-      description: "Coverage for 68 severe illnesses with lump sum benefits",
-    },
-    {
-      id: "OMP-FIC-002",
-      name: "Policyholder",
-      type: "OMP Funeral Insurance",
-      status: "Active",
-      coverage: "N$50,000",
-      premium: "N$350/month",
-      renewalDate: "2025-11-15",
-      advisor: "Old Mutual Advisor",
-      description: "Extended family funeral coverage with cashback benefits",
-    },
-    {
-      id: "OMP-DIC-003",
-      name: "Policyholder",
-      type: "OMP Disability Income Cover",
-      status: "Active",
-      coverage: "75% of income",
-      premium: "N$1,200/month",
-      renewalDate: "2025-10-30",
-      advisor: "Old Mutual Advisor",
-      description: "Monthly income replacement for disability up to age 65",
-    },
-    {
-      id: "UT-INCOME-004",
-      name: "Investor",
-      type: "Old Mutual Namibia Income Fund",
-      status: "Active",
-      coverage: "Unit Trust Investment",
-      premium: "N$1,000/month",
-      renewalDate: "Ongoing",
-      advisor: "Old Mutual Investment Group",
-      description: "Professional investment in income-generating assets",
-    },
-    {
-      id: "UT-GROWTH-005",
-      name: "Investor",
-      type: "Old Mutual Namibia Growth Fund",
-      status: "Active",
-      coverage: "Unit Trust Investment",
-      premium: "N$500/month",
-      renewalDate: "Ongoing",
-      advisor: "Old Mutual Investment Group",
-      description: "Growth-oriented investment in Namibian equities",
-    },
-  ];
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get selected customer persona
+    const selectedPersona = sessionStorage.getItem("selectedCustomerPersona");
+    if (!selectedPersona) {
+      setError("Please select a customer persona first");
+      setLoading(false);
+      return;
+    }
+
+    // Fetch policies from API
+    const fetchPolicies = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/policies?customerNumber=${selectedPersona}`);
+        if (!response.ok) throw new Error("Failed to fetch policies");
+        const data = await response.json();
+        setPolicies(data);
+      } catch (err) {
+        console.error("Error fetching policies:", err);
+        setError("Failed to load policies. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPolicies();
+  }, []);
+
+  // Calculate stats from policies
+  const activePolicies = policies.filter((p) => p.status === "Active").length;
+  const totalCoverage = policies
+    .filter((p) => p.status === "Active")
+    .reduce((sum, p) => sum + (p.coverageAmount || 0), 0);
+  const totalPremium = policies
+    .filter((p) => p.status === "Active")
+    .reduce((sum, p) => sum + (p.premiumAmount || 0), 0);
+
+  if (loading) {
+    return (
+      <CorporateLayout
+        heroTitle="My Policies"
+        heroSubtitle="Loading..."
+        pageType="customer"
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="loading loading-spinner loading-lg text-om-green"></div>
+        </div>
+      </CorporateLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <CorporateLayout
+        heroTitle="My Policies"
+        heroSubtitle="Error"
+        pageType="customer"
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="alert alert-error">{error}</div>
+          <Link href="/customer/select" className="btn btn-om-primary mt-4">
+            Select Customer Persona
+          </Link>
+        </div>
+      </CorporateLayout>
+    );
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -117,12 +145,24 @@ export default function PoliciesPage() {
             {[
               {
                 label: "Active Policies",
-                value: "5",
+                value: activePolicies.toString(),
                 Icon: ClipboardDocumentListIcon,
               },
-              { label: "Total Coverage", value: "N$5.3M+", Icon: ShieldCheckIcon },
-              { label: "Monthly Premium", value: "N$5,550", Icon: BanknotesIcon },
-              { label: "Claims Processed", value: "12", Icon: DocumentTextIcon },
+              { 
+                label: "Total Coverage", 
+                value: totalCoverage > 0 
+                  ? `N$${Math.round(totalCoverage / 1000)}K+` 
+                  : "N/A", 
+                Icon: ShieldCheckIcon 
+              },
+              { 
+                label: "Monthly Premium", 
+                value: totalPremium > 0 
+                  ? `N$${totalPremium.toLocaleString()}` 
+                  : "N/A", 
+                Icon: BanknotesIcon 
+              },
+              { label: "Total Policies", value: policies.length.toString(), Icon: DocumentTextIcon },
             ].map((stat, idx) => (
               <motion.div
                 key={idx}
@@ -155,75 +195,86 @@ export default function PoliciesPage() {
           </div>
 
           <div className="grid gap-6">
-            {policies.map((policy, idx) => (
-              <motion.div
-                key={policy.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="card-om p-6"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-4">
-                      <h3 className="text-xl font-bold text-om-navy">
-                        {policy.type}
-                      </h3>
-                      <div className={`badge ${getStatusBadge(policy.status)}`}>
-                        {policy.status}
+            {policies.length > 0 ? (
+              policies.map((policy, idx) => (
+                <motion.div
+                  key={policy.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  className="card-om p-6"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4 mb-4">
+                        <h3 className="text-xl font-bold text-om-navy">
+                          {policy.type} {policy.subtype ? `- ${policy.subtype}` : ""}
+                        </h3>
+                        <div className={`badge ${getStatusBadge(policy.status)}`}>
+                          {policy.status}
+                        </div>
+                      </div>
+
+                      <div className="grid md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="text-om-grey">Policy Number:</span>
+                          <div className="font-semibold text-om-navy">
+                            {policy.policyNumber || policy.id}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-om-grey">Coverage:</span>
+                          <div className="font-semibold text-om-navy">
+                            {policy.coverageAmount 
+                              ? `N$${policy.coverageAmount.toLocaleString()}` 
+                              : "N/A"}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-om-grey">Premium:</span>
+                          <div className="font-semibold text-om-navy">
+                            {policy.premiumAmount 
+                              ? `N$${policy.premiumAmount.toLocaleString()} / ${policy.premiumFrequency || "Monthly"}` 
+                              : "N/A"}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-om-grey">Start Date:</span>
+                          <div className="font-semibold text-om-navy">
+                            {policy.startDate ? new Date(policy.startDate).toLocaleDateString() : "N/A"}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-om-grey">Renewal Date:</span>
+                          <div className="font-semibold text-om-navy">
+                            {policy.renewalDate 
+                              ? new Date(policy.renewalDate).toLocaleDateString() 
+                              : "Ongoing"}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mb-4">
-                      <p className="text-sm text-om-grey">{policy.description}</p>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="text-om-grey">Policy Number:</span>
-                        <div className="font-semibold text-om-navy">
-                          {policy.id}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-om-grey">Coverage:</span>
-                        <div className="font-semibold text-om-navy">
-                          {policy.coverage}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-om-grey">Premium:</span>
-                        <div className="font-semibold text-om-navy">
-                          {policy.premium}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-om-grey">Renewal Date:</span>
-                        <div className="font-semibold text-om-navy">
-                          {policy.renewalDate}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-om-grey">Advisor:</span>
-                        <div className="font-semibold text-om-navy">
-                          {policy.advisor}
-                        </div>
-                      </div>
+                    <div className="flex gap-2 mt-4 lg:mt-0 lg:flex-col lg:gap-2">
+                      <button className="btn-om-primary btn-sm">
+                        View Details
+                      </button>
+                      <Link href="/products" className="btn-om-outline btn-sm">Download</Link>
+                      <Link href="/advisors" className="btn btn-ghost btn-sm">
+                        Contact Advisor
+                      </Link>
                     </div>
                   </div>
-
-                  <div className="flex gap-2 mt-4 lg:mt-0 lg:flex-col lg:gap-2">
-                    <button className="btn-om-primary btn-sm">
-                      View Details
-                    </button>
-                    <button className="btn-om-outline btn-sm">Download</button>
-                    <button className="btn btn-ghost btn-sm">
-                      Contact Advisor
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))
+            ) : (
+              <div className="text-center py-12 text-om-grey">
+                <p className="text-lg mb-4">No policies found</p>
+                <Link href="/products" className="btn btn-om-primary">
+                  Browse Products
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </section>

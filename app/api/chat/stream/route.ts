@@ -6,7 +6,7 @@ import { ChatRequest } from "@/lib/agent/models";
 import { rateLimit, getClientIdentifier } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
