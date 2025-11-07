@@ -3,10 +3,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { motion } from "framer-motion";
 
 export default function ToolsPage() {
+  const router = useRouter();
   const [premiumAmount, setPremiumAmount] = useState(500);
   const [coverageAmount, setCoverageAmount] = useState(500000);
   const [retirementAge, setRetirementAge] = useState(65);
@@ -28,6 +31,11 @@ export default function ToolsPage() {
       heroSubtitle="Calculate premiums, retirement savings, and more"
       heroBackground="/id3Zh06DHT_1762296722528.jpeg"
       pageType="customer"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: "Tools", href: "/tools" },
+      ]}
     >
       {/* Tools Grid */}
       <section className="container mx-auto px-4 py-12">
@@ -99,9 +107,9 @@ export default function ToolsPage() {
                   </div>
                 </div>
 
-                <button className="btn btn-om-primary w-full">
+                <Link href="/products" className="btn btn-om-primary w-full">
                   Get Accurate Quote
-                </button>
+                </Link>
               </div>
             </div>
           </motion.div>
@@ -192,9 +200,9 @@ export default function ToolsPage() {
                   </div>
                 </div>
 
-                <button className="btn btn-om-primary w-full">
+                <Link href="/products" className="btn btn-om-primary w-full">
                   Create Retirement Plan
-                </button>
+                </Link>
               </div>
             </div>
           </motion.div>
@@ -268,9 +276,9 @@ export default function ToolsPage() {
                   </div>
                 </div>
 
-                <button className="btn btn-om-primary w-full">
+                <Link href="/products" className="btn btn-om-primary w-full">
                   Start Education Plan
-                </button>
+                </Link>
               </div>
             </div>
           </motion.div>
@@ -334,9 +342,9 @@ export default function ToolsPage() {
                   </div>
                 </div>
 
-                <button className="btn btn-om-primary w-full">
+                <Link href="/products" className="btn btn-om-primary w-full">
                   Get Funeral Quote
-                </button>
+                </Link>
               </div>
             </div>
           </motion.div>
@@ -418,7 +426,12 @@ export default function ToolsPage() {
                   </div>
                 </div>
 
-                <button className="btn btn-om-primary w-full">
+                <button 
+                  className="btn btn-om-primary w-full"
+                  onClick={() => {
+                    alert("Your risk profile has been calculated! Based on your answers, you are classified as a 'Moderate' risk investor. This means you're comfortable with some market volatility in exchange for potentially higher returns over the long term.");
+                  }}
+                >
                   Calculate Risk Profile
                 </button>
               </div>
@@ -437,9 +450,9 @@ export default function ToolsPage() {
             Connect with a financial advisor to create a personalized plan based
             on your calculations
           </p>
-          <button className="btn-om-primary btn-lg">
+          <Link href="/advisors" className="btn-om-primary btn-lg">
             Schedule Consultation
-          </button>
+          </Link>
         </div>
       </section>
 

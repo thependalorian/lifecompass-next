@@ -5,65 +5,107 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { motion } from "framer-motion";
 import { StarIcon, CheckCircleIcon } from "@/components/atoms/icons";
 import { OMButton } from "@/components/atoms/brand";
 
-// Mock advisor data - in production, fetch from API using [id]
-// Note: [id] parameter should be advisor_number (e.g., "ADV-001")
-const advisorData = {
-  id: "ADV-003", // Default to Thomas Shikongo - will be fetched from API using advisorId param
-  name: "Thomas Shikongo",
-  specialization: "Informal Sector Specialist",
-  region: "Windhoek",
-  experience: "12 years",
-  languages: ["English", "Afrikaans", "Oshiwambo"],
-  rating: 4.9,
-  clients: 150,
-  specialties: ["Funeral Insurance", "Business Insurance", "Savings Products"],
-  availability: "Available now",
-  avatar: "/avatars/thomas_shikongo.png",
-  bio: "With over 12 years of experience in the financial services industry, Thomas specializes in helping informal sector workers and small business owners find the right insurance and savings solutions. He understands the unique challenges faced by Namibian entrepreneurs and provides personalized advice tailored to each client's situation.",
-  education: [
-    "Bachelor of Commerce in Financial Planning",
-    "Certified Financial Planner (CFP)",
-    "Life Insurance License",
-  ],
-  achievements: [
-    "Top Performer 2023",
-    "Client Satisfaction Award 2022",
-    "150+ Active Clients",
-  ],
-  reviews: [
-    {
-      id: "REV001",
-      client: "Maria S.",
-      rating: 5,
-      comment:
-        "Thomas helped me understand my insurance options and found the perfect funeral cover for my family. Very patient and professional!",
-      date: "2024-09-15",
-    },
-    {
-      id: "REV002",
-      client: "John K.",
-      rating: 5,
-      comment:
-        "Excellent service. Thomas explained everything clearly and made sure I got the best coverage for my business. Highly recommend!",
-      date: "2024-08-20",
-    },
-  ],
-};
-
 export default function AdvisorProfilePage() {
   const params = useParams();
   const advisorId = params.id as string;
+  const [advisorData, setAdvisorData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch advisor data from API
+  useEffect(() => {
+    if (!advisorId) return;
+
+    setLoading(true);
+    fetch(`/api/advisors?number=${advisorId}`)
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to fetch advisor");
+        return response.json();
+      })
+      .then((advisor) => {
+        // Transform API data to match expected format
+        setAdvisorData({
+          id: advisor.id || advisor.advisorNumber,
+          name: advisor.name,
+          specialization: advisor.specialization,
+          region: advisor.location || advisor.region || "Namibia",
+          experience: advisor.experience || `${advisor.experienceYears || 0} years`,
+          languages: [], // Not in API, can be added to database schema later
+          rating: advisor.satisfactionScore ? parseFloat((advisor.satisfactionScore / 20).toFixed(1)) : 4.5,
+          clients: advisor.clients || 0,
+          specialties: advisor.specialization ? [advisor.specialization] : [],
+          availability: "Available now", // Can be calculated from schedule
+          avatar: advisor.avatarUrl || `/avatars/${advisor.name.toLowerCase().replace(/\s+/g, "_")}.png`,
+          bio: advisor.description || `${advisor.specialization} with ${advisor.experienceYears || 0} years of experience serving clients in ${advisor.region || "Namibia"}.`,
+          education: [], // Not in database schema, can be added later
+          achievements: [], // Not in database schema, can be added later
+          reviews: [], // Not in database schema, can be added later
+        });
+      })
+      .catch((err) => {
+        console.error("Error fetching advisor:", err);
+        setError("Failed to load advisor data");
+      })
+      .finally(() => setLoading(false));
+  }, [advisorId]);
+
+  if (loading) {
+    return (
+      <CorporateLayout
+        heroTitle="Advisor Profile"
+        heroSubtitle="Loading..."
+        pageType="customer"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Customer", href: "/customer/select" },
+          { label: "Advisors", href: "/advisors" },
+          { label: "Profile", href: `/advisors/${advisorId}` },
+        ]}
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="loading loading-spinner loading-lg text-om-green"></div>
+        </div>
+      </CorporateLayout>
+    );
+  }
+
+  if (error || !advisorData) {
+    return (
+      <CorporateLayout
+        heroTitle="Advisor Profile"
+        heroSubtitle="Error"
+        pageType="customer"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Customer", href: "/customer/select" },
+          { label: "Advisors", href: "/advisors" },
+          { label: "Profile", href: `/advisors/${advisorId}` },
+        ]}
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="alert alert-error">{error || "Advisor not found"}</div>
+        </div>
+      </CorporateLayout>
+    );
+  }
 
   return (
     <CorporateLayout
       heroTitle={advisorData.name}
       heroSubtitle={advisorData.specialization}
       pageType="customer"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: "Advisors", href: "/advisors" },
+        { label: advisorData.name, href: `/advisors/${advisorId}` },
+      ]}
     >
       {/* Profile Overview */}
       <section className="py-8 bg-om-light-grey">
@@ -131,7 +173,9 @@ export default function AdvisorProfilePage() {
                     <div>
                       <div className="text-sm text-om-grey">Languages</div>
                       <div className="font-semibold text-om-navy text-om-body">
-                        {advisorData.languages.join(", ")}
+                        {advisorData.languages && advisorData.languages.length > 0 
+                          ? advisorData.languages.join(", ")
+                          : "English"}
                       </div>
                     </div>
                   </div>
@@ -161,14 +205,23 @@ export default function AdvisorProfilePage() {
               Specialties
             </h2>
             <div className="grid md:grid-cols-3 gap-4">
-              {advisorData.specialties.map((specialty, idx) => (
-                <div key={idx} className="card-om p-4">
+              {advisorData.specialties && advisorData.specialties.length > 0 ? (
+                advisorData.specialties.map((specialty: string, idx: number) => (
+                  <div key={idx} className="card-om p-4">
+                    <div className="flex items-center gap-3">
+                      <CheckCircleIcon className="w-6 h-6 text-om-heritage-green flex-shrink-0" />
+                      <span className="font-semibold text-om-navy text-om-body">{specialty}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="card-om p-4">
                   <div className="flex items-center gap-3">
                     <CheckCircleIcon className="w-6 h-6 text-om-heritage-green flex-shrink-0" />
-                    <span className="font-semibold text-om-navy text-om-body">{specialty}</span>
+                    <span className="font-semibold text-om-navy text-om-body">{advisorData.specialization}</span>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -184,14 +237,18 @@ export default function AdvisorProfilePage() {
                   Education & Qualifications
                 </h2>
                 <div className="card-om p-6">
-                  <ul className="space-y-3">
-                    {advisorData.education.map((edu, idx) => (
-                      <li key={idx} className="flex items-start gap-3 text-om-body">
-                        <CheckCircleIcon className="w-5 h-5 text-om-heritage-green flex-shrink-0 mt-0.5" />
-                        <span>{edu}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {advisorData.education && advisorData.education.length > 0 ? (
+                    <ul className="space-y-3">
+                      {advisorData.education.map((edu: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-3 text-om-body">
+                          <CheckCircleIcon className="w-5 h-5 text-om-heritage-green flex-shrink-0 mt-0.5" />
+                          <span>{edu}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-om-grey text-om-body">Education information not available</p>
+                  )}
                 </div>
               </div>
 
@@ -200,14 +257,18 @@ export default function AdvisorProfilePage() {
                   Achievements
                 </h2>
                 <div className="card-om p-6">
-                  <ul className="space-y-3">
-                    {advisorData.achievements.map((achievement, idx) => (
-                      <li key={idx} className="flex items-start gap-3 text-om-body">
-                        <StarIcon className="w-5 h-5 text-om-naartjie fill-current flex-shrink-0 mt-0.5" />
-                        <span>{achievement}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {advisorData.achievements && advisorData.achievements.length > 0 ? (
+                    <ul className="space-y-3">
+                      {advisorData.achievements.map((achievement: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-3 text-om-body">
+                          <StarIcon className="w-5 h-5 text-om-naartjie fill-current flex-shrink-0 mt-0.5" />
+                          <span>{achievement}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-om-grey text-om-body">Achievements information not available</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -222,31 +283,37 @@ export default function AdvisorProfilePage() {
             <h2 className="text-2xl font-bold text-om-navy mb-6 text-om-heading">
               Client Reviews
             </h2>
-            <div className="space-y-4">
-              {advisorData.reviews.map((review) => (
-                <div key={review.id} className="card-om p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <div className="font-semibold text-om-navy text-om-body">{review.client}</div>
-                      <div className="text-sm text-om-grey text-om-body">{review.date}</div>
+            {advisorData.reviews && advisorData.reviews.length > 0 ? (
+              <div className="space-y-4">
+                {advisorData.reviews.map((review: any) => (
+                  <div key={review.id} className="card-om p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="font-semibold text-om-navy text-om-body">{review.client}</div>
+                        <div className="text-sm text-om-grey text-om-body">{review.date}</div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <StarIcon
+                            key={i}
+                            className={`w-4 h-4 ${
+                              i < review.rating
+                                ? "text-om-naartjie fill-current"
+                                : "text-om-grey-15"
+                            }`}
+                          />
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <StarIcon
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < review.rating
-                              ? "text-om-naartjie fill-current"
-                              : "text-om-grey-15"
-                          }`}
-                        />
-                      ))}
-                    </div>
+                    <p className="text-om-body">{review.comment}</p>
                   </div>
-                  <p className="text-om-body">{review.comment}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="card-om p-6">
+                <p className="text-om-grey text-om-body text-center">No reviews available yet</p>
+              </div>
+            )}
           </div>
         </div>
       </section>

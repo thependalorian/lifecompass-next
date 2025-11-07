@@ -1,8 +1,10 @@
 // app/api/advisors/[id]/clients/route.ts
 // API endpoint for fetching advisor's clients
+// PII Masking: Sensitive client data is masked for advisor view
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAdvisorClients, getAdvisorByNumber } from "@/lib/db/neon";
+import { maskCustomerPII, MaskingLevel } from "@/lib/utils/pii-mask";
 
 // Force dynamic rendering since we use request.url
 export const dynamic = 'force-dynamic';
@@ -39,16 +41,33 @@ export async function GET(
     const clients = await getAdvisorClients(advisorId, limit);
 
     // Transform to match frontend expected format
-    const transformedClients = clients.map((client: any) => ({
-      id: client.customer_number || client.id,
-      customerNumber: client.customer_number,
-      name: `${client.first_name} ${client.last_name}`,
-      firstName: client.first_name,
-      lastName: client.last_name,
-      segment: client.segment,
-      engagementScore: client.engagement_score ? parseFloat(client.engagement_score.toString()) : 0,
-      lifetimeValue: client.lifetime_value ? parseFloat(client.lifetime_value.toString()) : 0,
-    }));
+    const transformedClients = clients.map((client: any) => {
+      const clientData = {
+        id: client.customer_number || client.id,
+        customerId: client.id,
+        customerNumber: client.customer_number,
+        name: `${client.first_name} ${client.last_name}`,
+        firstName: client.first_name,
+        lastName: client.last_name,
+        email: client.email,
+        phone: client.phone_primary,
+        segment: client.segment,
+        engagementScore: client.engagement_score ? parseFloat(client.engagement_score.toString()) : 0,
+        lifetimeValue: client.lifetime_value ? parseFloat(client.lifetime_value.toString()) : 0,
+        churnRisk: client.churn_risk || "Low",
+        primaryAdvisorId: client.primary_advisor_id,
+        dateOfBirth: null, // Not in this query
+        address: null,
+        city: null,
+        region: null,
+        monthlyIncome: 0,
+        nationalId: null, // Never expose
+      };
+
+      // Apply PII masking (advisor level - moderate masking)
+      const maskingLevel: MaskingLevel = 'advisor';
+      return maskCustomerPII(clientData, { level: maskingLevel });
+    });
 
     return NextResponse.json(transformedClients);
   } catch (error) {

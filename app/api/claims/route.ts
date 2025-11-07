@@ -42,12 +42,18 @@ export async function GET(request: NextRequest) {
       type: claim.claim_type,
       status: claim.status,
       incidentDate: claim.incident_date,
+      reportedDate: claim.reported_date,
       approvedAmount: claim.approved_amount ? parseFloat(claim.approved_amount.toString()) : null,
       paidAmount: claim.paid_amount ? parseFloat(claim.paid_amount.toString()) : null,
       processingTimeDays: claim.processing_time_days,
+      assessorId: claim.assessor_id,
+      documents: claim.documents || [],
+      causeOfLoss: claim.cause_of_loss,
+      reserveAmount: claim.reserve_amount ? parseFloat(claim.reserve_amount.toString()) : null,
       policyId: claim.policy_id,
       customerId: claim.customer_id,
       customerNumber: claim.customer_number || null,
+      createdAt: claim.created_at,
     }));
 
     return NextResponse.json(transformedClaims);

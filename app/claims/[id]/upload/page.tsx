@@ -94,6 +94,13 @@ export default function UploadDocumentsPage() {
       heroTitle="Upload Documents"
       heroSubtitle={`Add supporting documents for Claim #${claimId}`}
       pageType="customer"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: "Claims", href: "/claims" },
+        { label: `Claim #${claimId}`, href: `/claims/${claimId}` },
+        { label: "Upload", href: `/claims/${claimId}/upload` },
+      ]}
     >
       <section className="py-12">
         <div className="container mx-auto px-4">

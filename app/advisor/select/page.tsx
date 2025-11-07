@@ -130,19 +130,19 @@ export default function AdvisorPersonaSelection() {
               >
                 <div className="card-body">
                   <div className="flex items-start gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-om-heritage-green/20 flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-om-heritage-green/20 flex-shrink-0 aspect-square">
                       {persona.avatarUrl ? (
                         <img
                           src={persona.avatarUrl}
                           alt={persona.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover aspect-square"
                           onError={(e) => {
                             // Fallback to initials if image fails to load
                             const target = e.target as HTMLImageElement;
                             target.style.display = "none";
                             const parent = target.parentElement;
                             if (parent) {
-                              parent.className = "w-16 h-16 rounded-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-xl font-bold ring-2 ring-om-heritage-green/20 flex-shrink-0";
+                              parent.className = "w-16 h-16 rounded-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-xl font-bold ring-2 ring-om-heritage-green/20 flex-shrink-0 aspect-square";
                               parent.textContent = persona.name
                                 .split(" ")
                                 .map((n: string) => n[0])
@@ -153,7 +153,7 @@ export default function AdvisorPersonaSelection() {
                           }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-xl font-bold">
+                        <div className="w-full h-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-xl font-bold aspect-square">
                           {persona.name
                             .split(" ")
                             .map((n: string) => n[0])

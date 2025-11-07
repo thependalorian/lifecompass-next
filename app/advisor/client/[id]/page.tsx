@@ -36,6 +36,7 @@ interface Client {
   engagementScore: number;
   lifetimeValue: number;
   churnRisk: string;
+  primaryAdvisorId?: string | null;
 }
 
 interface Policy {
@@ -151,19 +152,36 @@ export default function Client360Page() {
       heroTitle={client.name}
       heroSubtitle={`${client.customerNumber} | ${client.segment} Segment`}
       pageType="advisor"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Advisor", href: "/advisor/select" },
+        { label: "Dashboard", href: "/advisor" },
+        { label: "Clients", href: "/advisor/clients" },
+        { label: client.name, href: `/advisor/client/${client.customerNumber}` },
+      ]}
     >
       {/* Action Buttons */}
       <section className="bg-om-heritage-green text-white py-4">
         <div className="container mx-auto px-4">
           <div className="flex justify-end gap-3">
-            <Link href={`/advisors`}>
-              <OMButton variant="outline" size="sm" className="border-white text-white hover:bg-white hover:text-om-heritage-green">
-                Schedule Meeting
+            {client.primaryAdvisorId ? (
+              <Link href={`/advisors/${client.primaryAdvisorId}/book?client=${encodeURIComponent(client.customerNumber)}`}>
+                <OMButton variant="outline" size="sm" className="border-white text-white hover:bg-white hover:text-om-heritage-green">
+                  Schedule Meeting
+                </OMButton>
+              </Link>
+            ) : (
+              <Link href={`/advisors`}>
+                <OMButton variant="outline" size="sm" className="border-white text-white hover:bg-white hover:text-om-heritage-green">
+                  Find Advisor
+                </OMButton>
+              </Link>
+            )}
+            <Link href="/advisor/communicate">
+              <OMButton variant="primary" size="sm">
+                Send Message
               </OMButton>
             </Link>
-            <OMButton variant="primary" size="sm">
-              Send Message
-            </OMButton>
           </div>
         </div>
       </section>
@@ -389,7 +407,7 @@ export default function Client360Page() {
             {/* Profile Summary */}
             <div className="card-om p-6">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 rounded-full bg-om-heritage-green text-white flex items-center justify-center font-bold text-xl">
+                <div className="w-16 h-16 rounded-full bg-om-heritage-green text-white flex items-center justify-center font-bold text-xl aspect-square">
                   {client.name.split(" ").map(n => n[0]).join("")}
                 </div>
                 <div>

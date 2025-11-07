@@ -8,6 +8,19 @@ import Link from "next/link";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { motion } from "framer-motion";
 import { OMButton } from "@/components/atoms/brand";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 interface Client {
   id: string;
@@ -200,21 +213,176 @@ export default function AdvisorClientsPage() {
               </div>
             </div>
           </div>
-          <div className="card-om">
+          <div className="card-om bg-om-cerise/10">
             <div className="card-body">
-              <div className="text-sm text-om-grey">Total LTV</div>
-              <div className="text-3xl font-bold text-om-green">
-                N$
-                {Math.round(
-                  filteredClients.reduce((sum, c) => sum + c.lifetimeValue, 0) /
-                    1000,
-                )}
-                K
+              <div className="text-sm text-om-grey">High Risk Clients</div>
+              <div className="text-3xl font-bold text-om-cerise">
+                {filteredClients.filter((c) => {
+                  // Check if client has churnRisk property
+                  const risk = (c as any).churnRisk || "Low";
+                  return risk === "High";
+                }).length}
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Client Analytics Visualizations */}
+      {filteredClients.length > 0 && (
+        <section className="container mx-auto px-4 pb-6">
+          <h2 className="text-xl font-bold text-om-navy mb-4">Client Portfolio Analytics</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Segment Distribution */}
+            <div className="card-om">
+              <div className="card-body">
+                <h3 className="font-bold text-om-navy mb-4">Segment Distribution</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={(() => {
+                        const segmentCounts: Record<string, number> = {};
+                        filteredClients.forEach((c) => {
+                          const seg = c.segment || "Unknown";
+                          segmentCounts[seg] = (segmentCounts[seg] || 0) + 1;
+                        });
+                        return Object.entries(segmentCounts).map(([name, value]) => ({
+                          name,
+                          value,
+                        }));
+                      })()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={(entry: any) => `${entry.name} (${((entry.percent || 0) * 100).toFixed(0)}%)`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {(() => {
+                        const segmentCounts: Record<string, number> = {};
+                        filteredClients.forEach((c) => {
+                          const seg = c.segment || "Unknown";
+                          segmentCounts[seg] = (segmentCounts[seg] || 0) + 1;
+                        });
+                        return Object.entries(segmentCounts).map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={["#009677", "#50b848", "#8dc63f", "#00c0e8", "#f37021"][index % 5]}
+                          />
+                        ));
+                      })()}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Churn Risk Distribution */}
+            <div className="card-om">
+              <div className="card-body">
+                <h3 className="font-bold text-om-navy mb-4">Churn Risk Distribution</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={(() => {
+                        const riskCounts: Record<string, number> = { Low: 0, Medium: 0, High: 0 };
+                        filteredClients.forEach((c) => {
+                          const risk = ((c as any).churnRisk || "Low") as string;
+                          riskCounts[risk] = (riskCounts[risk] || 0) + 1;
+                        });
+                        return Object.entries(riskCounts)
+                          .filter(([_, value]) => value > 0)
+                          .map(([name, value]) => ({
+                            name,
+                            value,
+                            color:
+                              name === "Low"
+                                ? "#50b848"
+                                : name === "Medium"
+                                  ? "#f37021"
+                                  : "#ed0080",
+                          }));
+                      })()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={(entry: any) =>
+                        `${entry.name}: ${entry.value} (${((entry.percent || 0) * 100).toFixed(0)}%)`
+                      }
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {(() => {
+                        const riskCounts: Record<string, number> = { Low: 0, Medium: 0, High: 0 };
+                        filteredClients.forEach((c) => {
+                          const risk = ((c as any).churnRisk || "Low") as string;
+                          riskCounts[risk] = (riskCounts[risk] || 0) + 1;
+                        });
+                        return Object.entries(riskCounts)
+                          .filter(([_, value]) => value > 0)
+                          .map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={
+                                entry[0] === "Low"
+                                  ? "#50b848"
+                                  : entry[0] === "Medium"
+                                    ? "#f37021"
+                                    : "#ed0080"
+                              }
+                            />
+                          ));
+                      })()}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Engagement Score Distribution */}
+            <div className="card-om md:col-span-2">
+              <div className="card-body">
+                <h3 className="font-bold text-om-navy mb-4">Engagement Score Distribution</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart
+                    data={(() => {
+                      const ranges = [
+                        { range: "0-20", min: 0, max: 20 },
+                        { range: "21-40", min: 21, max: 40 },
+                        { range: "41-60", min: 41, max: 60 },
+                        { range: "61-80", min: 61, max: 80 },
+                        { range: "81-100", min: 81, max: 100 },
+                      ];
+                      return ranges.map((r) => ({
+                        range: r.range,
+                        count: filteredClients.filter(
+                          (c) => c.engagementScore >= r.min && c.engagementScore <= r.max
+                        ).length,
+                      }));
+                    })()}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e3e3e3" />
+                    <XAxis dataKey="range" stroke="#575757" />
+                    <YAxis stroke="#575757" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#fff",
+                        border: "1px solid #e3e3e3",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <Bar dataKey="count" fill="#50b848" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Clients List */}
       <section className="container mx-auto px-4 pb-20">
@@ -232,11 +400,11 @@ export default function AdvisorClientsPage() {
                 {/* Client Header */}
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="avatar">
-                    <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-om-heritage-green/20">
+                    <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-om-heritage-green/20 aspect-square">
                       <img
                         src={`https://ui-avatars.com/api/?name=${encodeURIComponent(client.name)}&background=009677&color=fff&size=128&bold=true&font-size=0.5`}
                         alt={client.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover aspect-square"
                       />
                     </div>
                   </div>
@@ -311,7 +479,7 @@ export default function AdvisorClientsPage() {
             {/* Client Profile */}
             <div className="flex items-center space-x-4 mb-6">
               <div className="avatar">
-                <div className="w-20 rounded-full bg-om-green text-white flex items-center justify-center text-2xl font-bold">
+                <div className="w-20 h-20 rounded-full bg-om-green text-white flex items-center justify-center text-2xl font-bold aspect-square">
                   {getInitials(selectedClient.name)}
                 </div>
               </div>

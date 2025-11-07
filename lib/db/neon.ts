@@ -114,13 +114,20 @@ export async function getCustomerById(customerId: string) {
       phone_primary,
       phone_secondary,
       date_of_birth,
+      address_street,
       address_city,
       address_region,
       occupation,
       monthly_income,
+      marital_status,
+      dependents_count,
       segment,
+      digital_adoption_level,
+      preferred_language,
+      preferred_contact_method,
       lifetime_value,
       engagement_score,
+      churn_risk,
       primary_advisor_id::text
     FROM customers
     WHERE id = ${customerId}::uuid
@@ -135,14 +142,23 @@ export async function getCustomerPolicies(customerId: string) {
     SELECT
       id::text,
       policy_number,
+      customer_id::text,
       product_type,
       product_subtype,
       status,
       coverage_amount,
       premium_amount,
+      premium_frequency,
       start_date,
       end_date,
-      renewal_date
+      renewal_date,
+      sum_assured,
+      beneficiaries,
+      underwriting_class,
+      payment_method,
+      payment_status,
+      advisor_id::text,
+      created_at
     FROM policies
     WHERE customer_id = ${customerId}::uuid
     ORDER BY created_at DESC
@@ -162,9 +178,15 @@ export async function getCustomerClaims(customerId: string) {
       claim_type,
       status,
       incident_date,
+      reported_date,
       approved_amount,
       paid_amount,
-      processing_time_days
+      processing_time_days,
+      assessor_id::text,
+      documents,
+      cause_of_loss,
+      reserve_amount,
+      created_at
     FROM claims
     WHERE customer_id = ${customerId}::uuid
     ORDER BY created_at DESC
@@ -185,9 +207,15 @@ export async function getAllClaims(limit = 100) {
       c.claim_type,
       c.status,
       c.incident_date,
+      c.reported_date,
       c.approved_amount,
       c.paid_amount,
-      c.processing_time_days
+      c.processing_time_days,
+      c.assessor_id::text,
+      c.documents,
+      c.cause_of_loss,
+      c.reserve_amount,
+      c.created_at
     FROM claims c
     LEFT JOIN customers cust ON c.customer_id = cust.id
     ORDER BY c.created_at DESC
@@ -232,9 +260,13 @@ export async function getAdvisorClients(advisorId: string, limit = 50) {
       c.customer_number,
       c.first_name,
       c.last_name,
+      c.email,
+      c.phone_primary,
       c.segment,
       c.engagement_score,
-      c.lifetime_value
+      c.lifetime_value,
+      c.churn_risk,
+      c.primary_advisor_id::text
     FROM customers c
     WHERE c.primary_advisor_id = ${advisorId}::uuid
     ORDER BY c.engagement_score DESC
@@ -322,7 +354,11 @@ export async function getAllCustomers() {
       segment,
       digital_adoption_level,
       preferred_language,
-      preferred_contact_method
+      preferred_contact_method,
+      engagement_score,
+      lifetime_value,
+      churn_risk,
+      primary_advisor_id::text
     FROM customers
     ORDER BY customer_number
   `;
@@ -355,7 +391,8 @@ export async function getCustomerByNumber(customerNumber: string) {
       preferred_contact_method,
       engagement_score,
       lifetime_value,
-      churn_risk
+      churn_risk,
+      primary_advisor_id::text
     FROM customers
     WHERE customer_number = ${customerNumber}
   `;
@@ -520,6 +557,10 @@ export async function getCustomerInteractions(
       sentiment,
       intent,
       outcome,
+      duration_minutes,
+      quality_score,
+      follow_up_required,
+      follow_up_date,
       created_at
     FROM interactions
     WHERE customer_id = ${customerId}::uuid
@@ -807,4 +848,260 @@ export async function createTask(
   `;
   
   return task;
+}
+
+// Communications functions
+export async function getAdvisorCommunications(
+  advisorId: string,
+  limit: number = 50
+) {
+  const client = getSqlClient();
+  const communications = await client`
+    SELECT
+      c.id::text,
+      c.communication_number,
+      c.customer_id::text,
+      c.advisor_id::text,
+      c.type,
+      c.subject,
+      c.content,
+      c.status,
+      c.sent_at,
+      c.delivered_at,
+      c.read_at,
+      c.template_id::text,
+      c.created_at,
+      cust.first_name || ' ' || cust.last_name AS customer_name,
+      cust.customer_number
+    FROM communications c
+    LEFT JOIN customers cust ON c.customer_id = cust.id
+    WHERE c.advisor_id = ${advisorId}::uuid
+    ORDER BY c.sent_at DESC NULLS LAST, c.created_at DESC
+    LIMIT ${limit}
+  `;
+  return communications;
+}
+
+export async function getCustomerCommunications(
+  customerId: string,
+  limit: number = 50
+) {
+  const client = getSqlClient();
+  const communications = await client`
+    SELECT
+      c.id::text,
+      c.communication_number,
+      c.customer_id::text,
+      c.advisor_id::text,
+      c.type,
+      c.subject,
+      c.content,
+      c.status,
+      c.sent_at,
+      c.delivered_at,
+      c.read_at,
+      c.template_id::text,
+      c.created_at
+    FROM communications c
+    WHERE c.customer_id = ${customerId}::uuid
+    ORDER BY c.sent_at DESC NULLS LAST, c.created_at DESC
+    LIMIT ${limit}
+  `;
+  return communications;
+}
+
+export async function createCommunication(
+  advisorId: string,
+  communicationData: {
+    customerId: string;
+    type: string;
+    subject?: string;
+    content: string;
+    status?: string;
+    templateId?: string;
+  }
+) {
+  const client = getSqlClient();
+  
+  // Generate communication number (format: COM-YYYY-NNNNNN)
+  const year = new Date().getFullYear();
+  const commCount = await client`
+    SELECT COUNT(*)::int as count FROM communications WHERE communication_number LIKE ${`COM-${year}-%`}
+  `;
+  const nextNumber = (commCount[0]?.count || 0) + 1;
+  const communicationNumber = `COM-${year}-${String(nextNumber).padStart(6, "0")}`;
+  
+  // Insert communication
+  const [communication] = await client`
+    INSERT INTO communications (
+      communication_number,
+      customer_id,
+      advisor_id,
+      type,
+      subject,
+      content,
+      status,
+      sent_at,
+      template_id
+    ) VALUES (
+      ${communicationNumber},
+      ${communicationData.customerId}::uuid,
+      ${advisorId}::uuid,
+      ${communicationData.type},
+      ${communicationData.subject || null},
+      ${communicationData.content},
+      ${communicationData.status || "Sent"},
+      ${communicationData.status === "Sent" ? new Date() : null}::timestamp with time zone,
+      ${communicationData.templateId || null}::uuid
+    )
+    RETURNING
+      id::text,
+      communication_number,
+      customer_id::text,
+      advisor_id::text,
+      type,
+      subject,
+      content,
+      status,
+      sent_at,
+      created_at
+  `;
+  
+  return communication;
+}
+
+// Templates functions
+export async function getAllTemplates(advisorId?: string, category?: string) {
+  const client = getSqlClient();
+  
+  if (advisorId) {
+    // Get advisor-specific and global templates
+    const templates = await client`
+      SELECT
+        id::text,
+        template_number,
+        name,
+        category,
+        content,
+        advisor_id::text,
+        is_global,
+        usage_count,
+        is_active,
+        created_at,
+        updated_at
+      FROM templates
+      WHERE is_active = TRUE
+        AND (is_global = TRUE OR advisor_id = ${advisorId}::uuid)
+        ${category ? client`AND category = ${category}` : client``}
+      ORDER BY is_global DESC, usage_count DESC, name ASC
+    `;
+    return templates;
+  } else {
+    // Get only global templates
+    const templates = await client`
+      SELECT
+        id::text,
+        template_number,
+        name,
+        category,
+        content,
+        advisor_id::text,
+        is_global,
+        usage_count,
+        is_active,
+        created_at,
+        updated_at
+      FROM templates
+      WHERE is_active = TRUE
+        AND is_global = TRUE
+        ${category ? client`AND category = ${category}` : client``}
+      ORDER BY usage_count DESC, name ASC
+    `;
+    return templates;
+  }
+}
+
+export async function getTemplateByNumber(templateNumber: string) {
+  const client = getSqlClient();
+  const [template] = await client`
+    SELECT
+      id::text,
+      template_number,
+      name,
+      category,
+      content,
+      advisor_id::text,
+      is_global,
+      usage_count,
+      is_active,
+      created_at,
+      updated_at
+    FROM templates
+    WHERE template_number = ${templateNumber}
+  `;
+  return template;
+}
+
+export async function createTemplate(
+  advisorId: string,
+  templateData: {
+    name: string;
+    category: string;
+    content: string;
+    isGlobal?: boolean;
+  }
+) {
+  const client = getSqlClient();
+  
+  // Generate template number (format: TPL-YYYY-NNNNNN)
+  const year = new Date().getFullYear();
+  const templateCount = await client`
+    SELECT COUNT(*)::int as count FROM templates WHERE template_number LIKE ${`TPL-${year}-%`}
+  `;
+  const nextNumber = (templateCount[0]?.count || 0) + 1;
+  const templateNumber = `TPL-${year}-${String(nextNumber).padStart(6, "0")}`;
+  
+  // Insert template
+  const [template] = await client`
+    INSERT INTO templates (
+      template_number,
+      name,
+      category,
+      content,
+      advisor_id,
+      is_global,
+      created_by
+    ) VALUES (
+      ${templateNumber},
+      ${templateData.name},
+      ${templateData.category},
+      ${templateData.content},
+      ${templateData.isGlobal ? null : advisorId}::uuid,
+      ${templateData.isGlobal || false},
+      ${advisorId}::uuid
+    )
+    RETURNING
+      id::text,
+      template_number,
+      name,
+      category,
+      content,
+      advisor_id::text,
+      is_global,
+      usage_count,
+      is_active,
+      created_at,
+      updated_at
+  `;
+  
+  return template;
+}
+
+export async function incrementTemplateUsage(templateId: string) {
+  const client = getSqlClient();
+  await client`
+    UPDATE templates
+    SET usage_count = usage_count + 1
+    WHERE id = ${templateId}::uuid
+  `;
 }

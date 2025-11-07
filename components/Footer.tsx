@@ -25,7 +25,7 @@ export default function Footer() {
           </div>
           <div className="text-center">
             <p className="text-xs text-white font-bold">
-              Built by Autumn8 Analytics (Autumn)
+              Built by Buffr
             </p>
             <p className="text-xs text-white mt-1 font-bold">
               George Nekwaya (B.Eng, NUST 🇳🇦, MBA, Brandeis University 🇺🇸) & Etuna Nekwaya (B.Eng, Bohai University 🇨🇳)

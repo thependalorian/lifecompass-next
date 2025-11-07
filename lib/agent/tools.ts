@@ -43,31 +43,64 @@ export interface EntityRelationshipInput {
 }
 
 // Vector Search Tool
+// Uses the match_chunks PostgreSQL function from schema_ollama.sql
 export async function vectorSearchTool(
   input: VectorSearchInput,
 ): Promise<ChunkResult[]> {
   try {
     const { query, limit = 10 } = input;
 
-    // Generate embedding
+    // Generate embedding (must be 768 dimensions to match schema)
     const embedding = await embeddingProvider.generateEmbedding(query);
-    const embeddingStr = "[" + embedding.join(",") + "]";
+    
+    // Verify embedding dimension (should be 768)
+    if (embedding.length !== 768) {
+      console.warn(`Embedding dimension mismatch: expected 768, got ${embedding.length}. Using raw SQL fallback.`);
+      // Fallback to raw SQL if dimension doesn't match
+      const embeddingStr = "[" + embedding.join(",") + "]";
+      const results = await sql`
+        SELECT
+          c.id::text as chunk_id,
+          c.document_id::text,
+          c.content,
+          d.title as document_title,
+          d.source as document_source,
+          c.metadata,
+          1 - (c.embedding <=> ${embeddingStr}::vector) AS similarity
+        FROM chunks c
+        JOIN documents d ON c.document_id = d.id
+        WHERE 1 - (c.embedding <=> ${embeddingStr}::vector) > 0.7
+        ORDER BY c.embedding <=> ${embeddingStr}::vector
+        LIMIT ${limit}
+      `;
+      return results.map((r) => ({
+        chunkId: r.chunk_id,
+        documentId: r.document_id,
+        content: r.content,
+        score: Number(r.similarity),
+        metadata: r.metadata as Record<string, any>,
+        documentTitle: r.document_title,
+        documentSource: r.document_source,
+      }));
+    }
 
-    // Vector similarity search
+    // Use the match_chunks function from schema (optimized)
+    const embeddingStr = "[" + embedding.join(",") + "]";
     const results = await sql`
       SELECT
-        c.id::text as chunk_id,
-        c.document_id::text,
-        c.content,
-        d.title as document_title,
-        d.source as document_source,
-        c.metadata,
-        1 - (c.embedding <=> ${embeddingStr}::vector) AS similarity
-      FROM chunks c
-      JOIN documents d ON c.document_id = d.id
-      WHERE 1 - (c.embedding <=> ${embeddingStr}::vector) > 0.7
-      ORDER BY c.embedding <=> ${embeddingStr}::vector
-      LIMIT ${limit}
+        chunk_id::text,
+        document_id::text,
+        content,
+        similarity,
+        metadata,
+        document_title,
+        document_source
+      FROM match_chunks(
+        ${embeddingStr}::vector(768),
+        ${limit}
+      )
+      WHERE similarity > 0.7
+      ORDER BY similarity DESC
     `;
 
     return results.map((r) => ({
@@ -81,67 +114,105 @@ export async function vectorSearchTool(
     }));
   } catch (error) {
     console.error("Vector search failed:", error);
+    // Fallback to basic text search if vector search fails
     return [];
   }
 }
 
 // Hybrid Search Tool
+// Uses the hybrid_search PostgreSQL function from schema_ollama.sql
 export async function hybridSearchTool(
   input: HybridSearchInput,
 ): Promise<ChunkResult[]> {
   try {
     const { query, limit = 10, textWeight = 0.3 } = input;
 
-    // Generate embedding
+    // Generate embedding (must be 768 dimensions to match schema)
     const embedding = await embeddingProvider.generateEmbedding(query);
-    const embeddingStr = "[" + embedding.join(",") + "]";
+    
+    // Verify embedding dimension (should be 768)
+    if (embedding.length !== 768) {
+      console.warn(`Embedding dimension mismatch: expected 768, got ${embedding.length}. Using raw SQL fallback.`);
+      // Fallback to raw SQL if dimension doesn't match
+      const embeddingStr = "[" + embedding.join(",") + "]";
+      const results = await sql`
+        WITH vector_search AS (
+          SELECT
+            c.id,
+            c.content,
+            c.document_id,
+            c.metadata,
+            d.title as document_title,
+            d.source as document_source,
+            1 - (c.embedding <=> ${embeddingStr}::vector) AS vector_score
+          FROM chunks c
+          JOIN documents d ON c.document_id = d.id
+          ORDER BY c.embedding <=> ${embeddingStr}::vector
+          LIMIT ${limit * 2}
+        ),
+        text_search AS (
+          SELECT
+            c.id,
+            c.content,
+            c.document_id,
+            c.metadata,
+            d.title as document_title,
+            d.source as document_source,
+            ts_rank_cd(
+              to_tsvector('english', c.content),
+              plainto_tsquery('english', ${query})
+            ) AS text_score
+          FROM chunks c
+          JOIN documents d ON c.document_id = d.id
+          WHERE to_tsvector('english', c.content) @@ plainto_tsquery('english', ${query})
+          ORDER BY text_score DESC
+          LIMIT ${limit * 2}
+        )
+        SELECT
+          COALESCE(v.id, t.id)::text AS chunk_id,
+          COALESCE(v.document_id, t.document_id)::text AS document_id,
+          COALESCE(v.content, t.content) AS content,
+          COALESCE(v.document_title, t.document_title) AS document_title,
+          COALESCE(v.document_source, t.document_source) AS document_source,
+          COALESCE(v.metadata, t.metadata) AS metadata,
+          (COALESCE(v.vector_score, 0) * ${1 - textWeight} +
+           COALESCE(t.text_score, 0) * ${textWeight}) AS combined_score
+        FROM vector_search v
+        FULL OUTER JOIN text_search t ON v.id = t.id
+        ORDER BY combined_score DESC
+        LIMIT ${limit}
+      `;
+      return results.map((r) => ({
+        chunkId: r.chunk_id,
+        documentId: r.document_id,
+        content: r.content,
+        score: Number(r.combined_score),
+        metadata: r.metadata as Record<string, any>,
+        documentTitle: r.document_title,
+        documentSource: r.document_source,
+      }));
+    }
 
+    // Use the hybrid_search function from schema (optimized)
+    const embeddingStr = "[" + embedding.join(",") + "]";
     const results = await sql`
-      WITH vector_search AS (
-        SELECT
-          c.id,
-          c.content,
-          c.document_id,
-          c.metadata,
-          d.title as document_title,
-          d.source as document_source,
-          1 - (c.embedding <=> ${embeddingStr}::vector) AS vector_score
-        FROM chunks c
-        JOIN documents d ON c.document_id = d.id
-        ORDER BY c.embedding <=> ${embeddingStr}::vector
-        LIMIT ${limit * 2}
-      ),
-      text_search AS (
-        SELECT
-          c.id,
-          c.content,
-          c.document_id,
-          c.metadata,
-          d.title as document_title,
-          d.source as document_source,
-          ts_rank(
-            to_tsvector('english', c.content),
-            plainto_tsquery('english', ${query})
-          ) AS text_score
-        FROM chunks c
-        JOIN documents d ON c.document_id = d.id
-        WHERE to_tsvector('english', c.content) @@ plainto_tsquery('english', ${query})
-        ORDER BY text_score DESC
-        LIMIT ${limit * 2}
-      )
       SELECT
-        COALESCE(v.id, t.id)::text AS chunk_id,
-        COALESCE(v.document_id, t.document_id)::text AS document_id,
-        COALESCE(v.content, t.content) AS content,
-        COALESCE(v.document_title, t.document_title) AS document_title,
-        COALESCE(v.document_source, t.document_source) AS document_source,
-        COALESCE(v.metadata, t.metadata) AS metadata,
-        (COALESCE(v.vector_score, 0) * ${1 - textWeight} +
-         COALESCE(t.text_score, 0) * ${textWeight}) AS combined_score
-      FROM vector_search v
-      FULL OUTER JOIN text_search t ON v.id = t.id
+        chunk_id::text,
+        document_id::text,
+        content,
+        combined_score,
+        vector_similarity,
+        text_similarity,
+        metadata,
+        document_title,
+        document_source
+      FROM hybrid_search(
+        ${embeddingStr}::vector(768),
+        ${query},
+        ${limit},
+        ${textWeight}
+      )
       ORDER BY combined_score DESC
-      LIMIT ${limit}
     `;
 
     return results.map((r) => ({
@@ -155,7 +226,8 @@ export async function hybridSearchTool(
     }));
   } catch (error) {
     console.error("Hybrid search failed:", error);
-    return [];
+    // Fallback to vector search only if hybrid search fails
+    return vectorSearchTool({ query: input.query, limit: input.limit });
   }
 }
 
@@ -221,6 +293,7 @@ export async function graphSearchTool(
 }
 
 // Get Document Tool
+// Uses the get_document_chunks PostgreSQL function from schema_ollama.sql
 export async function getDocumentTool(
   input: DocumentInput,
 ): Promise<any | null> {
@@ -242,21 +315,25 @@ export async function getDocumentTool(
 
     if (!document) return null;
 
-    // Get chunks
+    // Get chunks using the get_document_chunks function from schema (optimized)
     const chunks = await sql`
       SELECT
-        id::text as chunk_id,
+        chunk_id::text,
         content,
         chunk_index,
         metadata
-      FROM chunks
-      WHERE document_id = ${documentId}::uuid
+      FROM get_document_chunks(${documentId}::uuid)
       ORDER BY chunk_index
     `;
 
     return {
       ...document,
-      chunks,
+      chunks: chunks.map((c: any) => ({
+        chunkId: c.chunk_id,
+        content: c.content,
+        chunkIndex: c.chunk_index,
+        metadata: c.metadata,
+      })),
     };
   } catch (error) {
     console.error("Document retrieval failed:", error);

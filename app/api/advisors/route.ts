@@ -1,8 +1,10 @@
 // app/api/advisors/route.ts
 // API endpoint for fetching advisors from database
+// PII Masking: Email and phone are masked for demo/hackathon purposes
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAllAdvisors, getAdvisorByNumber } from "@/lib/db/neon";
+import { maskAdvisorPII, MaskingLevel } from "@/lib/utils/pii-mask";
 
 // Force dynamic rendering since we use request.url
 export const dynamic = 'force-dynamic';
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Transform to match frontend expected format
-      return NextResponse.json({
+      const advisorData = {
         id: advisor.advisor_number,
         advisorNumber: advisor.advisor_number,
         name: `${advisor.first_name} ${advisor.last_name}`,
@@ -46,36 +48,48 @@ export async function GET(request: NextRequest) {
         performanceRating: advisor.performance_rating,
         avatarUrl: advisor.avatar_url || null,
         type: "advisor",
-      });
+      };
+
+      // Apply PII masking (public level for demo)
+      const maskingLevel: MaskingLevel = 'public';
+      const maskedData = maskAdvisorPII(advisorData, { level: maskingLevel });
+
+      return NextResponse.json(maskedData);
     }
 
     // Get all advisors
     const advisors = await getAllAdvisors();
 
     // Transform to match frontend expected format
-    const transformedAdvisors = advisors.map((advisor: any) => ({
-      id: advisor.advisor_number,
-      advisorNumber: advisor.advisor_number,
-      name: `${advisor.first_name} ${advisor.last_name}`,
-      firstName: advisor.first_name,
-      lastName: advisor.last_name,
-      email: advisor.email,
-      phone: advisor.phone,
-      specialization: advisor.specialization,
-      experience: `${advisor.experience_years} years`,
-      experienceYears: advisor.experience_years,
-      clients: advisor.active_clients,
-      location: advisor.region,
-      branch: advisor.branch,
-      description: `${advisor.specialization} with ${advisor.experience_years} years of experience serving clients in ${advisor.region}`,
-      monthlyTarget: parseFloat(advisor.monthly_target?.toString() || "0"),
-      currentSales: parseFloat(advisor.monthly_sales?.toString() || "0"),
-      conversionRate: parseFloat(advisor.conversion_rate?.toString() || "0"),
-      satisfactionScore: parseFloat(advisor.satisfaction_score?.toString() || "0"),
-      performanceRating: advisor.performance_rating,
-      avatarUrl: advisor.avatar_url || null,
-      type: "advisor",
-    }));
+    const transformedAdvisors = advisors.map((advisor: any) => {
+      const advisorData = {
+        id: advisor.advisor_number,
+        advisorNumber: advisor.advisor_number,
+        name: `${advisor.first_name} ${advisor.last_name}`,
+        firstName: advisor.first_name,
+        lastName: advisor.last_name,
+        email: advisor.email,
+        phone: advisor.phone,
+        specialization: advisor.specialization,
+        experience: `${advisor.experience_years} years`,
+        experienceYears: advisor.experience_years,
+        clients: advisor.active_clients,
+        location: advisor.region,
+        branch: advisor.branch,
+        description: `${advisor.specialization} with ${advisor.experience_years} years of experience serving clients in ${advisor.region}`,
+        monthlyTarget: parseFloat(advisor.monthly_target?.toString() || "0"),
+        currentSales: parseFloat(advisor.monthly_sales?.toString() || "0"),
+        conversionRate: parseFloat(advisor.conversion_rate?.toString() || "0"),
+        satisfactionScore: parseFloat(advisor.satisfaction_score?.toString() || "0"),
+        performanceRating: advisor.performance_rating,
+        avatarUrl: advisor.avatar_url || null,
+        type: "advisor",
+      };
+
+      // Apply PII masking (public level for demo)
+      const maskingLevel: MaskingLevel = 'public';
+      return maskAdvisorPII(advisorData, { level: maskingLevel });
+    });
 
     return NextResponse.json(transformedAdvisors);
   } catch (error) {

@@ -185,6 +185,11 @@ export default function ClaimsPage() {
       heroSubtitle="Get support when you need it most"
       heroBackground="/id3Zh06DHT_1762296722528.jpeg"
       pageType="customer"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: "Claims", href: "/claims" },
+      ]}
     >
       {/* Quick Actions */}
       <section className="py-12">

@@ -3,14 +3,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { motion } from "framer-motion";
 import { StarIcon } from "@/components/atoms/icons";
+import { OMButton } from "@/components/atoms/brand";
 
-const advisors = [
+// Hardcoded advisors - will be replaced by API fetch
+const defaultAdvisors = [
   {
-    id: "ADV001",
+    id: "ADV-001",
     name: "Thomas Shikongo",
     specialization: "Informal Sector Specialist",
     region: "Windhoek",
@@ -27,7 +29,7 @@ const advisors = [
     avatar: "/avatars/thomas_shikongo.png",
   },
   {
-    id: "ADV002",
+    id: "ADV-002",
     name: "Helvi Bezuidenhout",
     specialization: "Investment & Retirement Specialist",
     region: "Windhoek",
@@ -40,7 +42,7 @@ const advisors = [
     avatar: "/avatars/helvi_bezuidenhout.png",
   },
   {
-    id: "ADV003",
+    id: "ADV-003",
     name: "David Ndjavera",
     specialization: "Agricultural & Rural Specialist",
     region: "Tsumeb",
@@ -53,7 +55,7 @@ const advisors = [
     avatar: "/avatars/david_ndjavera.png",
   },
   {
-    id: "ADV004",
+    id: "ADV-004",
     name: "Fatima Isaacks",
     specialization: "Family & Education Specialist",
     region: "Oshakati",
@@ -66,7 +68,7 @@ const advisors = [
     avatar: "/avatars/fatima_isaacks.png",
   },
   {
-    id: "ADV005",
+    id: "ADV-005",
     name: "John-Paul !Gaeb",
     specialization: "Maritime & Fisheries Specialist",
     region: "Swakopmund",
@@ -79,7 +81,7 @@ const advisors = [
     avatar: "/avatars/john_paul_gaeb.png",
   },
   {
-    id: "ADV006",
+    id: "ADV-006",
     name: "Maria Shikongo",
     specialization: "Small Business Specialist",
     region: "Windhoek",
@@ -92,7 +94,7 @@ const advisors = [
     avatar: "/avatars/maria_shikongo.png",
   },
   {
-    id: "ADV007",
+    id: "ADV-007",
     name: "Petrus van der Merwe",
     specialization: "Estate Planning Specialist",
     region: "Windhoek",
@@ -105,7 +107,7 @@ const advisors = [
     avatar: "/avatars/petrus_van_der_merwe.png",
   },
   {
-    id: "ADV008",
+    id: "ADV-008",
     name: "Amina Nangombe",
     specialization: "Health & Wellness Specialist",
     region: "Oshakati",
@@ -118,7 +120,7 @@ const advisors = [
     avatar: "/avatars/amina_nangombe.png",
   },
   {
-    id: "ADV009",
+    id: "ADV-009",
     name: "Christoph Müller",
     specialization: "Expatriate Services Specialist",
     region: "Windhoek",
@@ -131,7 +133,7 @@ const advisors = [
     avatar: "/avatars/christoph_muller.png",
   },
   {
-    id: "ADV010",
+    id: "ADV-010",
     name: "Lydia Geingob",
     specialization: "Women's Financial Empowerment",
     region: "Windhoek",
@@ -144,7 +146,7 @@ const advisors = [
     avatar: "/avatars/lydia_geingob.png",
   },
   {
-    id: "ADV011",
+    id: "ADV-011",
     name: "Francois Coetzee",
     specialization: "High Net Worth Specialist",
     region: "Windhoek",
@@ -157,7 +159,7 @@ const advisors = [
     avatar: "/avatars/francois_coetzee.jpg",
   },
   {
-    id: "ADV012",
+    id: "ADV-012",
     name: "Selma Katjijere",
     specialization: "Youth Financial Planning",
     region: "Oshakati",
@@ -170,7 +172,7 @@ const advisors = [
     avatar: "/avatars/selma_katjijere.png",
   },
   {
-    id: "ADV013",
+    id: "ADV-013",
     name: "Willem Botha",
     specialization: "Agricultural Finance Specialist",
     region: "Tsumeb",
@@ -183,7 +185,7 @@ const advisors = [
     avatar: "/avatars/willem_botha.png",
   },
   {
-    id: "ADV014",
+    id: "ADV-014",
     name: "Hilma Shikwambi",
     specialization: "Micro-Enterprise Specialist",
     region: "Windhoek",
@@ -196,7 +198,7 @@ const advisors = [
     avatar: "/avatars/hilma_shikwambi.png",
   },
   {
-    id: "ADV015",
+    id: "ADV-015",
     name: "Pieter Swart",
     specialization: "Retirement Planning Specialist",
     region: "Windhoek",
@@ -209,7 +211,7 @@ const advisors = [
     avatar: "/avatars/pieter_swart.jpg",
   },
   {
-    id: "ADV016",
+    id: "ADV-016",
     name: "Esther Mwandingi",
     specialization: "Family Protection Specialist",
     region: "Oshakati",
@@ -222,7 +224,7 @@ const advisors = [
     avatar: "/avatars/esther_mwandingi.png",
   },
   {
-    id: "ADV017",
+    id: "ADV-017",
     name: "Andreas Fischer",
     specialization: "Corporate Benefits Specialist",
     region: "Windhoek",
@@ -235,7 +237,7 @@ const advisors = [
     avatar: "/avatars/andreas_fischer.png",
   },
   {
-    id: "ADV018",
+    id: "ADV-018",
     name: "Rebecca Katjimune",
     specialization: "Education Planning Specialist",
     region: "Windhoek",
@@ -248,7 +250,7 @@ const advisors = [
     avatar: "/avatars/rebecca_katjimune.png",
   },
   {
-    id: "ADV019",
+    id: "ADV-019",
     name: "Stephanus Groenewaldt",
     specialization: "Property & Asset Protection",
     region: "Swakopmund",
@@ -261,7 +263,7 @@ const advisors = [
     avatar: "/avatars/stephanus_groenewaldt.png",
   },
   {
-    id: "ADV020",
+    id: "ADV-020",
     name: "Joyce Nakale",
     specialization: "Comprehensive Financial Planning",
     region: "Windhoek",
@@ -291,6 +293,47 @@ export default function AdvisorsPage() {
     "All Specializations",
   );
   const [selectedRegion, setSelectedRegion] = useState("All Regions");
+  const [advisors, setAdvisors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch advisors from API
+  useEffect(() => {
+    const fetchAdvisors = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch("/api/advisors");
+        if (!response.ok) throw new Error("Failed to fetch advisors");
+        const data = await response.json();
+        
+        // Transform API data to match expected format
+        const transformedAdvisors = data.map((advisor: any) => ({
+          id: advisor.id || advisor.advisorNumber,
+          name: advisor.name,
+          specialization: advisor.specialization,
+          region: advisor.location || advisor.region || "Namibia",
+          experience: advisor.experience || `${advisor.experienceYears || 0} years`,
+          languages: [], // Not in API response, can be added later
+          rating: advisor.satisfactionScore ? parseFloat((advisor.satisfactionScore / 20).toFixed(1)) : 4.5, // Convert 0-100 to 0-5 scale
+          clients: advisor.clients || 0,
+          specialties: advisor.specialization ? [advisor.specialization] : [],
+          availability: "Available now", // Can be calculated from schedule
+          avatar: advisor.avatarUrl || `/avatars/${advisor.name.toLowerCase().replace(/\s+/g, "_")}.png`,
+        }));
+        
+        setAdvisors(transformedAdvisors);
+      } catch (err) {
+        console.error("Error fetching advisors:", err);
+        setError("Failed to load advisors");
+        // Fallback to default advisors if API fails
+        setAdvisors(defaultAdvisors);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdvisors();
+  }, []);
 
   const getAvailabilityColor = (availability: string) => {
     if (availability.includes("now")) return "text-om-green";
@@ -312,12 +355,57 @@ export default function AdvisorsPage() {
     return matchesSearch && matchesSpecialization && matchesRegion;
   });
 
+  if (loading) {
+    return (
+      <CorporateLayout
+        heroTitle="Find Your Perfect Advisor"
+        heroSubtitle="Loading..."
+        heroBackground="/id3Zh06DHT_1762296722528.jpeg"
+        pageType="customer"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Customer", href: "/customer/select" },
+          { label: "Advisors", href: "/advisors" },
+        ]}
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="loading loading-spinner loading-lg text-om-green"></div>
+        </div>
+      </CorporateLayout>
+    );
+  }
+
+  if (error && advisors.length === 0) {
+    return (
+      <CorporateLayout
+        heroTitle="Find Your Perfect Advisor"
+        heroSubtitle="Error"
+        heroBackground="/id3Zh06DHT_1762296722528.jpeg"
+        pageType="customer"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Customer", href: "/customer/select" },
+          { label: "Advisors", href: "/advisors" },
+        ]}
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="alert alert-error">{error}</div>
+        </div>
+      </CorporateLayout>
+    );
+  }
+
   return (
     <CorporateLayout
       heroTitle="Find Your Perfect Advisor"
       heroSubtitle="Connect with experienced financial advisors who understand Namibia's unique financial landscape"
       heroBackground="/id3Zh06DHT_1762296722528.jpeg"
       pageType="customer"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: "Advisors", href: "/advisors" },
+      ]}
     >
       {/* Search & Filters */}
       <section className="py-8 bg-om-light-grey">
@@ -382,11 +470,11 @@ export default function AdvisorsPage() {
               >
                 <div className="flex items-start gap-4">
                   <div className="avatar placeholder">
-                    <div className="rounded-full w-16 h-16 overflow-hidden ring-2 ring-om-heritage-green/20">
+                    <div className="rounded-full w-16 h-16 overflow-hidden ring-2 ring-om-heritage-green/20 aspect-square">
                       <img
                         src={advisor.avatar}
                         alt={advisor.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover aspect-square"
                       />
                     </div>
                   </div>
@@ -441,7 +529,7 @@ export default function AdvisorsPage() {
                         Specialties:
                       </h4>
                       <div className="flex flex-wrap gap-2">
-                        {advisor.specialties.map((specialty, specialtyIdx) => (
+                        {advisor.specialties.map((specialty: string, specialtyIdx: number) => (
                           <span
                             key={specialtyIdx}
                             className="badge badge-outline badge-sm"
@@ -503,9 +591,11 @@ export default function AdvisorsPage() {
               Our AI assistant can help match you with the perfect advisor based
               on your needs and preferences.
             </p>
-            <button className="btn-om-primary btn-lg">
+            <Link href="/chat">
+              <OMButton variant="primary" size="lg">
               Get AI Matching Assistance
-            </button>
+              </OMButton>
+            </Link>
           </div>
         </div>
       </section>

@@ -12,23 +12,42 @@ import { CalendarDaysIcon, CpuChipIcon, PhoneIcon } from "@/components/atoms/ico
 import { ClockIcon } from "@heroicons/react/24/outline";
 import { OMButton } from "@/components/atoms/brand";
 
-// Mock advisor data - in production, fetch from API using [id]
-// Note: [id] parameter should be advisor_number (e.g., "ADV-001")
-const advisorData = {
-  id: "ADV-003", // Default to Thomas Shikongo - will be fetched from API using advisorId param
-  name: "Thomas Shikongo",
-  specialization: "Informal Sector Specialist",
-  region: "Windhoek",
-};
-
-const availableSlots = [
-  { id: "SLOT001", date: "2024-11-18", time: "09:00", type: "In-Person", available: true },
-  { id: "SLOT002", date: "2024-11-18", time: "10:30", type: "Video Call", available: true },
-  { id: "SLOT003", date: "2024-11-18", time: "14:00", type: "Phone Call", available: true },
-  { id: "SLOT004", date: "2024-11-19", time: "09:00", type: "In-Person", available: true },
-  { id: "SLOT005", date: "2024-11-19", time: "11:00", type: "Video Call", available: false },
-  { id: "SLOT006", date: "2024-11-19", time: "15:30", type: "Phone Call", available: true },
-];
+// Generate available time slots for the next 7 days
+function generateAvailableSlots() {
+  const slots: Array<{
+    id: string;
+    date: string;
+    time: string;
+    type: string;
+    available: boolean;
+  }> = [];
+  
+  const today = new Date();
+  const timeSlots = ["09:00", "10:30", "11:00", "14:00", "15:30", "16:00"];
+  const types = ["In-Person", "Video Call", "Phone Call"];
+  
+  for (let day = 0; day < 7; day++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + day);
+    const dateStr = date.toISOString().split("T")[0];
+    
+    types.forEach((type) => {
+      timeSlots.forEach((time) => {
+        // Randomly make some slots unavailable (20% chance)
+        const available = Math.random() > 0.2;
+        slots.push({
+          id: `SLOT-${dateStr}-${time}-${type.replace(/\s+/g, "-")}`,
+          date: dateStr,
+          time,
+          type,
+          available,
+        });
+      });
+    });
+  }
+  
+  return slots;
+}
 
 const consultationTypes = [
   { id: "in-person", name: "In-Person", icon: CalendarDaysIcon, description: "Meet at advisor's office" },
@@ -49,9 +68,46 @@ export default function BookConsultationPage() {
     notes: "",
   });
   const [customerPersona, setCustomerPersona] = useState<any>(null);
+  const [advisorData, setAdvisorData] = useState<any>(null);
+  const [availableSlots, setAvailableSlots] = useState(generateAvailableSlots());
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Auto-populate customer information from selected persona
+  // Fetch advisor data and customer information
   useEffect(() => {
+    if (!advisorId) return;
+
+    setLoading(true);
+
+    // Fetch advisor data
+    fetch(`/api/advisors/${advisorId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch advisor");
+        }
+        return response.json();
+      })
+      .then((advisor) => {
+        setAdvisorData({
+          id: advisor.id || advisorId,
+          name: advisor.name || "Advisor",
+          specialization: advisor.specialization || "Financial Advisor",
+          region: advisor.region || "Namibia",
+        });
+      })
+      .catch((err) => {
+        console.error("Error fetching advisor:", err);
+        // Fallback to basic data
+        setAdvisorData({
+          id: advisorId,
+          name: "Advisor",
+          specialization: "Financial Advisor",
+          region: "Namibia",
+        });
+      })
+      .finally(() => setLoading(false));
+
+    // Auto-populate customer information from selected persona
     if (typeof window !== "undefined") {
       const selectedCustomerId = sessionStorage.getItem("selectedCustomerPersona");
       if (selectedCustomerId) {
@@ -96,11 +152,42 @@ export default function BookConsultationPage() {
           });
       }
     }
-  }, []);
+  }, [advisorId]);
 
-  const handleSubmit = () => {
-    // In production, submit booking to API
-    router.push(`/advisors/${advisorId}?booked=true`);
+  const handleSubmit = async () => {
+    if (!selectedSlot || !contactDetails.name || !contactDetails.email || !contactDetails.phone) {
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      // Get selected slot details
+      const slot = availableSlots.find((s) => s.id === selectedSlot);
+      
+      // In production, submit booking to API
+      // For now, simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Store booking confirmation
+      const bookingData = {
+        advisorId: advisorData?.id || advisorId,
+        advisorName: advisorData?.name || "Advisor",
+        slot: slot,
+        contactDetails,
+        timestamp: new Date().toISOString(),
+      };
+      
+      sessionStorage.setItem("lastBooking", JSON.stringify(bookingData));
+
+      // Redirect to advisor profile with success message
+      router.push(`/advisors/${advisorId}?booked=true`);
+    } catch (error) {
+      console.error("Error submitting booking:", error);
+      alert("Failed to submit booking. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const getTypeIcon = (type: string) => {
@@ -108,11 +195,38 @@ export default function BookConsultationPage() {
     return typeData?.icon || CalendarDaysIcon;
   };
 
+  if (loading) {
+    return (
+      <CorporateLayout
+        heroTitle="Book Consultation"
+        heroSubtitle="Loading..."
+        pageType="customer"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Customer", href: "/customer/select" },
+          { label: "Advisors", href: "/advisors" },
+          { label: "Book", href: `/advisors/${advisorId}/book` },
+        ]}
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="loading loading-spinner loading-lg text-om-green"></div>
+        </div>
+      </CorporateLayout>
+    );
+  }
+
   return (
     <CorporateLayout
       heroTitle="Book Consultation"
-      heroSubtitle={`Schedule a consultation with ${advisorData.name}`}
+      heroSubtitle={`Schedule a consultation with ${advisorData?.name || "Advisor"}`}
       pageType="customer"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: "Advisors", href: "/advisors" },
+        { label: advisorData?.name || "Advisor", href: `/advisors/${advisorId}` },
+        { label: "Book", href: `/advisors/${advisorId}/book` },
+      ]}
     >
       <section className="py-12">
         <div className="container mx-auto px-4">
@@ -151,9 +265,17 @@ export default function BookConsultationPage() {
               </h2>
               <div className="grid md:grid-cols-2 gap-4">
                 {availableSlots
-                  .filter((slot) => slot.type === selectedType || selectedType === "in-person")
+                  .filter((slot) => {
+                    // Map selectedType to slot type
+                    const typeMap: Record<string, string> = {
+                      "in-person": "In-Person",
+                      "video": "Video Call",
+                      "phone": "Phone Call",
+                    };
+                    return slot.type === typeMap[selectedType];
+                  })
                   .map((slot) => {
-                    const Icon = getTypeIcon(slot.type);
+                    const Icon = getTypeIcon(selectedType);
                     return (
                       <button
                         key={slot.id}
@@ -303,9 +425,16 @@ export default function BookConsultationPage() {
               <OMButton
                 variant="primary"
                 onClick={handleSubmit}
-                disabled={!selectedSlot || !contactDetails.name || !contactDetails.email || !contactDetails.phone}
+                disabled={!selectedSlot || !contactDetails.name || !contactDetails.email || !contactDetails.phone || submitting}
               >
-                Confirm Booking
+                {submitting ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Submitting...
+                  </>
+                ) : (
+                  "Confirm Booking"
+                )}
               </OMButton>
             </div>
           </div>

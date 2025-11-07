@@ -137,6 +137,11 @@ export default function PoliciesPage() {
       heroSubtitle="Manage and track all your Old Mutual policies"
       heroBackground="/id3Zh06DHT_1762296722528.jpeg"
       pageType="customer"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: "Policies", href: "/policies" },
+      ]}
     >
       {/* Quick Stats */}
       <section className="py-8 bg-om-grey-5">
@@ -256,9 +261,9 @@ export default function PoliciesPage() {
                     </div>
 
                     <div className="flex gap-2 mt-4 lg:mt-0 lg:flex-col lg:gap-2">
-                      <button className="btn-om-primary btn-sm">
+                      <Link href={`/policies?policy=${encodeURIComponent(policy.policyNumber || policy.id)}`} className="btn-om-primary btn-sm">
                         View Details
-                      </button>
+                      </Link>
                       <Link href="/products" className="btn-om-outline btn-sm">Download</Link>
                       <Link href="/advisors" className="btn btn-ghost btn-sm">
                         Contact Advisor

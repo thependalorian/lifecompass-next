@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import toast from "react-hot-toast";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { PolicySummaryTile } from "@/components/molecules/PolicySummaryTile";
 import { QuickActionButtons } from "@/components/molecules/QuickActionButtons";
@@ -73,12 +74,18 @@ export default function ProductsPage() {
             const title = doc.title.toLowerCase();
             if (title.includes("severe illness")) {
               docsMap["OMP Severe Illness Cover"] = doc;
-            } else if (title.includes("funeral") && title.includes("extended")) {
-              docsMap["OMP Funeral Insurance"] = doc;
+            } else if (title.includes("funeral")) {
+              // Match both Extended and Family Funeral Cover
+              if (title.includes("extended") || title.includes("family")) {
+                docsMap["OMP Funeral Insurance"] = doc;
+              }
             } else if (title.includes("disability") && title.includes("income")) {
               docsMap["OMP Disability Income Cover"] = doc;
             }
           });
+        } else {
+          console.error("Failed to fetch insurance documents:", insuranceResponse.status);
+          toast.error("Failed to load product guides");
         }
         
         // Process Investment Forms (for Unit Trusts)
@@ -90,12 +97,18 @@ export default function ProductsPage() {
             // Map Unit Trust forms to "Unit Trusts" product
             const title = doc.title.toLowerCase();
             if (title.includes("unit trust") && title.includes("buying")) {
-              docsMap["Unit Trusts"] = doc; // Use first buying form found
+              // Use first buying form found, but don't overwrite if already set
+              if (!docsMap["Unit Trusts"]) {
+                docsMap["Unit Trusts"] = doc;
+              }
             }
           });
+        } else {
+          console.error("Failed to fetch investment documents:", investmentResponse.status);
         }
         
         setDocuments(docsMap);
+        console.log("Documents loaded:", Object.keys(docsMap).length, "documents");
       } catch (error) {
         console.error("Error fetching documents:", error);
       }
@@ -126,7 +139,13 @@ export default function ProductsPage() {
         const persona = JSON.parse(selectedPersona);
         // Redirect to advisor booking with product context
         if (persona.primaryAdvisorId) {
-          router.push(`/advisors/${persona.primaryAdvisorId}/book?product=${encodeURIComponent(productName)}`);
+          // Normalize advisor ID format (handle both ADV-001 and ADV001)
+          let advisorId = persona.primaryAdvisorId;
+          if (advisorId && !advisorId.includes('-')) {
+            // Convert ADV001 to ADV-001 format
+            advisorId = advisorId.replace(/ADV(\d{3})/, 'ADV-$1');
+          }
+          router.push(`/advisors/${advisorId}/book?product=${encodeURIComponent(productName)}`);
         } else {
           // Go to advisor selection with product context
           router.push(`/advisors?product=${encodeURIComponent(productName)}`);
@@ -260,6 +279,11 @@ export default function ProductsPage() {
       heroSubtitle="Explore comprehensive financial solutions designed for your needs"
       heroBackground="/id3Zh06DHT_1762296722528.jpeg"
       pageType="customer"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: "Products", href: "/products" },
+      ]}
     >
       {/* Products Grid */}
       <section className="py-20">
@@ -307,21 +331,45 @@ export default function ProductsPage() {
                       ))}
                     </ul>
                     <div className="flex gap-2">
-                      <OMButton 
-                        variant="primary" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleLearnMore(product.name)}
-                      >
-                        Learn More
-                      </OMButton>
-                      <OMButton 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleGetQuote(product.name)}
-                      >
-                        Get Quote
-                      </OMButton>
+                      {(() => {
+                        const docNumber = productDocumentMap[product.name];
+                        const doc = docNumber ? documents[docNumber] : documents[product.name];
+                        return (
+                          <>
+                            {doc && (
+                              <a
+                                href={`/api/documents/${doc.documentNumber}/view`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <OMButton 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="rounded-full text-center"
+                                >
+                                  View Guide
+                                </OMButton>
+                              </a>
+                            )}
+                            <OMButton 
+                              variant="primary" 
+                              size="sm" 
+                              className="flex-1 rounded-full text-center"
+                              onClick={() => handleLearnMore(product.name)}
+                            >
+                              Learn More
+                            </OMButton>
+                            <OMButton 
+                              variant="outline" 
+                              size="sm"
+                              className="rounded-full text-center"
+                              onClick={() => handleGetQuote(product.name)}
+                            >
+                              Get Quote
+                            </OMButton>
+                          </>
+                        );
+                      })()}
                     </div>
                   </motion.div>
                 ))}

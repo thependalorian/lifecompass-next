@@ -63,6 +63,12 @@ export default function ClaimDetailsPage() {
       heroTitle="Claim Details"
       heroSubtitle={`Claim #${claimId}`}
       pageType="customer"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: "Claims", href: "/claims" },
+        { label: `Claim #${claimId}`, href: `/claims/${claimId}` },
+      ]}
     >
       {/* Claim Summary */}
       <section className="py-8 bg-om-light-grey">
@@ -210,7 +216,12 @@ export default function ClaimDetailsPage() {
                 <Link href="/chat">
                   <OMButton variant="outline">Chat with AI Assistant</OMButton>
                 </Link>
-                <button className="btn btn-ghost">Contact Claims Team</button>
+                <a 
+                  href="tel:+26461223189" 
+                  className="btn btn-ghost hover:bg-om-heritage-green hover:text-white"
+                >
+                  Contact Claims Team
+                </a>
               </div>
             </div>
           </div>

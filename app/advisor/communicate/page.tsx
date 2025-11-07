@@ -2,82 +2,203 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import ChatWidget from "@/components/ChatWidget";
 import { motion } from "framer-motion";
 
-const messages = [
-  {
-    id: "MSG001",
-    client: "Maria Shikongo",
-    type: "Incoming",
-    subject: "Question about education savings",
-    preview:
-      "Hi Thomas, I was wondering about the education savings plan you mentioned...",
-    date: "2024-11-01",
-    read: false,
-    priority: "High",
-  },
-  {
-    id: "MSG002",
-    client: "John-Paul !Gaeb",
-    type: "Outgoing",
-    subject: "Insurance renewal reminder",
-    preview:
-      "Dear John-Paul, your fishing boat insurance is due for renewal...",
-    date: "2024-10-28",
-    read: true,
-    priority: "Medium",
-  },
-  {
-    id: "MSG003",
-    client: "Fatima Isaacks",
-    type: "Incoming",
-    subject: "Application status inquiry",
-    preview:
-      "Hello, I wanted to check on the status of my funeral insurance application...",
-    date: "2024-10-30",
-    read: false,
-    priority: "Medium",
-  },
-];
-
-const templates = [
-  {
-    id: "TPL001",
-    name: "Welcome Message",
-    category: "Onboarding",
-    content:
-      "Welcome to Old Mutual! I'm your dedicated advisor and I'm here to help you with all your insurance needs.",
-  },
-  {
-    id: "TPL002",
-    name: "Renewal Reminder",
-    category: "Policy Management",
-    content:
-      "Your policy is due for renewal. Please contact me to discuss your options and ensure continuous coverage.",
-  },
-  {
-    id: "TPL003",
-    name: "Claim Update",
-    category: "Claims",
-    content:
-      "Your claim has been processed. Here are the details of the payout and next steps.",
-  },
-];
-
 export default function AdvisorCommunicatePage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("messages");
   const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
+  const [templateName, setTemplateName] = useState("");
+  const [templateCategory, setTemplateCategory] = useState("Onboarding");
+  const [templateContent, setTemplateContent] = useState("");
+  const [composeRecipient, setComposeRecipient] = useState("");
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeMessage, setComposeMessage] = useState("");
+  const [messages, setMessages] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [clients, setClients] = useState<Array<{ id: string; name: string; customerNumber: string }>>([]);
+
+  // Fetch communications and templates
+  useEffect(() => {
+    const selectedPersona = sessionStorage.getItem("selectedAdvisorPersona");
+    if (!selectedPersona) {
+      router.push("/advisor/select");
+      return;
+    }
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch communications
+        const commResponse = await fetch(`/api/communications?advisorNumber=${selectedPersona}`);
+        if (commResponse.ok) {
+          const commData = await commResponse.json();
+          setMessages(commData);
+        } else {
+          console.error("Failed to fetch communications");
+          toast.error("Failed to load communications");
+        }
+
+        // Fetch templates
+        const templateResponse = await fetch("/api/templates");
+        if (templateResponse.ok) {
+          const templateData = await templateResponse.json();
+          setTemplates(templateData);
+        } else {
+          console.error("Failed to fetch templates");
+        }
+
+        // Fetch clients for compose dropdown
+        const clientsResponse = await fetch(`/api/advisors/${selectedPersona}/clients`);
+        if (clientsResponse.ok) {
+          const clientsData = await clientsResponse.json();
+          setClients(
+            clientsData.map((c: any) => ({
+              id: c.customerId || c.id,
+              name: c.name,
+              customerNumber: c.customerNumber,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast.error("Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [router]);
 
   const unreadCount = messages.filter((msg) => !msg.read).length;
+
+  const handleSendMessage = async () => {
+    if (!composeRecipient || !composeMessage) {
+      toast.error("Please fill in recipient and message");
+      return;
+    }
+
+    const selectedPersona = sessionStorage.getItem("selectedAdvisorPersona");
+    if (!selectedPersona) {
+      toast.error("Please select an advisor");
+      return;
+    }
+
+    // Find customer ID from recipient name
+    const client = clients.find((c) => c.name === composeRecipient);
+    if (!client) {
+      toast.error("Client not found");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/communications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          advisorNumber: selectedPersona,
+          customerId: client.id,
+          type: "Email", // Can be made dynamic
+          subject: composeSubject || "No subject",
+          content: composeMessage,
+          status: "Sent",
+        }),
+      });
+
+      if (response.ok) {
+        toast.success("Message sent successfully!");
+        setComposeRecipient("");
+        setComposeSubject("");
+        setComposeMessage("");
+        // Refresh messages
+        const commResponse = await fetch(`/api/communications?advisorNumber=${selectedPersona}`);
+        if (commResponse.ok) {
+          const commData = await commResponse.json();
+          setMessages(commData);
+        }
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to send message");
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+    }
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!templateName || !templateContent) {
+      toast.error("Please fill in template name and content");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: templateName,
+          category: templateCategory,
+          content: templateContent,
+        }),
+      });
+
+      if (response.ok) {
+        const newTemplate = await response.json();
+        setTemplates([...templates, newTemplate]);
+        toast.success("Template saved successfully!");
+        setTemplateName("");
+        setTemplateContent("");
+        setTemplateCategory("Onboarding");
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to save template");
+      }
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast.error("Failed to save template");
+    }
+  };
+
+  if (loading) {
+    return (
+      <CorporateLayout
+        heroTitle="Communication Center"
+        heroSubtitle="Loading..."
+        pageType="advisor"
+        showBreadcrumbs={true}
+        breadcrumbItems={[
+          { label: "Advisor", href: "/advisor/select" },
+          { label: "Dashboard", href: "/advisor" },
+          { label: "Communicate", href: "/advisor/communicate" },
+        ]}
+      >
+        <div className="container mx-auto px-4 py-12 text-center">
+          <div className="loading loading-spinner loading-lg text-om-green"></div>
+        </div>
+      </CorporateLayout>
+    );
+  }
 
   return (
     <CorporateLayout
       heroTitle="Communication Center"
       heroSubtitle="Manage client communications and messaging"
       pageType="advisor"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Advisor", href: "/advisor/select" },
+        { label: "Dashboard", href: "/advisor" },
+        { label: "Communicate", href: "/advisor/communicate" },
+      ]}
     >
 
       {/* Communication Stats */}
@@ -148,47 +269,75 @@ export default function AdvisorCommunicatePage() {
         <div className="container mx-auto px-4">
           {activeTab === "messages" && (
             <div className="space-y-4">
-              {messages.map((message, idx) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: idx * 0.05 }}
-                  className={`card-om p-6 ${!message.read ? "border-l-4 border-l-om-green" : ""}`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-bold text-om-navy">
-                          {message.subject}
-                        </h3>
-                        <div
-                          className={`badge ${message.type === "Incoming" ? "badge-info" : "badge-success"}`}
-                        >
-                          {message.type}
+              {messages.length === 0 ? (
+                <div className="card-om p-6 text-center">
+                  <p className="text-om-grey">No messages found</p>
+                </div>
+              ) : (
+                messages.map((message, idx) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: idx * 0.05 }}
+                    className={`card-om p-6 ${!message.read ? "border-l-4 border-l-om-green" : ""}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-bold text-om-navy">
+                            {message.subject}
+                          </h3>
+                          <div
+                            className={`badge ${message.type === "Incoming" ? "badge-info" : "badge-success"}`}
+                          >
+                            {message.type}
+                          </div>
+                          {!message.read && (
+                            <div className="badge badge-om-active">New</div>
+                          )}
                         </div>
-                        {!message.read && (
-                          <div className="badge badge-om-active">New</div>
-                        )}
+
+                        <p className="text-om-grey mb-3">{message.preview}</p>
+
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="font-semibold text-om-navy">
+                            {message.client}
+                          </span>
+                          <span className="text-om-grey">{message.date}</span>
+                        </div>
                       </div>
 
-                      <p className="text-om-grey mb-3">{message.preview}</p>
-
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="font-semibold text-om-navy">
-                          {message.client}
-                        </span>
-                        <span className="text-om-grey">{message.date}</span>
+                      <div className="flex gap-2 ml-4">
+                        <button 
+                          className="btn-om-primary btn-sm"
+                          onClick={() => {
+                            setActiveTab("compose");
+                            setComposeRecipient(message.client);
+                            setComposeSubject(`Re: ${message.subject}`);
+                          }}
+                        >
+                          Reply
+                        </button>
+                        <button 
+                          className="btn-om-outline btn-sm"
+                          onClick={() => setSelectedMessage(selectedMessage === message.id ? null : message.id)}
+                        >
+                          {selectedMessage === message.id ? "Hide" : "View"}
+                        </button>
                       </div>
+                      {selectedMessage === message.id && (
+                        <div className="mt-4 p-4 bg-base-200 rounded-lg">
+                          <p className="text-sm text-om-grey whitespace-pre-wrap">{message.preview}</p>
+                          <div className="mt-2 text-xs text-om-grey">
+                            Priority: {message.priority} | Date: {message.date}
+                          </div>
+                        </div>
+                      )}
                     </div>
-
-                    <div className="flex gap-2 ml-4">
-                      <button className="btn-om-primary btn-sm">Reply</button>
-                      <button className="btn-om-outline btn-sm">View</button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))
+              )}
             </div>
           )}
 
@@ -211,7 +360,14 @@ export default function AdvisorCommunicatePage() {
                         {template.category}
                       </div>
                     </div>
-                    <button className="btn-om-primary btn-sm">
+                    <button 
+                      className="btn-om-primary btn-sm"
+                      onClick={() => {
+                        setActiveTab("compose");
+                        setSelectedTemplate(template.id);
+                        setComposeMessage(template.content);
+                      }}
+                    >
                       Use Template
                     </button>
                   </div>
@@ -230,8 +386,14 @@ export default function AdvisorCommunicatePage() {
                       type="text"
                       placeholder="Template name"
                       className="input input-bordered input-om"
+                      value={templateName}
+                      onChange={(e) => setTemplateName(e.target.value)}
                     />
-                    <select className="select select-bordered input-om">
+                    <select 
+                      className="select select-bordered input-om"
+                      value={templateCategory}
+                      onChange={(e) => setTemplateCategory(e.target.value)}
+                    >
                       <option>Onboarding</option>
                       <option>Policy Management</option>
                       <option>Claims</option>
@@ -242,8 +404,15 @@ export default function AdvisorCommunicatePage() {
                     placeholder="Template content..."
                     className="textarea textarea-bordered input-om w-full"
                     rows={4}
+                    value={templateContent}
+                    onChange={(e) => setTemplateContent(e.target.value)}
                   />
-                  <button className="btn-om-primary">Save Template</button>
+                  <button 
+                    className="btn-om-primary"
+                    onClick={handleSaveTemplate}
+                  >
+                    Save Template
+                  </button>
                 </div>
               </div>
             </div>
@@ -261,12 +430,17 @@ export default function AdvisorCommunicatePage() {
                     <label className="label">
                       <span className="label-text">Recipient</span>
                     </label>
-                    <select className="select select-bordered input-om w-full">
-                      <option>Select client...</option>
-                      <option>Maria Shikongo</option>
-                      <option>John-Paul !Gaeb</option>
-                      <option>Fatima Isaacks</option>
-                      <option>David Ndjavera</option>
+                    <select 
+                      className="select select-bordered input-om w-full"
+                      value={composeRecipient}
+                      onChange={(e) => setComposeRecipient(e.target.value)}
+                    >
+                      <option value="">Select client...</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.name}>
+                          {client.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -277,6 +451,8 @@ export default function AdvisorCommunicatePage() {
                     <input
                       type="text"
                       className="input input-bordered input-om w-full"
+                      value={composeSubject}
+                      onChange={(e) => setComposeSubject(e.target.value)}
                     />
                   </div>
 
@@ -287,7 +463,13 @@ export default function AdvisorCommunicatePage() {
                     <select
                       className="select select-bordered input-om w-full"
                       value={selectedTemplate}
-                      onChange={(e) => setSelectedTemplate(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedTemplate(e.target.value);
+                        const template = templates.find(t => t.id === e.target.value);
+                        if (template) {
+                          setComposeMessage(template.content);
+                        }
+                      }}
                     >
                       <option value="">Select template...</option>
                       {templates.map((template) => (
@@ -307,14 +489,78 @@ export default function AdvisorCommunicatePage() {
                     className="textarea textarea-bordered input-om w-full"
                     rows={12}
                     placeholder="Type your message here..."
+                    value={composeMessage}
+                    onChange={(e) => setComposeMessage(e.target.value)}
                   />
                 </div>
               </div>
 
               <div className="flex gap-4 mt-6">
-                <button className="btn-om-primary">Send Message</button>
-                <button className="btn-om-outline">Save as Draft</button>
-                <button className="btn btn-ghost">Cancel</button>
+                <button 
+                  className="btn-om-primary"
+                  onClick={handleSendMessage}
+                >
+                  Send Message
+                </button>
+                <button 
+                  className="btn-om-outline"
+                  onClick={async () => {
+                    if (!composeRecipient || !composeMessage) {
+                      toast.error("Please fill in recipient and message to save as draft");
+                      return;
+                    }
+
+                    const selectedPersona = sessionStorage.getItem("selectedAdvisorPersona");
+                    if (!selectedPersona) {
+                      toast.error("Please select an advisor");
+                      return;
+                    }
+
+                    const client = clients.find((c) => c.name === composeRecipient);
+                    if (!client) {
+                      toast.error("Client not found");
+                      return;
+                    }
+
+                    try {
+                      const response = await fetch("/api/communications", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          advisorNumber: selectedPersona,
+                          customerId: client.id,
+                          type: "Email",
+                          subject: composeSubject || "Draft",
+                          content: composeMessage,
+                          status: "Draft",
+                        }),
+                      });
+
+                      if (response.ok) {
+                        toast.success("Draft saved successfully!");
+                      } else {
+                        const error = await response.json();
+                        toast.error(error.error || "Failed to save draft");
+                      }
+                    } catch (error) {
+                      console.error("Error saving draft:", error);
+                      toast.error("Failed to save draft");
+                    }
+                  }}
+                >
+                  Save as Draft
+                </button>
+                <button 
+                  className="btn btn-ghost"
+                  onClick={() => {
+                    setComposeRecipient("");
+                    setComposeSubject("");
+                    setComposeMessage("");
+                    setSelectedTemplate("");
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           )}

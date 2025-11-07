@@ -430,9 +430,12 @@ export default function AdvisorDashboard() {
                 <h2 className="text-lg sm:text-xl font-bold text-om-navy">
                   Today's Meetings
                 </h2>
-                <button className="btn btn-xs sm:btn-sm btn-om-outline w-full sm:w-auto">
+                <Link 
+                  href="/advisor/communicate" 
+                  className="btn btn-xs sm:btn-sm btn-om-outline w-full sm:w-auto"
+                >
                   Schedule New
-                </button>
+                </Link>
               </div>
               <div className="space-y-3">
                 {upcomingMeetings.length > 0 ? (

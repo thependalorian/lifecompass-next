@@ -145,7 +145,7 @@ export default function CustomerProfilePage() {
             <div className="card-body">
               {/* Avatar Section */}
               <div className="flex items-center gap-6 mb-8 pb-6 border-b border-base-300">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-3xl font-bold ring-4 ring-om-heritage-green/20">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-3xl font-bold ring-4 ring-om-heritage-green/20 aspect-square">
                   {persona.name
                     .split(" ")
                     .map((n: string) => n[0])

@@ -39,20 +39,20 @@ export default function Navigation({
               <HomeIcon className="w-4 h-4 md:w-5 md:h-5" />
             </Link>
             
-            {/* Logo */}
-            <Link
-              href={type === "advisor" ? "/advisor" : "/"}
-              className="flex items-center"
-            >
-              <Image
-                src="/logos/om_lifecompass_logo.jpg"
-                alt="Old Mutual Life Compass Logo"
-                width={250}
-                height={50}
-                className="h-10 md:h-14 w-auto"
-                priority
-              />
-            </Link>
+          {/* Logo */}
+          <Link
+            href={type === "advisor" ? "/advisor" : "/"}
+            className="flex items-center"
+          >
+            <Image
+              src="/logos/om_lifecompass_logo.jpg"
+              alt="Old Mutual Life Compass Logo"
+              width={250}
+              height={50}
+              className="h-10 md:h-14 w-auto"
+              priority
+            />
+          </Link>
           </div>
 
           {/* Desktop Navigation - CTAs Only */}

@@ -216,6 +216,11 @@ export default function ChatPage() {
       heroSubtitle="Your AI assistant is here to help"
       pageType="customer"
       showChat={false}
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: "Chat", href: "/chat" },
+      ]}
     >
 
       {/* Header */}
@@ -350,7 +355,7 @@ export default function ChatPage() {
                     </p>
                   </div>
                   {message.role === "user" && (
-                    <div className="w-10 h-10 rounded-full bg-om-heritage-green text-white flex items-center justify-center flex-shrink-0 font-semibold">
+                    <div className="w-10 h-10 rounded-full bg-om-heritage-green text-white flex items-center justify-center flex-shrink-0 font-semibold aspect-square">
                       You
                     </div>
                   )}

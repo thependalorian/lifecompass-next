@@ -92,6 +92,12 @@ export default function NewClaimPage() {
       heroTitle="Start New Claim"
       heroSubtitle="We're here to help you through the claims process"
       pageType="customer"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Customer", href: "/customer/select" },
+        { label: "Claims", href: "/claims" },
+        { label: "New Claim", href: "/claims/new" },
+      ]}
     >
       {/* Progress Steps */}
       <section className="py-8 bg-om-light-grey">

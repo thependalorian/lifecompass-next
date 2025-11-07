@@ -67,12 +67,12 @@ export function CustomerProfileCard({
       <div className="flex items-start gap-4 mb-6">
         {/* Avatar */}
         <div className="relative">
-          <div className="w-16 h-16 rounded-full bg-om-heritage-green/10 flex items-center justify-center ring-2 ring-om-heritage-green/20">
+          <div className="w-16 h-16 rounded-full bg-om-heritage-green/10 flex items-center justify-center ring-2 ring-om-heritage-green/20 aspect-square">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={name}
-                className="w-full h-full rounded-full object-cover"
+                className="w-full h-full rounded-full object-cover aspect-square"
               />
             ) : (
               <UserIcon className="w-8 h-8 text-om-heritage-green" />

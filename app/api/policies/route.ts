@@ -47,11 +47,18 @@ export async function GET(request: NextRequest) {
       status: policy.status,
       coverageAmount: policy.coverage_amount ? parseFloat(policy.coverage_amount.toString()) : null,
       premiumAmount: policy.premium_amount ? parseFloat(policy.premium_amount.toString()) : null,
-      premiumFrequency: policy.premium_frequency,
+      premiumFrequency: policy.premium_frequency || "Monthly",
       startDate: policy.start_date,
       endDate: policy.end_date,
       renewalDate: policy.renewal_date,
+      sumAssured: policy.sum_assured ? parseFloat(policy.sum_assured.toString()) : null,
+      beneficiaries: policy.beneficiaries || [],
+      underwritingClass: policy.underwriting_class,
+      paymentMethod: policy.payment_method,
+      paymentStatus: policy.payment_status || "Current",
+      advisorId: policy.advisor_id,
       customerId: policy.customer_id,
+      createdAt: policy.created_at,
     }));
 
     return NextResponse.json(transformedPolicies);

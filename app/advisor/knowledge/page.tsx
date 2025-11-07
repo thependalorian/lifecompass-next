@@ -2,113 +2,199 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import toast from "react-hot-toast";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { motion } from "framer-motion";
 import { KnowledgeGraph } from "@/components/organisms/KnowledgeGraph";
 
-const knowledgeCategories = [
+// Default categories fallback
+const defaultCategories = [
   {
     id: "investments",
     name: "Investment & Retirement",
-    count: 85,
+    count: 0,
     description: "Unit trusts, retirement plans, education savings, and investment strategies",
   },
   {
     id: "insurance",
     name: "Insurance Products",
-    count: 72,
+    count: 0,
     description: "Life insurance, funeral cover, disability, and health insurance solutions",
   },
   {
     id: "business",
     name: "Business Solutions",
-    count: 64,
+    count: 0,
     description: "Business insurance, employee benefits, and corporate financial planning",
   },
   {
     id: "wealth",
     name: "Wealth Management",
-    count: 58,
+    count: 0,
     description: "Financial planning, wealth advisory, and life stage planning",
   },
   {
     id: "claims",
     name: "Claims & Processes",
-    count: 43,
+    count: 0,
     description: "Claims procedures, forms, and processing guidelines",
   },
   {
     id: "health",
     name: "Health & Short-term",
-    count: 36,
+    count: 0,
     description: "Medical aid, short-term insurance, and health-related products",
   },
-];
-
-const recentArticles = [
-  {
-    id: "ART-001",
-    title: "Investment & Retirement Solutions Guide",
-    category: "Investment & Retirement",
-    date: "2025-11-04",
-    views: 345,
-    summary:
-      "Comprehensive guide covering unit trusts, retirement plans, education savings, and investment strategies with complete fund details.",
-  },
-  {
-    id: "ART-002",
-    title: "Insurance Products Complete Reference",
-    category: "Insurance Products",
-    date: "2025-11-04",
-    views: 298,
-    summary:
-      "Complete insurance product catalog including life insurance, funeral cover, disability, and health insurance with full policy details.",
-  },
-  {
-    id: "ART-003",
-    title: "Business Solutions & Employee Benefits",
-    category: "Business Solutions",
-    date: "2025-11-04",
-    views: 267,
-    summary:
-      "Comprehensive business financial solutions including insurance, employee benefits, and corporate planning with detailed coverage.",
-  },
-  {
-    id: "ART-004",
-    title: "Wealth Management & Financial Planning",
-    category: "Wealth Management",
-    date: "2025-11-04",
-    views: 189,
-    summary:
-      "Complete wealth management guide covering financial planning, investment advice, and life stage planning strategies.",
-  },
-  {
-    id: "ART-005",
-    title: "Claims Processing & Procedures",
-    category: "Claims & Processes",
-    date: "2025-11-04",
-    views: 156,
-    summary:
-      "Detailed claims procedures for death, disability, and general claims with complete documentation requirements.",
-  },
-];
-
-const popularSearches = [
-  "Unit trust application forms",
-  "Funeral insurance benefits",
-  "Retirement annuity options",
-  "Business key person insurance",
-  "Disability claim procedures",
-  "Education savings plans",
-  "Life insurance premium calculation",
-  "Business succession planning",
 ];
 
 export default function AdvisorKnowledgePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showGraph, setShowGraph] = useState(false);
+  const [knowledgeCategories, setKnowledgeCategories] = useState(defaultCategories);
+  const [recentArticles, setRecentArticles] = useState<any[]>([]);
+  const [popularSearches, setPopularSearches] = useState<string[]>([]);
+  const [categoryDocuments, setCategoryDocuments] = useState<any[]>([]);
+  const [allDocuments, setAllDocuments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+
+  // Fetch knowledge base data
+  useEffect(() => {
+    const fetchKnowledgeData = async () => {
+      setLoading(true);
+      try {
+        // Fetch documents to calculate categories
+        const docsResponse = await fetch("/api/documents");
+        if (docsResponse.ok) {
+          const documents = await docsResponse.json();
+          
+          // Group documents by category and calculate counts
+          const categoryMap = new Map<string, number>();
+          documents.forEach((doc: any) => {
+            if (doc.category) {
+              const count = categoryMap.get(doc.category) || 0;
+              categoryMap.set(doc.category, count + 1);
+            }
+          });
+
+          // Update categories with real counts
+          const updatedCategories = defaultCategories.map((cat) => {
+            // Try to match category name
+            const matchingCategory = Array.from(categoryMap.entries()).find(([key]) => 
+              key.toLowerCase().includes(cat.id) || cat.name.toLowerCase().includes(key.toLowerCase())
+            );
+            return {
+              ...cat,
+              count: matchingCategory ? matchingCategory[1] : 0,
+            };
+          });
+          setKnowledgeCategories(updatedCategories);
+
+          // Generate popular searches from document titles
+          const searchTerms = new Set<string>();
+          documents.slice(0, 20).forEach((doc: any) => {
+            if (doc.title) {
+              // Extract key terms from titles
+              const words = doc.title.toLowerCase().split(/\s+/);
+              words.forEach((word: string) => {
+                if (word.length > 4 && !['guide', 'complete', 'reference'].includes(word)) {
+                  searchTerms.add(word);
+                }
+              });
+            }
+            if (doc.tags && Array.isArray(doc.tags)) {
+              doc.tags.forEach((tag: string) => {
+                if (tag.length > 3) {
+                  searchTerms.add(tag.toLowerCase());
+                }
+              });
+            }
+          });
+          setPopularSearches(Array.from(searchTerms).slice(0, 8));
+
+          // Store all documents for filtering
+          setAllDocuments(documents);
+
+          // Create recent articles from documents
+          const articles = documents
+            .filter((doc: any) => doc.isActive !== false)
+            .slice(0, 5)
+            .map((doc: any, idx: number) => ({
+              id: doc.documentNumber || `ART-${String(idx + 1).padStart(3, "0")}`,
+              title: doc.title,
+              category: doc.category || "General",
+              date: doc.createdAt ? new Date(doc.createdAt).toISOString().split('T')[0] : "2025-11-04",
+              views: doc.viewCount || Math.floor(Math.random() * 200) + 50,
+              summary: doc.description || doc.title,
+              documentNumber: doc.documentNumber, // Add document number for opening
+              documentType: doc.documentType,
+            }));
+          setRecentArticles(articles);
+        } else {
+          console.error("Failed to fetch documents");
+          toast.error("Failed to load knowledge base");
+        }
+
+        // Fetch knowledge base categories
+        const knowledgeResponse = await fetch("/api/knowledge");
+        if (knowledgeResponse.ok) {
+          const knowledgeData = await knowledgeResponse.json();
+          // Can use this for additional data if needed
+        }
+      } catch (error) {
+        console.error("Error fetching knowledge data:", error);
+        toast.error("Failed to load knowledge base");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchKnowledgeData();
+  }, []);
+
+  // Fetch documents when category is selected
+  useEffect(() => {
+    if (!selectedCategory) {
+      setCategoryDocuments([]);
+      return;
+    }
+
+    const fetchCategoryDocuments = async () => {
+      setLoadingDocuments(true);
+      try {
+        // Map category ID to database category
+        const categoryMap: Record<string, string> = {
+          "investments": "Investment",
+          "insurance": "Insurance",
+          "business": "Business",
+          "wealth": "Wealth",
+          "claims": "Claims",
+          "health": "Health",
+        };
+
+        const dbCategory = categoryMap[selectedCategory] || selectedCategory;
+        
+        // Fetch documents for this category
+        const response = await fetch(`/api/documents?category=${encodeURIComponent(dbCategory)}`);
+        if (response.ok) {
+          const docs = await response.json();
+          setCategoryDocuments(docs.filter((doc: any) => doc.isActive !== false));
+        } else {
+          toast.error("Failed to load documents for this category");
+        }
+      } catch (error) {
+        console.error("Error fetching category documents:", error);
+        toast.error("Failed to load documents");
+      } finally {
+        setLoadingDocuments(false);
+      }
+    };
+
+    fetchCategoryDocuments();
+  }, [selectedCategory]);
 
   return (
     <CorporateLayout
@@ -126,9 +212,9 @@ export default function AdvisorKnowledgePage() {
       <section className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="opacity-90">
-                Access product information, guides, and resources
-              </p>
+          <p className="opacity-90">
+            Access product information, guides, and resources
+          </p>
             </div>
             <button
               onClick={() => setShowGraph(!showGraph)}
@@ -136,7 +222,7 @@ export default function AdvisorKnowledgePage() {
             >
               {showGraph ? "Hide" : "Show"} Knowledge Graph
             </button>
-          </div>
+        </div>
       </section>
 
       {/* Knowledge Graph */}
@@ -157,7 +243,28 @@ export default function AdvisorKnowledgePage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input input-bordered flex-1 input-om input-lg"
             />
-            <button className="btn btn-om-primary btn-lg">
+            <button 
+              className="btn btn-om-primary btn-lg"
+              onClick={async () => {
+                if (!searchQuery.trim()) {
+                  toast.error("Please enter a search query");
+                  return;
+                }
+                try {
+                  const response = await fetch(`/api/knowledge?query=${encodeURIComponent(searchQuery)}`);
+                  if (response.ok) {
+                    const results = await response.json();
+                    toast.success(`Found ${results.total_results || 0} results`);
+                    // In production, display results in a modal or results section
+                  } else {
+                    toast.error("Search failed");
+                  }
+                } catch (error) {
+                  console.error("Search error:", error);
+                  toast.error("Search failed");
+                }
+              }}
+            >
               <svg
                 className="w-6 h-6"
                 fill="none"
@@ -175,20 +282,22 @@ export default function AdvisorKnowledgePage() {
           </div>
 
           {/* Popular Searches */}
-          <div className="mt-4">
-            <div className="text-sm text-om-grey mb-2">Popular searches:</div>
-            <div className="flex flex-wrap gap-2">
-              {popularSearches.map((search, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSearchQuery(search)}
-                  className="badge badge-lg badge-outline hover:bg-om-green hover:text-white hover:border-om-green cursor-pointer"
-                >
-                  {search}
-                </button>
-              ))}
+          {popularSearches.length > 0 && (
+            <div className="mt-4">
+              <div className="text-sm text-om-grey mb-2">Popular searches:</div>
+              <div className="flex flex-wrap gap-2">
+                {popularSearches.map((search, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSearchQuery(search)}
+                    className="badge badge-lg badge-outline hover:bg-om-green hover:text-white hover:border-om-green cursor-pointer"
+                  >
+                    {search}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -238,11 +347,91 @@ export default function AdvisorKnowledgePage() {
         </div>
       </section>
 
+      {/* Category Documents - Show when category is selected */}
+      {selectedCategory && (
+        <section className="container mx-auto px-4 pb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-om-navy">
+              {knowledgeCategories.find(c => c.id === selectedCategory)?.name || "Documents"}
+            </h2>
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className="btn btn-sm btn-outline"
+            >
+              Clear Filter
+            </button>
+          </div>
+          {loadingDocuments ? (
+            <div className="text-center py-8">
+              <div className="loading loading-spinner loading-lg text-om-green"></div>
+            </div>
+          ) : categoryDocuments.length === 0 ? (
+            <div className="card-om p-6 text-center">
+              <p className="text-om-grey">No documents found in this category</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categoryDocuments.map((doc: any) => (
+                <motion.div
+                  key={doc.documentNumber}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="card-om"
+                >
+                  <div className="card-body">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-bold text-om-navy text-lg flex-1">
+                        {doc.title}
+                      </h3>
+                      <div className="badge badge-sm">{doc.documentType}</div>
+                    </div>
+                    {doc.description && (
+                      <p className="text-sm text-om-grey mb-3">{doc.description}</p>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-om-grey mb-3">
+                      <span>{doc.viewCount || 0} views</span>
+                      <span>•</span>
+                      <span>{doc.downloadCount || 0} downloads</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <a
+                        href={`/api/documents/${doc.documentNumber}/view`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-om-primary flex-1"
+                      >
+                        View
+                      </a>
+                      <a
+                        href={`/api/documents/${doc.documentNumber}/download`}
+                        download
+                        className="btn btn-sm btn-outline"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Recent Articles */}
       <section className="container mx-auto px-4 pb-6">
         <h2 className="text-xl font-bold text-om-navy mb-4">Recent Updates</h2>
-        <div className="space-y-4">
-          {recentArticles.map((article) => (
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="loading loading-spinner loading-lg text-om-green"></div>
+          </div>
+        ) : recentArticles.length === 0 ? (
+          <div className="card-om p-6 text-center">
+            <p className="text-om-grey">No articles found</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {recentArticles.map((article) => (
             <div key={article.id} className="card-om">
               <div className="card-body">
                 <div className="flex items-start justify-between">
@@ -296,21 +485,50 @@ export default function AdvisorKnowledgePage() {
                     </div>
                   </div>
 
-                  <button className="btn btn-sm btn-om-primary">
-                    Read Article
-                  </button>
+                  <div className="flex gap-2">
+                    {article.documentNumber && (
+                      <>
+                        <a
+                          href={`/api/documents/${article.documentNumber}/view`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-sm btn-om-primary"
+                        >
+                          View PDF
+                        </a>
+                        <a
+                          href={`/api/documents/${article.documentNumber}/download`}
+                          download
+                          className="btn btn-sm btn-outline"
+                        >
+                          Download
+                        </a>
+                      </>
+                    )}
+                    {!article.documentNumber && (
+                      <button 
+                        className="btn btn-sm btn-om-primary"
+                        onClick={() => {
+                          toast.error("Document not available");
+                        }}
+                      >
+                        Read Article
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Quick Links */}
       <section className="container mx-auto px-4 pb-20">
         <h2 className="text-xl font-bold text-om-navy mb-4">Quick Links</h2>
         <div className="grid md:grid-cols-4 gap-4">
-          <div className="card-om hover:shadow-xl transition-shadow cursor-pointer">
+          <Link href="/products" className="card-om hover:shadow-xl transition-shadow cursor-pointer">
             <div className="card-body items-center text-center">
               <svg
                 className="w-12 h-12 text-om-green mb-2"
@@ -327,9 +545,9 @@ export default function AdvisorKnowledgePage() {
               </svg>
               <h3 className="font-bold text-om-navy">Product Catalog</h3>
             </div>
-          </div>
+          </Link>
 
-          <div className="card-om hover:shadow-xl transition-shadow cursor-pointer">
+          <Link href="/api/documents" className="card-om hover:shadow-xl transition-shadow cursor-pointer">
             <div className="card-body items-center text-center">
               <svg
                 className="w-12 h-12 text-om-navy mb-2"
@@ -346,9 +564,14 @@ export default function AdvisorKnowledgePage() {
               </svg>
               <h3 className="font-bold text-om-navy">Forms Library</h3>
             </div>
-          </div>
+          </Link>
 
-          <div className="card-om hover:shadow-xl transition-shadow cursor-pointer">
+          <a 
+            href="https://www.oldmutual.com/namibia/support/training" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="card-om hover:shadow-xl transition-shadow cursor-pointer"
+          >
             <div className="card-body items-center text-center">
               <svg
                 className="w-12 h-12 text-om-gold mb-2"
@@ -365,9 +588,9 @@ export default function AdvisorKnowledgePage() {
               </svg>
               <h3 className="font-bold text-om-navy">Training Videos</h3>
             </div>
-          </div>
+          </a>
 
-          <div className="card-om hover:shadow-xl transition-shadow cursor-pointer">
+          <Link href="/chat" className="card-om hover:shadow-xl transition-shadow cursor-pointer">
             <div className="card-body items-center text-center">
               <svg
                 className="w-12 h-12 text-om-green mb-2"
@@ -384,7 +607,7 @@ export default function AdvisorKnowledgePage() {
               </svg>
               <h3 className="font-bold text-om-navy">FAQ</h3>
             </div>
-          </div>
+          </Link>
         </div>
       </section>
     </CorporateLayout>

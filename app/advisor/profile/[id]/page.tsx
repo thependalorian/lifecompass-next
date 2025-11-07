@@ -87,13 +87,23 @@ export default function AdvisorProfilePage() {
     );
   }
 
-  const progressPercentage = (persona.currentSales / persona.monthlyTarget) * 100;
+  // Calculate progress percentage with safety checks
+  const currentSales = typeof persona.currentSales === 'number' ? persona.currentSales : 0;
+  const monthlyTarget = typeof persona.monthlyTarget === 'number' && persona.monthlyTarget > 0 ? persona.monthlyTarget : 1;
+  const progressPercentage = Math.min((currentSales / monthlyTarget) * 100, 100);
+  const conversionRate = typeof persona.conversionRate === 'number' ? persona.conversionRate : 0;
 
   return (
     <CorporateLayout
       heroTitle={`${persona.name}'s Profile`}
       heroSubtitle={persona.specialization}
       pageType="advisor"
+      showBreadcrumbs={true}
+      breadcrumbItems={[
+        { label: "Advisor", href: "/advisor/select" },
+        { label: "Dashboard", href: "/advisor" },
+        { label: persona.name, href: `/advisor/profile/${persona.id}` },
+      ]}
     >
       <section className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
@@ -106,19 +116,19 @@ export default function AdvisorProfilePage() {
             <div className="card-body">
               {/* Avatar Section */}
               <div className="flex items-center gap-6 mb-8 pb-6 border-b border-base-300">
-                <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-om-heritage-green/20">
+                <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-om-heritage-green/20 aspect-square">
                   {persona.avatarUrl ? (
                     <img
                       src={persona.avatarUrl}
                       alt={persona.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover aspect-square"
                       onError={(e) => {
                         // Fallback to initials if image fails to load
                         const target = e.target as HTMLImageElement;
                         target.style.display = "none";
                         const parent = target.parentElement;
                         if (parent) {
-                          parent.className = "w-24 h-24 rounded-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-3xl font-bold ring-4 ring-om-heritage-green/20";
+                          parent.className = "w-24 h-24 rounded-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-3xl font-bold ring-4 ring-om-heritage-green/20 aspect-square";
                           parent.textContent = persona.name
                             .split(" ")
                             .map((n: string) => n[0])
@@ -129,7 +139,7 @@ export default function AdvisorProfilePage() {
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-3xl font-bold">
+                    <div className="w-full h-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-3xl font-bold aspect-square">
                       {persona.name
                         .split(" ")
                         .map((n: string) => n[0])
@@ -172,7 +182,9 @@ export default function AdvisorProfilePage() {
                     <UserGroupIcon className="w-5 h-5 text-om-heritage-green mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-sm text-om-grey">Active Clients</p>
-                      <p className="font-semibold text-om-navy">{persona.clients}</p>
+                      <p className="font-semibold text-om-navy">
+                        {typeof persona.clients === 'number' ? persona.clients : persona.activeClients || 0}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -186,22 +198,39 @@ export default function AdvisorProfilePage() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex-1 bg-om-light-grey rounded-full h-3">
                         <div
-                          className="bg-om-heritage-green h-3 rounded-full"
-                          style={{ width: `${Math.min(progressPercentage, 100)}%` }}
+                          className="bg-om-heritage-green h-3 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.round(progressPercentage)}%` }}
                         />
                       </div>
-                      <span className="text-sm font-semibold text-om-navy">
+                      <span className="text-sm font-semibold text-om-navy whitespace-nowrap">
                         {Math.round(progressPercentage)}%
                       </span>
                     </div>
                     <p className="text-xs text-om-grey">
-                      N${persona.currentSales.toLocaleString()} / N${persona.monthlyTarget.toLocaleString()}
+                      N${currentSales.toLocaleString('en-US')} / N${monthlyTarget.toLocaleString('en-US')}
                     </p>
+                    {monthlyTarget > 0 && (
+                      <p className="text-xs text-om-grey mt-1">
+                        N${(monthlyTarget - currentSales).toLocaleString('en-US')} remaining
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm text-om-grey mb-1">Conversion Rate</p>
-                    <p className="font-semibold text-om-navy">{persona.conversionRate}%</p>
+                    <p className="font-semibold text-om-navy">
+                      {typeof conversionRate === 'number' ? `${conversionRate.toFixed(1)}%` : 'N/A'}
+                    </p>
                   </div>
+                  {persona.satisfactionScore !== undefined && (
+                    <div>
+                      <p className="text-sm text-om-grey mb-1">Satisfaction Score</p>
+                      <p className="font-semibold text-om-navy">
+                        {typeof persona.satisfactionScore === 'number' 
+                          ? `${(persona.satisfactionScore / 20).toFixed(1)}/5.0` 
+                          : 'N/A'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
