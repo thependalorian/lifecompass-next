@@ -42,7 +42,9 @@ export default function ClaimsPage() {
     const fetchClaims = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/claims?customerNumber=${selectedPersona}`);
+        const response = await fetch(
+          `/api/claims?customerNumber=${selectedPersona}`,
+        );
         if (!response.ok) throw new Error("Failed to fetch claims");
         const data = await response.json();
         setClaims(data);
@@ -75,7 +77,8 @@ export default function ClaimsPage() {
     },
     {
       title: "Disability Claims",
-      description: "Claims for disability income and functional impairment benefits",
+      description:
+        "Claims for disability income and functional impairment benefits",
       Icon: ShieldCheckIcon,
       process: [
         "Report disability to Old Mutual Claims Service Centre: 061 223 189 within 30 days",
@@ -221,16 +224,21 @@ export default function ClaimsPage() {
                 Claims Assistance
               </h2>
               <p className="text-om-grey mb-6">
-                Need help with your claim? Contact our dedicated Claims Service Centre
-                for expert assistance with documentation and claim processing.
+                Need help with your claim? Contact our dedicated Claims Service
+                Centre for expert assistance with documentation and claim
+                processing.
               </p>
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="font-semibold text-om-navy">Claims Service Centre:</span>
+                  <span className="font-semibold text-om-navy">
+                    Claims Service Centre:
+                  </span>
                   <span className="text-om-grey">061 223 189</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="font-semibold text-om-navy">Short-term Insurance:</span>
+                  <span className="font-semibold text-om-navy">
+                    Short-term Insurance:
+                  </span>
                   <span className="text-om-grey">061 207 7111</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
@@ -265,13 +273,17 @@ export default function ClaimsPage() {
               >
                 <div className="flex items-start gap-4">
                   <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-om-heritage-green/10 flex-shrink-0">
-                    {type.Icon && <type.Icon className="w-6 h-6 text-om-heritage-green" />}
+                    {type.Icon && (
+                      <type.Icon className="w-6 h-6 text-om-heritage-green" />
+                    )}
                   </div>
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-om-navy mb-2 text-om-heading">
                       {type.title}
                     </h3>
-                    <p className="text-om-grey mb-4 text-om-body">{type.description}</p>
+                    <p className="text-om-grey mb-4 text-om-body">
+                      {type.description}
+                    </p>
                     <div className="space-y-2">
                       <h4 className="font-semibold text-om-navy">Process:</h4>
                       <ol className="list-decimal list-inside text-sm text-om-grey space-y-1 text-om-body">
@@ -291,7 +303,9 @@ export default function ClaimsPage() {
       {/* Recent Claims */}
       <section className="py-12">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold text-om-navy mb-8 text-om-heading">Your Claims</h2>
+          <h2 className="text-2xl font-bold text-om-navy mb-8 text-om-heading">
+            Your Claims
+          </h2>
 
           {claims.length > 0 ? (
             <div className="grid gap-6">
@@ -322,17 +336,21 @@ export default function ClaimsPage() {
                         <div>
                           <span className="text-om-grey">Incident Date:</span>
                           <div className="font-semibold text-om-navy">
-                            {claim.incidentDate ? new Date(claim.incidentDate).toLocaleDateString() : "N/A"}
+                            {claim.incidentDate
+                              ? new Date(
+                                  claim.incidentDate,
+                                ).toLocaleDateString()
+                              : "N/A"}
                           </div>
                         </div>
                         <div>
                           <span className="text-om-grey">Claim Amount:</span>
                           <div className="font-semibold text-om-navy">
-                            {claim.paidAmount 
-                              ? `N$${claim.paidAmount.toLocaleString()}` 
-                              : claim.approvedAmount 
-                              ? `N$${claim.approvedAmount.toLocaleString()} (Approved)` 
-                              : "Pending"}
+                            {claim.paidAmount
+                              ? `N$${claim.paidAmount.toLocaleString()}`
+                              : claim.approvedAmount
+                                ? `N$${claim.approvedAmount.toLocaleString()} (Approved)`
+                                : "Pending"}
                           </div>
                         </div>
                       </div>
@@ -345,10 +363,16 @@ export default function ClaimsPage() {
                     </div>
 
                     <div className="flex gap-2 mt-4 lg:mt-0 lg:flex-col lg:gap-2">
-                      <Link href={`/claims/${claim.id}`} className="btn-om-primary btn-sm">
+                      <Link
+                        href={`/claims/${claim.id}`}
+                        className="btn-om-primary btn-sm"
+                      >
                         View Details
                       </Link>
-                      <Link href={`/claims/${claim.id}/upload`} className="btn-om-outline btn-sm">
+                      <Link
+                        href={`/claims/${claim.id}/upload`}
+                        className="btn-om-outline btn-sm"
+                      >
                         Upload Documents
                       </Link>
                       <button className="btn btn-ghost btn-sm">

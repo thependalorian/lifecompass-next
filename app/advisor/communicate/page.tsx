@@ -23,7 +23,9 @@ export default function AdvisorCommunicatePage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [clients, setClients] = useState<Array<{ id: string; name: string; customerNumber: string }>>([]);
+  const [clients, setClients] = useState<
+    Array<{ id: string; name: string; customerNumber: string }>
+  >([]);
 
   // Fetch communications and templates
   useEffect(() => {
@@ -37,7 +39,9 @@ export default function AdvisorCommunicatePage() {
       setLoading(true);
       try {
         // Fetch communications
-        const commResponse = await fetch(`/api/communications?advisorNumber=${selectedPersona}`);
+        const commResponse = await fetch(
+          `/api/communications?advisorNumber=${selectedPersona}`,
+        );
         if (commResponse.ok) {
           const commData = await commResponse.json();
           setMessages(commData);
@@ -56,7 +60,9 @@ export default function AdvisorCommunicatePage() {
         }
 
         // Fetch clients for compose dropdown
-        const clientsResponse = await fetch(`/api/advisors/${selectedPersona}/clients`);
+        const clientsResponse = await fetch(
+          `/api/advisors/${selectedPersona}/clients`,
+        );
         if (clientsResponse.ok) {
           const clientsData = await clientsResponse.json();
           setClients(
@@ -64,7 +70,7 @@ export default function AdvisorCommunicatePage() {
               id: c.customerId || c.id,
               name: c.name,
               customerNumber: c.customerNumber,
-            }))
+            })),
           );
         }
       } catch (error) {
@@ -119,7 +125,9 @@ export default function AdvisorCommunicatePage() {
         setComposeSubject("");
         setComposeMessage("");
         // Refresh messages
-        const commResponse = await fetch(`/api/communications?advisorNumber=${selectedPersona}`);
+        const commResponse = await fetch(
+          `/api/communications?advisorNumber=${selectedPersona}`,
+        );
         if (commResponse.ok) {
           const commData = await commResponse.json();
           setMessages(commData);
@@ -200,7 +208,6 @@ export default function AdvisorCommunicatePage() {
         { label: "Communicate", href: "/advisor/communicate" },
       ]}
     >
-
       {/* Communication Stats */}
       <section className="py-6 bg-om-light-grey">
         <div className="container mx-auto px-4">
@@ -309,7 +316,7 @@ export default function AdvisorCommunicatePage() {
                       </div>
 
                       <div className="flex gap-2 ml-4">
-                        <button 
+                        <button
                           className="btn-om-primary btn-sm"
                           onClick={() => {
                             setActiveTab("compose");
@@ -319,16 +326,24 @@ export default function AdvisorCommunicatePage() {
                         >
                           Reply
                         </button>
-                        <button 
+                        <button
                           className="btn-om-outline btn-sm"
-                          onClick={() => setSelectedMessage(selectedMessage === message.id ? null : message.id)}
+                          onClick={() =>
+                            setSelectedMessage(
+                              selectedMessage === message.id
+                                ? null
+                                : message.id,
+                            )
+                          }
                         >
                           {selectedMessage === message.id ? "Hide" : "View"}
                         </button>
                       </div>
                       {selectedMessage === message.id && (
                         <div className="mt-4 p-4 bg-base-200 rounded-lg">
-                          <p className="text-sm text-om-grey whitespace-pre-wrap">{message.preview}</p>
+                          <p className="text-sm text-om-grey whitespace-pre-wrap">
+                            {message.preview}
+                          </p>
                           <div className="mt-2 text-xs text-om-grey">
                             Priority: {message.priority} | Date: {message.date}
                           </div>
@@ -360,7 +375,7 @@ export default function AdvisorCommunicatePage() {
                         {template.category}
                       </div>
                     </div>
-                    <button 
+                    <button
                       className="btn-om-primary btn-sm"
                       onClick={() => {
                         setActiveTab("compose");
@@ -389,7 +404,7 @@ export default function AdvisorCommunicatePage() {
                       value={templateName}
                       onChange={(e) => setTemplateName(e.target.value)}
                     />
-                    <select 
+                    <select
                       className="select select-bordered input-om"
                       value={templateCategory}
                       onChange={(e) => setTemplateCategory(e.target.value)}
@@ -407,7 +422,7 @@ export default function AdvisorCommunicatePage() {
                     value={templateContent}
                     onChange={(e) => setTemplateContent(e.target.value)}
                   />
-                  <button 
+                  <button
                     className="btn-om-primary"
                     onClick={handleSaveTemplate}
                   >
@@ -430,7 +445,7 @@ export default function AdvisorCommunicatePage() {
                     <label className="label">
                       <span className="label-text">Recipient</span>
                     </label>
-                    <select 
+                    <select
                       className="select select-bordered input-om w-full"
                       value={composeRecipient}
                       onChange={(e) => setComposeRecipient(e.target.value)}
@@ -465,7 +480,9 @@ export default function AdvisorCommunicatePage() {
                       value={selectedTemplate}
                       onChange={(e) => {
                         setSelectedTemplate(e.target.value);
-                        const template = templates.find(t => t.id === e.target.value);
+                        const template = templates.find(
+                          (t) => t.id === e.target.value,
+                        );
                         if (template) {
                           setComposeMessage(template.content);
                         }
@@ -496,27 +513,30 @@ export default function AdvisorCommunicatePage() {
               </div>
 
               <div className="flex gap-4 mt-6">
-                <button 
-                  className="btn-om-primary"
-                  onClick={handleSendMessage}
-                >
+                <button className="btn-om-primary" onClick={handleSendMessage}>
                   Send Message
                 </button>
-                <button 
+                <button
                   className="btn-om-outline"
                   onClick={async () => {
                     if (!composeRecipient || !composeMessage) {
-                      toast.error("Please fill in recipient and message to save as draft");
+                      toast.error(
+                        "Please fill in recipient and message to save as draft",
+                      );
                       return;
                     }
 
-                    const selectedPersona = sessionStorage.getItem("selectedAdvisorPersona");
+                    const selectedPersona = sessionStorage.getItem(
+                      "selectedAdvisorPersona",
+                    );
                     if (!selectedPersona) {
                       toast.error("Please select an advisor");
                       return;
                     }
 
-                    const client = clients.find((c) => c.name === composeRecipient);
+                    const client = clients.find(
+                      (c) => c.name === composeRecipient,
+                    );
                     if (!client) {
                       toast.error("Client not found");
                       return;
@@ -550,7 +570,7 @@ export default function AdvisorCommunicatePage() {
                 >
                   Save as Draft
                 </button>
-                <button 
+                <button
                   className="btn btn-ghost"
                   onClick={() => {
                     setComposeRecipient("");
@@ -567,7 +587,9 @@ export default function AdvisorCommunicatePage() {
         </div>
       </section>
 
-      <ChatWidget />
+      {/* Chat Widget - Enhanced with streaming and file uploads */}
+      {/* Note: ChatWidget is now globally available via layout.tsx, so this is redundant */}
+      {/* Keeping this comment for reference - ChatWidget will appear as floating button */}
 
       <footer className="bg-om-navy text-white py-8">
         <div className="container mx-auto px-4 text-center">

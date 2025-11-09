@@ -2,21 +2,16 @@
 
 import { getDeepSeekProvider } from "./providers";
 import {
-  vectorSearchTool,
   hybridSearchTool,
   graphSearchTool,
-  getDocumentTool,
-  getEntityRelationshipsTool,
-  // CRM Tools
-  getCustomerProfileTool,
   getCustomerPoliciesTool,
   getCustomerClaimsTool,
   getCustomerInteractionsTool,
+  getCustomerProfileTool,
   getAdvisorProfileTool,
   getAdvisorTasksTool,
-  listAvailableDocumentsTool,
+  recommendAdvisorsTool,
   searchDocumentsTool,
-  // Calculator Tool
   calculatorTool,
   extractCalculationFromText,
 } from "./tools";
@@ -26,17 +21,27 @@ import {
   ChatRequest,
   ToolCall,
   ChunkResult,
+  GraphSearchResult,
 } from "./models";
 import { CUSTOMER_SYSTEM_PROMPT, ADVISER_SYSTEM_PROMPT } from "./prompts";
 import {
+  detectQueryIntent,
+  preSelectTools,
+  buildContextFromPreSelected,
+} from "./shared";
+import {
   createSession,
+  getOrCreateSessionByPersona,
   addMessage,
   getSessionMessages,
   getCustomerByNumber,
   getCustomerPolicies,
   getCustomerClaims,
   getAdvisorByNumber,
+  getAdvisorById,
+  getAllAdvisors,
   getAdvisorClients,
+  createChatInteraction,
 } from "@/lib/db/neon";
 
 export class LifeCompassAgent {
@@ -62,33 +67,44 @@ export class LifeCompassAgent {
     // Security: Validate user isolation
     const validatedUserId = this.validateUserAccess(userId, metadata);
 
-    // Create or use existing session
-    // Validate sessionId is a valid UUID format, otherwise create new session
-    const isValidUUID = sessionId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId);
-    const activeSessionId = isValidUUID && sessionId 
-      ? sessionId 
-      : (await createSession(validatedUserId));
-
     // Get selected persona from metadata (auto-populated from sessionStorage)
     const selectedCustomerPersona = metadata?.selectedCustomerPersona;
     const selectedAdvisorPersona = metadata?.selectedAdvisorPersona;
 
+    // Get or create session based on persona (ensures conversation isolation)
+    const activeSessionId = await getOrCreateSessionByPersona(
+      validatedUserId,
+      {
+        selectedCustomerPersona,
+        selectedAdvisorPersona,
+        userType:
+          metadata?.userType ||
+          (selectedAdvisorPersona ? "advisor" : "customer"),
+      },
+      sessionId,
+    );
+
     // Save user message
     await addMessage(activeSessionId, "user", message, metadata);
+
+    // Create interaction record for CRM tracking
+    await createChatInteraction(activeSessionId, message, "user");
 
     // Get conversation history
     const history = await getSessionMessages(activeSessionId, 10);
 
     // Build CRM context automatically if persona is selected
+    // IMPORTANT: Strict separation - customers see THEIR OWN data, advisors see CLIENT data
     let crmContext = "";
     if (selectedCustomerPersona) {
+      // CUSTOMER FLOW: Customer viewing their own data
       try {
         const customer = await getCustomerByNumber(selectedCustomerPersona);
         if (customer) {
           // Security: Verify user has access to this customer
           const hasAccess = await this.verifyCustomerAccess(
             validatedUserId,
-            customer.id
+            customer.id,
           );
           if (!hasAccess) {
             throw new Error("Access denied to customer data");
@@ -97,12 +113,46 @@ export class LifeCompassAgent {
           const policies = await getCustomerPolicies(customer.id);
           const claims = await getCustomerClaims(customer.id);
 
-          crmContext = `Customer Context: ${customer.first_name} ${customer.last_name} (${customer.customer_number}), ${customer.segment} segment, ${policies.length} active policies, ${claims.length} claims. `;
+          // Use "your" language for customers (first person perspective)
+          crmContext = `You are ${customer.first_name} ${customer.last_name} (${customer.customer_number}), ${customer.segment} segment. You have ${policies.length} active policies and ${claims.length} claims. `;
 
           if (policies.length > 0) {
-            crmContext += `Active policies: ${policies
+            crmContext += `Your active policies: ${policies
               .map((p: any) => `${p.product_type} (${p.policy_number})`)
               .join(", ")}. `;
+          }
+          
+          if (claims.length > 0) {
+            const outstandingClaims = claims.filter((c: any) => 
+              c.status && !["Paid", "Closed", "Denied"].includes(c.status)
+            );
+            if (outstandingClaims.length > 0) {
+              crmContext += `You have ${outstandingClaims.length} outstanding claim(s). `;
+            }
+          }
+
+          // Add advisor information if assigned
+          if (customer.primary_advisor_id) {
+            try {
+              const advisor = await getAdvisorById(customer.primary_advisor_id);
+              if (advisor) {
+                crmContext += `Your assigned financial advisor is ${advisor.first_name} ${advisor.last_name} (${advisor.advisor_number}). `;
+                if (advisor.specialization) {
+                  crmContext += `They specialize in ${advisor.specialization}. `;
+                }
+                if (advisor.phone) {
+                  crmContext += `Contact: ${advisor.phone}. `;
+                }
+                if (advisor.email) {
+                  crmContext += `Email: ${advisor.email}. `;
+                }
+              }
+            } catch (error) {
+              console.error("Failed to load advisor info:", error);
+            }
+          } else {
+            // No advisor assigned - mention advisor recommendation capability
+            crmContext += `You currently do not have an assigned advisor. The system can recommend advisors based on your needs and specialization (e.g., Life Insurance, Investment & Retirement, Wealth Management, Business Solutions). `;
           }
         }
       } catch (error) {
@@ -116,7 +166,7 @@ export class LifeCompassAgent {
           // Security: Verify user has access to this advisor
           const hasAccess = await this.verifyAdvisorAccess(
             validatedUserId,
-            advisor.id
+            advisor.id,
           );
           if (!hasAccess) {
             throw new Error("Access denied to advisor data");
@@ -124,7 +174,8 @@ export class LifeCompassAgent {
 
           const clients = await getAdvisorClients(advisor.id);
 
-          crmContext = `Advisor Context: ${advisor.first_name} ${advisor.last_name} (${advisor.advisor_number}), ${advisor.specialization} specialist, ${clients.length} active clients. `;
+          // Use "your clients" language for advisors (third person perspective for clients)
+          crmContext = `You are ${advisor.first_name} ${advisor.last_name} (${advisor.advisor_number}), a ${advisor.specialization} specialist. You manage ${clients.length} active clients. When customers ask about their data, you are viewing it as their advisor, not as the customer themselves. `;
         }
       } catch (error) {
         console.error("Failed to load advisor context:", error);
@@ -132,15 +183,37 @@ export class LifeCompassAgent {
       }
     }
 
-    // Perform search with intelligent tool selection
-    const searchResults = await this.performSearch(
+    // Perform search with intelligent tool selection (using shared utilities)
+    const intent = detectQueryIntent(message);
+    const { useVector, useGraph } = this.dependencies.searchPreferences || {
+      useVector: true,
+      useGraph: true,
+    };
+
+    const preSelected = await preSelectTools(
       message,
+      intent,
       selectedCustomerPersona,
-      selectedAdvisorPersona
+      selectedAdvisorPersona,
+      useVector,
+      useGraph,
     );
 
-    // Build context from search results and CRM data
-    const context = this.buildContext(searchResults, crmContext);
+    // Build context from search results and CRM data (using shared utilities)
+    // Pass persona type to ensure correct perspective (first-person for customers)
+    const isCustomerPersona = !!selectedCustomerPersona;
+    const context = buildContextFromPreSelected(
+      preSelected,
+      crmContext,
+      isCustomerPersona,
+    );
+
+    // Map to expected format for compatibility
+    const searchResults = {
+      sources: preSelected.sources,
+      toolsUsed: preSelected.toolsUsed,
+      crmData: preSelected.crmData,
+    };
 
     // Build messages for LLM
     const messages: Array<{
@@ -148,9 +221,7 @@ export class LifeCompassAgent {
       content: string;
     }> = [
       { role: "system", content: this.getSystemPrompt() },
-      ...(crmContext
-        ? [{ role: "system", content: crmContext } as const]
-        : []),
+      ...(crmContext ? [{ role: "system", content: crmContext } as const] : []),
       { role: "system", content: `Relevant context:\n${context}` },
       ...history.map((msg) => ({
         role: msg.role as "user" | "assistant" | "system",
@@ -180,294 +251,13 @@ export class LifeCompassAgent {
     };
   }
 
-  private async performSearch(
-    query: string,
-    selectedCustomerPersona?: string,
-    selectedAdvisorPersona?: string
-  ): Promise<{
-    sources: ChunkResult[];
-    toolsUsed: ToolCall[];
-    crmData?: any;
-  }> {
-    const { useVector, useGraph } = this.dependencies.searchPreferences || {
-      useVector: true,
-      useGraph: true,
-    };
-
-    const sources: ChunkResult[] = [];
-    const toolsUsed: ToolCall[] = [];
-    let crmData: any = null;
-
-    // Detect query intent for intelligent tool selection
-    const queryLower = query.toLowerCase();
-    const isPolicyQuery =
-      queryLower.includes("policy") || queryLower.includes("policies");
-    const isClaimQuery =
-      queryLower.includes("claim") || queryLower.includes("claims");
-    const isDocumentQuery =
-      queryLower.includes("form") ||
-      queryLower.includes("document") ||
-      queryLower.includes("guide") ||
-      queryLower.includes("pdf");
-    const isTaskQuery =
-      queryLower.includes("task") || queryLower.includes("tasks");
-    const isProfileQuery =
-      queryLower.includes("profile") ||
-      queryLower.includes("information") ||
-      queryLower.includes("details");
-    const isInteractionQuery =
-      queryLower.includes("interaction") ||
-      queryLower.includes("history") ||
-      queryLower.includes("previous");
-    const isCalculationQuery =
-      queryLower.includes("calculate") ||
-      queryLower.includes("compute") ||
-      queryLower.includes("work out") ||
-      queryLower.includes("what is") ||
-      queryLower.includes("how much") ||
-      /[\d+\-*/().]/.test(query); // Contains math operators
-
-    // Use CRM tools if relevant and persona is selected
-    if (selectedCustomerPersona) {
-      try {
-        if (isPolicyQuery) {
-          const policies = await getCustomerPoliciesTool({
-            customerNumber: selectedCustomerPersona,
-          });
-          crmData = { ...crmData, policies };
-          toolsUsed.push({
-            toolName: "get_customer_policies",
-            args: { customerNumber: selectedCustomerPersona },
-          });
-        }
-        if (isClaimQuery) {
-          const claims = await getCustomerClaimsTool({
-            customerNumber: selectedCustomerPersona,
-          });
-          crmData = { ...crmData, claims };
-          toolsUsed.push({
-            toolName: "get_customer_claims",
-            args: { customerNumber: selectedCustomerPersona },
-          });
-        }
-        if (isInteractionQuery) {
-          const interactions = await getCustomerInteractionsTool({
-            customerNumber: selectedCustomerPersona,
-            limit: 10,
-          });
-          crmData = { ...crmData, interactions };
-          toolsUsed.push({
-            toolName: "get_customer_interactions",
-            args: { customerNumber: selectedCustomerPersona },
-          });
-        }
-        if (isProfileQuery) {
-          const profile = await getCustomerProfileTool({
-            customerNumber: selectedCustomerPersona,
-          });
-          crmData = { ...crmData, profile };
-          toolsUsed.push({
-            toolName: "get_customer_profile",
-            args: { customerNumber: selectedCustomerPersona },
-          });
-        }
-      } catch (error) {
-        console.error("CRM tool execution failed:", error);
-      }
-    }
-
-    if (selectedAdvisorPersona) {
-      try {
-        if (isTaskQuery) {
-          const tasks = await getAdvisorTasksTool({
-            advisorNumber: selectedAdvisorPersona,
-          });
-          crmData = { ...crmData, tasks };
-          toolsUsed.push({
-            toolName: "get_advisor_tasks",
-            args: { advisorNumber: selectedAdvisorPersona },
-          });
-        }
-        if (isProfileQuery) {
-          const profile = await getAdvisorProfileTool({
-            advisorNumber: selectedAdvisorPersona,
-          });
-          crmData = { ...crmData, profile };
-          toolsUsed.push({
-            toolName: "get_advisor_profile",
-            args: { advisorNumber: selectedAdvisorPersona },
-          });
-        }
-      } catch (error) {
-        console.error("CRM tool execution failed:", error);
-      }
-    }
-
-    // Document search (available to all users)
-    if (isDocumentQuery) {
-      try {
-        const documents = await searchDocumentsTool({ query });
-        crmData = { ...crmData, documents };
-        toolsUsed.push({
-          toolName: "search_documents",
-          args: { query },
-        });
-      } catch (error) {
-        console.error("Document search failed:", error);
-      }
-    }
-
-    // Calculator (available to all users)
-    if (isCalculationQuery) {
-      try {
-        const calcInfo = extractCalculationFromText(query);
-        if (calcInfo.hasCalculation && calcInfo.expression) {
-          const calcResult = await calculatorTool({
-            expression: calcInfo.expression,
-            calculationType: calcInfo.calculationType,
-            variables: calcInfo.variables,
-          });
-          crmData = { ...crmData, calculation: calcResult };
-          toolsUsed.push({
-            toolName: "calculator",
-            args: {
-              expression: calcInfo.expression,
-              calculationType: calcInfo.calculationType,
-              variables: calcInfo.variables,
-            },
-          });
-        }
-      } catch (error) {
-        console.error("Calculator tool failed:", error);
-      }
-    }
-
-    // Vector/Hybrid search (knowledge base)
-    if (useVector) {
-      const vectorResults = await hybridSearchTool({ query, limit: 5 });
-      sources.push(...vectorResults);
-      toolsUsed.push({
-        toolName: "hybrid_search",
-        args: { query, limit: 5 },
-      });
-    }
-
-    // Graph search (knowledge graph)
-    if (useGraph) {
-      const graphResults = await graphSearchTool({ query });
-      toolsUsed.push({
-        toolName: "graph_search",
-        args: { query },
-      });
-    }
-
-    return { sources, toolsUsed, crmData };
-  }
-
-  private buildContext(
-    searchResults: {
-    sources: ChunkResult[];
-    toolsUsed: ToolCall[];
-      crmData?: any;
-    },
-    crmContext?: string
-  ): string {
-    const contextParts: string[] = [];
-
-    // Add CRM context if available
-    if (crmContext) {
-      contextParts.push(crmContext);
-    }
-
-    // Add CRM data from tools
-    if (searchResults.crmData) {
-      if (searchResults.crmData.policies) {
-        contextParts.push(
-          `Customer Policies:\n${JSON.stringify(
-            searchResults.crmData.policies,
-            null,
-            2
-          )}`
-        );
-      }
-      if (searchResults.crmData.claims) {
-        contextParts.push(
-          `Customer Claims:\n${JSON.stringify(
-            searchResults.crmData.claims,
-            null,
-            2
-          )}`
-        );
-      }
-      if (searchResults.crmData.interactions) {
-        contextParts.push(
-          `Customer Interactions:\n${JSON.stringify(
-            searchResults.crmData.interactions,
-            null,
-            2
-          )}`
-        );
-      }
-      if (searchResults.crmData.tasks) {
-        contextParts.push(
-          `Advisor Tasks:\n${JSON.stringify(
-            searchResults.crmData.tasks,
-            null,
-            2
-          )}`
-        );
-      }
-      if (searchResults.crmData.documents) {
-        contextParts.push(
-          `Available Documents:\n${JSON.stringify(
-            searchResults.crmData.documents,
-            null,
-            2
-          )}`
-        );
-      }
-      if (searchResults.crmData.profile) {
-        contextParts.push(
-          `Profile Data:\n${JSON.stringify(
-            searchResults.crmData.profile,
-            null,
-            2
-          )}`
-        );
-      }
-      if (searchResults.crmData.calculation) {
-        const calc = searchResults.crmData.calculation;
-        if (calc.error) {
-          contextParts.push(`Calculation Error: ${calc.message}`);
-        } else {
-          contextParts.push(
-            `Calculation Result:\nFormula: ${calc.formula}\nResult: ${calc.result}\nType: ${calc.calculationType}`
-          );
-    }
-      }
-    }
-
-    // Add knowledge base sources
-    if (searchResults.sources.length > 0) {
-      contextParts.push(
-        searchResults.sources
-      .map(
-        (source, idx) =>
-              `[Source ${idx + 1}: ${source.documentTitle}]\n${source.content}\n`
-      )
-          .join("\n---\n")
-      );
-    }
-
-    return contextParts.length > 0
-      ? contextParts.join("\n\n---\n\n")
-      : "No relevant context found in the knowledge base.";
-  }
+  // NOTE: Query intent detection, tool pre-selection, and context building are handled by
+  // lib/agent/shared.ts utilities (detectQueryIntent, preSelectTools, buildContextFromPreSelected)
 
   // Security: Validate user access
   private validateUserAccess(
     userId?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): string {
     // For now, use userId or generate a session-based ID
     // In production, this should validate against authentication system
@@ -477,117 +267,261 @@ export class LifeCompassAgent {
   // Security: Verify customer access
   private async verifyCustomerAccess(
     userId: string,
-    customerId: string
+    customerId: string,
   ): Promise<boolean> {
-    // For demo purposes, allow access
-    // In production, implement proper access control:
+    // HACKATHON DEMO: Access control intentionally omitted
+    // No authentication required for demo purposes - all personas accessible
+    //
+    // For production deployment, implement proper access control:
     // - Check if user is the customer
     // - Check if user is an advisor assigned to this customer
     // - Check if user has admin privileges
-    return true; // TODO: Implement proper access control
+    return true; // Intentionally skipped for hackathon demo
   }
 
   // Security: Verify advisor access
   private async verifyAdvisorAccess(
     userId: string,
-    advisorId: string
+    advisorId: string,
   ): Promise<boolean> {
-    // For demo purposes, allow access
-    // In production, implement proper access control:
+    // HACKATHON DEMO: Access control intentionally omitted
+    // No authentication required for demo purposes - all personas accessible
+    //
+    // For production deployment, implement proper access control:
     // - Check if user is the advisor
     // - Check if user has admin privileges
-    return true; // TODO: Implement proper access control
+    return true; // Intentionally skipped for hackathon demo
   }
 
   async streamResponse(request: ChatRequest) {
     // Similar to executeAgent but returns a stream
     const { message, sessionId, userId, metadata } = request;
 
-    // Security: Validate user access
-    const validatedUserId = this.validateUserAccess(userId, metadata);
+    let activeSessionId: string = "";
 
-    // Create or use existing session
-    // Validate sessionId is a valid UUID format, otherwise create new session
-    const isValidUUID = sessionId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId);
-    const activeSessionId = isValidUUID && sessionId 
-      ? sessionId 
-      : (await createSession(validatedUserId));
+    try {
+      // Security: Validate user access
+      const validatedUserId = this.validateUserAccess(userId, metadata);
 
-    // Get selected persona from metadata
-    const selectedCustomerPersona = metadata?.selectedCustomerPersona;
-    const selectedAdvisorPersona = metadata?.selectedAdvisorPersona;
+      // Get selected persona from metadata
+      const selectedCustomerPersona = metadata?.selectedCustomerPersona;
+      const selectedAdvisorPersona = metadata?.selectedAdvisorPersona;
 
-    await addMessage(activeSessionId, "user", message, metadata);
+      // Get or create session based on persona (ensures conversation isolation)
+      activeSessionId = await getOrCreateSessionByPersona(
+        validatedUserId,
+        {
+          selectedCustomerPersona,
+          selectedAdvisorPersona,
+          userType:
+            metadata?.userType ||
+            (selectedAdvisorPersona ? "advisor" : "customer"),
+        },
+        sessionId,
+      );
 
-    // Build CRM context automatically
-    let crmContext = "";
-    if (selectedCustomerPersona) {
+      // Save user message (non-blocking - continue even if this fails)
       try {
-        const customer = await getCustomerByNumber(selectedCustomerPersona);
-        if (customer) {
-          const hasAccess = await this.verifyCustomerAccess(
-            validatedUserId,
-            customer.id
-          );
-          if (hasAccess) {
-            const policies = await getCustomerPolicies(customer.id);
-            const claims = await getCustomerClaims(customer.id);
-            crmContext = `Customer Context: ${customer.first_name} ${customer.last_name} (${customer.customer_number}), ${customer.segment} segment, ${policies.length} active policies, ${claims.length} claims. `;
-          }
-        }
+        await addMessage(activeSessionId, "user", message, metadata);
       } catch (error) {
-        console.error("Failed to load customer context:", error);
+        console.error("Failed to save user message:", error);
+        // Continue - don't block streaming
       }
-    } else if (selectedAdvisorPersona) {
+
+      // Create interaction record for CRM tracking (non-blocking)
       try {
-        const advisor = await getAdvisorByNumber(selectedAdvisorPersona);
-        if (advisor) {
-          const hasAccess = await this.verifyAdvisorAccess(
-            validatedUserId,
-            advisor.id
-          );
-          if (hasAccess) {
-            const clients = await getAdvisorClients(advisor.id);
-            crmContext = `Advisor Context: ${advisor.first_name} ${advisor.last_name} (${advisor.advisor_number}), ${advisor.specialization} specialist, ${clients.length} active clients. `;
-          }
-        }
+        await createChatInteraction(activeSessionId, message, "user");
       } catch (error) {
-        console.error("Failed to load advisor context:", error);
+        console.error("Failed to create interaction record:", error);
+        // Continue - don't block streaming
       }
+
+      // Build CRM context automatically
+      // IMPORTANT: Strict separation - customers see THEIR OWN data, advisors see CLIENT data
+      let crmContext = "";
+
+      if (selectedCustomerPersona) {
+        // CUSTOMER FLOW: Customer viewing their own data
+        try {
+          const customer = await getCustomerByNumber(selectedCustomerPersona);
+          if (customer) {
+            const hasAccess = await this.verifyCustomerAccess(
+              validatedUserId,
+              customer.id,
+            );
+            if (hasAccess) {
+              try {
+                const [policies, claims] = await Promise.all([
+                  getCustomerPolicies(customer.id).catch(() => []),
+                  getCustomerClaims(customer.id).catch(() => []),
+                ]);
+
+                // Use "your" language for customers (first person perspective)
+                crmContext = `You are ${customer.first_name} ${customer.last_name} (${customer.customer_number}), ${customer.segment} segment. You have ${policies.length} active policies and ${claims.length} claims. `;
+                
+                if (claims.length > 0) {
+                  const outstandingClaims = claims.filter((c: any) => 
+                    c.status && !["Paid", "Closed", "Denied"].includes(c.status)
+                  );
+                  if (outstandingClaims.length > 0) {
+                    crmContext += `You have ${outstandingClaims.length} outstanding claim(s). `;
+                  }
+                }
+
+                // Add advisor information if assigned
+                if (customer.primary_advisor_id) {
+                  try {
+                    const advisor = await getAdvisorById(customer.primary_advisor_id);
+                    if (advisor) {
+                      crmContext += `Your assigned financial advisor is ${advisor.first_name} ${advisor.last_name} (${advisor.advisor_number}). `;
+                      if (advisor.specialization) {
+                        crmContext += `They specialize in ${advisor.specialization}. `;
+                      }
+                      if (advisor.phone) {
+                        crmContext += `Contact: ${advisor.phone}. `;
+                      }
+                      if (advisor.email) {
+                        crmContext += `Email: ${advisor.email}. `;
+                      }
+                    }
+                  } catch (error) {
+                    console.error("Failed to load advisor info:", error);
+                  }
+                } else {
+                  // No advisor assigned - mention advisor recommendation capability
+                  crmContext += `You currently do not have an assigned advisor. The system can recommend advisors based on your needs and specialization (e.g., Life Insurance, Investment & Retirement, Wealth Management, Business Solutions). `;
+                }
+              } catch (error) {
+                console.error("Failed to load customer policies/claims:", error);
+                // Continue with basic context
+                crmContext = `You are ${customer.first_name} ${customer.last_name} (${customer.customer_number}), ${customer.segment} segment. `;
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Failed to load customer context:", error);
+          // Continue without CRM context
+        }
+      } else if (selectedAdvisorPersona) {
+        try {
+          const advisor = await getAdvisorByNumber(selectedAdvisorPersona);
+          if (advisor) {
+            const hasAccess = await this.verifyAdvisorAccess(
+              validatedUserId,
+              advisor.id,
+            );
+            if (hasAccess) {
+              try {
+                const clients = await getAdvisorClients(advisor.id);
+                // Use "your clients" language for advisors (third person perspective for clients)
+                crmContext = `You are ${advisor.first_name} ${advisor.last_name} (${advisor.advisor_number}), a ${advisor.specialization} specialist. You manage ${clients.length} active clients. When customers ask about their data, you are viewing it as their advisor, not as the customer themselves. `;
+              } catch (error) {
+                console.error("Failed to load advisor clients:", error);
+                // Continue with basic context
+                crmContext = `You are ${advisor.first_name} ${advisor.last_name} (${advisor.advisor_number}), a ${advisor.specialization} specialist. `;
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Failed to load advisor context:", error);
+          // Continue without CRM context
+        }
+      }
+
+      // Get conversation history (with error handling)
+      let history: Array<{ role: string; content: string }> = [];
+      try {
+        history = await getSessionMessages(activeSessionId, 10);
+      } catch (error) {
+        console.error("Failed to load conversation history:", error);
+        // Continue with empty history
+      }
+
+      // Use shared intelligent tool selection (eliminates duplication)
+      const intent = detectQueryIntent(message);
+      const { useVector, useGraph } = this.dependencies.searchPreferences || {
+        useVector: true,
+        useGraph: true,
+      };
+
+      // Pre-select tools with error handling
+      let preSelected;
+      try {
+        preSelected = await preSelectTools(
+          message,
+          intent,
+          selectedCustomerPersona,
+          selectedAdvisorPersona,
+          useVector,
+          useGraph,
+        );
+      } catch (error) {
+        console.error("Failed to pre-select tools:", error);
+        // Fallback: empty tools
+        preSelected = {
+          crmData: {},
+          toolsUsed: [],
+          sources: [],
+        };
+      }
+
+      // Build context using shared utility (eliminates duplication)
+      // Pass persona type to ensure correct perspective (first-person for customers)
+      const isCustomerPersona = !!selectedCustomerPersona;
+      const context = buildContextFromPreSelected(
+        preSelected,
+        crmContext,
+        isCustomerPersona,
+      );
+
+      // Map to expected format for compatibility
+      const searchResults = {
+        sources: preSelected.sources || [],
+        toolsUsed: preSelected.toolsUsed || [],
+        crmData: preSelected.crmData || {},
+      };
+
+      const messages: Array<{
+        role: "user" | "assistant" | "system";
+        content: string;
+      }> = [
+        { role: "system", content: this.getSystemPrompt() },
+        ...(crmContext ? [{ role: "system", content: crmContext } as const] : []),
+        { role: "system", content: `Relevant context:\n${context}` },
+        ...history.map((msg) => ({
+          role: msg.role as "user" | "assistant" | "system",
+          content: msg.content,
+        })),
+        { role: "user", content: message },
+      ];
+
+      // Stream LLM response with error handling
+      let stream;
+      try {
+        stream = await this.llm.streamChat(messages);
+      } catch (error) {
+        console.error("Failed to stream LLM response:", error);
+        throw new Error("Failed to generate response. Please try again.");
+      }
+
+      return {
+        stream,
+        sessionId: activeSessionId,
+        sources: searchResults.sources,
+        toolsUsed: searchResults.toolsUsed,
+      };
+    } catch (error) {
+      // Log error with context
+      console.error("[Agent] streamResponse error:", {
+        error: error instanceof Error ? error.message : String(error),
+        sessionId: activeSessionId || "unknown",
+        userId: userId || "unknown",
+        message: message.substring(0, 100),
+      });
+
+      // Re-throw to be handled by API route
+      throw error;
     }
-
-    const history = await getSessionMessages(activeSessionId, 10);
-    const searchResults = await this.performSearch(
-      message,
-      selectedCustomerPersona,
-      selectedAdvisorPersona
-    );
-    const context = this.buildContext(searchResults, crmContext);
-
-    const messages: Array<{
-      role: "user" | "assistant" | "system";
-      content: string;
-    }> = [
-      { role: "system", content: this.getSystemPrompt() },
-      ...(crmContext
-        ? [{ role: "system", content: crmContext } as const]
-        : []),
-      { role: "system", content: `Relevant context:\n${context}` },
-      ...history.map((msg) => ({
-        role: msg.role as "user" | "assistant" | "system",
-        content: msg.content,
-      })),
-      { role: "user", content: message },
-    ];
-
-    const stream = await this.llm.streamChat(messages);
-
-    return {
-      stream,
-      sessionId: activeSessionId,
-      sources: searchResults.sources,
-      toolsUsed: searchResults.toolsUsed,
-    };
   }
 }
 

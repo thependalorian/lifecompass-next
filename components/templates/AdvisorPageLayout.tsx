@@ -10,7 +10,6 @@
 import { ReactNode } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import ChatWidget from "@/components/ChatWidget";
 
 interface AdvisorPageLayoutProps {
   children: ReactNode;
@@ -57,11 +56,10 @@ export function AdvisorPageLayout({
       {/* Main Content - Desktop-first layout */}
       <main className="container mx-auto px-4 py-6 md:py-8">{children}</main>
 
-      {/* Chat Widget - Available for advisor assistance */}
-      {showChat && <ChatWidget />}
+      {/* Chat is now provided by CopilotKitProvider via CopilotSidebar */}
+      {/* The CopilotSidebar is available throughout the app and can be toggled */}
 
       <Footer />
     </div>
   );
 }
-

@@ -46,14 +46,15 @@ export default function CustomerProfilePage() {
           ...data,
           role: data.occupation || data.segment,
           location: data.city ? `${data.city}, ${data.region}` : data.region,
-          monthlyIncome: data.monthlyIncome 
-            ? `N$${data.monthlyIncome.toLocaleString()}` 
+          monthlyIncome: data.monthlyIncome
+            ? `N$${data.monthlyIncome.toLocaleString()}`
             : "Not specified",
-          family: data.maritalStatus 
-            ? `${data.maritalStatus}${data.dependentsCount > 0 ? `, ${data.dependentsCount} ${data.dependentsCount === 1 ? 'child' : 'children'}` : ''}`
+          family: data.maritalStatus
+            ? `${data.maritalStatus}${data.dependentsCount > 0 ? `, ${data.dependentsCount} ${data.dependentsCount === 1 ? "child" : "children"}` : ""}`
             : "Not specified",
-          age: data.dateOfBirth 
-            ? new Date().getFullYear() - new Date(data.dateOfBirth).getFullYear()
+          age: data.dateOfBirth
+            ? new Date().getFullYear() -
+              new Date(data.dateOfBirth).getFullYear()
             : null,
           financialSituation: `${data.segment} customer`,
           digitalAdoption: data.digitalAdoption || "Not specified",
@@ -63,7 +64,10 @@ export default function CustomerProfilePage() {
         setPersona(transformed);
         // Store in sessionStorage for use across the customer experience
         sessionStorage.setItem("selectedCustomerPersona", personaId);
-        sessionStorage.setItem("customerPersonaData", JSON.stringify(transformed));
+        sessionStorage.setItem(
+          "customerPersonaData",
+          JSON.stringify(transformed),
+        );
       } catch (err) {
         console.error("Error fetching customer:", err);
         setError("Failed to load customer. Please try again.");
@@ -131,7 +135,10 @@ export default function CustomerProfilePage() {
       showBreadcrumbs={true}
       breadcrumbItems={[
         { label: "Customer", href: "/customer/select" },
-        { label: persona.name || "Profile", href: `/customer/profile/${personaId}` },
+        {
+          label: persona.name || "Profile",
+          href: `/customer/profile/${personaId}`,
+        },
       ]}
     >
       <section className="container mx-auto px-4 py-12">
@@ -170,21 +177,27 @@ export default function CustomerProfilePage() {
                     <MapPinIcon className="w-5 h-5 text-om-heritage-green mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-sm text-om-grey">Location</p>
-                      <p className="font-semibold text-om-navy">{persona.location}</p>
+                      <p className="font-semibold text-om-navy">
+                        {persona.location}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <BriefcaseIcon className="w-5 h-5 text-om-heritage-green mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-sm text-om-grey">Occupation</p>
-                      <p className="font-semibold text-om-navy">{persona.occupation}</p>
+                      <p className="font-semibold text-om-navy">
+                        {persona.occupation}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <CurrencyDollarIcon className="w-5 h-5 text-om-heritage-green mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-sm text-om-grey">Monthly Income</p>
-                      <p className="font-semibold text-om-navy">{persona.monthlyIncome}</p>
+                      <p className="font-semibold text-om-navy">
+                        {persona.monthlyIncome}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -193,19 +206,27 @@ export default function CustomerProfilePage() {
                     <UserIcon className="w-5 h-5 text-om-heritage-green mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-sm text-om-grey">Family</p>
-                      <p className="font-semibold text-om-navy">{persona.family}</p>
+                      <p className="font-semibold text-om-navy">
+                        {persona.family}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <HomeIcon className="w-5 h-5 text-om-heritage-green mt-1 flex-shrink-0" />
                     <div>
-                      <p className="text-sm text-om-grey">Financial Situation</p>
-                      <p className="font-semibold text-om-navy">{persona.financialSituation}</p>
+                      <p className="text-sm text-om-grey">
+                        Financial Situation
+                      </p>
+                      <p className="font-semibold text-om-navy">
+                        {persona.financialSituation}
+                      </p>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm text-om-grey mb-2">Age</p>
-                    <p className="font-semibold text-om-navy">{persona.age} years old</p>
+                    <p className="font-semibold text-om-navy">
+                      {persona.age} years old
+                    </p>
                   </div>
                 </div>
               </div>
@@ -280,4 +301,3 @@ export default function CustomerProfilePage() {
     </CorporateLayout>
   );
 }
-

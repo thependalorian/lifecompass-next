@@ -19,6 +19,7 @@
 ## Step 2: Configure Namecheap DNS
 
 ### Go to Namecheap Dashboard:
+
 1. Navigate to: **Domain List → theshandi.com → Advanced DNS**
 2. You'll see your current TXT record (keep it if needed)
 
@@ -27,6 +28,7 @@
 **Remove any existing A records first**, then add:
 
 #### Record 1: Root Domain (theshandi.com)
+
 ```
 Type: A Record
 Host: @
@@ -35,6 +37,7 @@ TTL: Automatic
 ```
 
 #### Record 2: WWW Subdomain
+
 ```
 Type: CNAME Record
 Host: www
@@ -43,6 +46,7 @@ TTL: Automatic
 ```
 
 ### Important Notes:
+
 - **Vercel may provide different IP addresses** - Always use the exact values shown in your Vercel dashboard
 - Current Vercel A record IP: `76.76.21.21` (may vary)
 - Keep your existing TXT record for Google verification if needed
@@ -97,17 +101,19 @@ vercel domains ls
 ## Troubleshooting
 
 ### Build Errors?
+
 - Check Vercel build logs in dashboard
 - Ensure all environment variables are set
 - Verify `package.json` has correct build script
 
 ### Domain Not Working?
+
 - Verify DNS records match Vercel's requirements exactly
 - Wait up to 48 hours for full DNS propagation
 - Check DNS propagation: https://dnschecker.org/#A/theshandi.com
 
 ### SSL Issues?
+
 - Vercel handles SSL automatically
 - Takes ~5 minutes after DNS is valid
 - Check domain status in Vercel dashboard
-

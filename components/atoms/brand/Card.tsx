@@ -44,7 +44,7 @@ export function OMCard({
         variantClasses[variant],
         paddingClasses[padding],
         hover && "hover:shadow-xl transition-shadow duration-300",
-        className
+        className,
       )}
       {...props}
     >
@@ -61,7 +61,9 @@ export function OMCardTitle({
   return (
     <h3
       className={clsx("card-title font-bold text-base-content", className)}
-      style={{ fontFamily: "Montserrat, Century Gothic, system-ui, sans-serif" }}
+      style={{
+        fontFamily: "Montserrat, Century Gothic, system-ui, sans-serif",
+      }}
       {...props}
     >
       {children}
@@ -92,4 +94,3 @@ export function OMCardActions({
     </div>
   );
 }
-

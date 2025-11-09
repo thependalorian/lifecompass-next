@@ -2,20 +2,41 @@
 // API endpoint for calculating cross-sell opportunities for advisor's clients
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAdvisorClients, getAdvisorByNumber, getCustomerPolicies } from "@/lib/db/neon";
+import {
+  getAdvisorClients,
+  getAdvisorByNumber,
+  getCustomerPolicies,
+} from "@/lib/db/neon";
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 // Product recommendations based on customer profile
 const PRODUCT_RECOMMENDATIONS: Record<string, string[]> = {
-  "Life Insurance": ["Funeral Cover", "Disability Cover", "Education Savings", "Retirement Annuity"],
+  "Life Insurance": [
+    "Funeral Cover",
+    "Disability Cover",
+    "Education Savings",
+    "Retirement Annuity",
+  ],
   "Funeral Cover": ["Life Insurance", "Disability Cover", "Education Savings"],
   "Motor Insurance": ["Business Insurance", "Home Insurance", "Life Insurance"],
   "Home Insurance": ["Motor Insurance", "Business Insurance", "Life Insurance"],
-  "Business Insurance": ["Life Insurance", "Retirement Annuity", "Disability Cover"],
-  "Education Savings": ["Life Insurance", "Retirement Annuity", "Funeral Cover"],
-  "Retirement Annuity": ["Life Insurance", "Disability Cover", "Education Savings"],
+  "Business Insurance": [
+    "Life Insurance",
+    "Retirement Annuity",
+    "Disability Cover",
+  ],
+  "Education Savings": [
+    "Life Insurance",
+    "Retirement Annuity",
+    "Funeral Cover",
+  ],
+  "Retirement Annuity": [
+    "Life Insurance",
+    "Disability Cover",
+    "Education Savings",
+  ],
   "Disability Cover": ["Life Insurance", "Funeral Cover", "Retirement Annuity"],
 };
 
@@ -23,7 +44,7 @@ const PRODUCT_RECOMMENDATIONS: Record<string, string[]> = {
 function calculateProbability(
   customer: any,
   currentProducts: string[],
-  recommendedProduct: string
+  recommendedProduct: string,
 ): number {
   let probability = 50; // Base probability
 
@@ -42,11 +63,17 @@ function calculateProbability(
 
   // Segment-based adjustments
   if (customer.segment === "Professional" || customer.segment === "Corporate") {
-    if (recommendedProduct.includes("Retirement") || recommendedProduct.includes("Business")) {
+    if (
+      recommendedProduct.includes("Retirement") ||
+      recommendedProduct.includes("Business")
+    ) {
       probability += 10;
     }
   } else if (customer.segment === "Informal Sector") {
-    if (recommendedProduct.includes("Funeral") || recommendedProduct.includes("Education")) {
+    if (
+      recommendedProduct.includes("Funeral") ||
+      recommendedProduct.includes("Education")
+    ) {
       probability += 10;
     }
   }
@@ -75,8 +102,8 @@ function estimateRevenue(product: string, segment: string): number {
 
   // Adjust based on segment
   const multipliers: Record<string, number> = {
-    "Corporate": 1.5,
-    "Professional": 1.3,
+    Corporate: 1.5,
+    Professional: 1.3,
     "Small Business": 1.1,
     "Informal Sector": 0.8,
   };
@@ -86,7 +113,7 @@ function estimateRevenue(product: string, segment: string): number {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const advisorIdOrNumber = params.id;
@@ -100,7 +127,7 @@ export async function GET(
       if (!advisor) {
         return NextResponse.json(
           { error: "Advisor not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
       advisorId = advisor.id;
@@ -128,7 +155,10 @@ export async function GET(
       const currentProducts = policies
         .map((p: any) => p.product_type || p.product_subtype)
         .filter((p: string) => p && p !== "Unknown")
-        .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index); // Remove duplicates
+        .filter(
+          (value: string, index: number, self: string[]) =>
+            self.indexOf(value) === index,
+        ); // Remove duplicates
 
       if (currentProducts.length === 0) continue;
 
@@ -146,7 +176,10 @@ export async function GET(
 
       // If no recommendations from current products, suggest based on segment
       if (recommendedProducts.size === 0) {
-        if (client.segment === "Professional" || client.segment === "Corporate") {
+        if (
+          client.segment === "Professional" ||
+          client.segment === "Corporate"
+        ) {
           recommendedProducts.add("Retirement Annuity");
           recommendedProducts.add("Business Insurance");
         } else if (client.segment === "Informal Sector") {
@@ -160,13 +193,26 @@ export async function GET(
 
       // Create opportunity for each recommended product
       recommendedProducts.forEach((product) => {
-        const probability = calculateProbability(client, currentProducts, product);
-        const potentialRevenue = estimateRevenue(product, client.segment || "Informal Sector");
+        const probability = calculateProbability(
+          client,
+          currentProducts,
+          product,
+        );
+        const potentialRevenue = estimateRevenue(
+          product,
+          client.segment || "Informal Sector",
+        );
 
         opportunities.push({
           clientId: client.id,
           customerNumber: client.customer_number,
-          clientName: `${client.first_name} ${client.last_name}`,
+          // Show full customer name with customer number
+          clientName:
+            client.first_name && client.last_name
+              ? client.customer_number
+                ? `${client.first_name} ${client.last_name} (${client.customer_number})`
+                : `${client.first_name} ${client.last_name}`
+              : client.customer_number || "Unknown Client",
           currentProducts,
           recommendedProduct: product,
           probability: Math.round(probability),
@@ -182,15 +228,15 @@ export async function GET(
     return NextResponse.json(topOpportunities);
   } catch (error) {
     console.error("Error calculating cross-sell opportunities:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       {
         error: "Failed to calculate cross-sell opportunities",
         message: errorMessage,
         timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

@@ -1,0 +1,240 @@
+// app/providers/CopilotKitProvider.tsx
+// CopilotKit Provider Component - Wraps the application with CopilotKit context
+
+"use client";
+
+import { CopilotKit } from "@copilotkit/react-core";
+import { useCopilotAction } from "@copilotkit/react-core";
+import FloatingChatWidget from "@/components/FloatingChatWidget";
+import { usePersonaState } from "@/lib/hooks/usePersonaState";
+import { CUSTOMER_SYSTEM_PROMPT, ADVISER_SYSTEM_PROMPT } from "@/lib/agent/prompts";
+
+interface CopilotKitProviderProps {
+  children: React.ReactNode;
+}
+
+// Component that registers frontend actions - must be inside CopilotKit
+function CopilotKitActions({ personaState }: { personaState: { customerPersona: string | null; advisorPersona: string | null; userType: "customer" | "advisor" } }) {
+  // Register frontend actions that the AI can trigger
+  useCopilotAction({
+    name: "getCustomerProfile",
+    description: "Get the currently selected customer's profile information including name, segment, engagement score, policies, claims, and financial details",
+    parameters: [],
+    handler: async () => {
+      if (!personaState.customerPersona) {
+        return "No customer persona selected. Please select a customer persona first by visiting /customer/select";
+      }
+
+      try {
+        // First try to get cached data from sessionStorage
+        const cachedData = typeof window !== "undefined" 
+          ? sessionStorage.getItem("customerPersonaData")
+          : null;
+        
+        let customerData: any = null;
+        if (cachedData) {
+          try {
+            customerData = JSON.parse(cachedData);
+          } catch (e) {
+            // If parsing fails, continue to API fetch
+          }
+        }
+
+        // Fetch fresh data from API (always fetch to get latest)
+        const [customerResponse, policiesResponse, claimsResponse] = await Promise.all([
+          fetch(`/api/customers?number=${personaState.customerPersona}`),
+          fetch(`/api/policies?customerNumber=${personaState.customerPersona}`).catch(() => null),
+          fetch(`/api/claims?customerNumber=${personaState.customerPersona}`).catch(() => null),
+        ]);
+        
+        if (!customerResponse.ok) {
+          if (customerResponse.status === 404) {
+            return `Customer ${personaState.customerPersona} not found. Please select a valid customer persona.`;
+          }
+          throw new Error(`API returned ${customerResponse.status}`);
+        }
+
+        const data = await customerResponse.json();
+        const policies = policiesResponse?.ok ? await policiesResponse.json() : [];
+        const claims = claimsResponse?.ok ? await claimsResponse.json() : [];
+
+        const activePolicies = policies.filter((p: any) => p.status === "Active");
+        const totalCoverage = activePolicies.reduce((sum: number, p: any) => sum + (parseFloat(p.coverageAmount || 0)), 0);
+        const totalPremium = activePolicies.reduce((sum: number, p: any) => sum + (parseFloat(p.premiumAmount || 0)), 0);
+
+        return `Customer Profile:
+- Name: ${data.firstName} ${data.lastName}
+- Customer Number: ${data.customerNumber}
+- Segment: ${data.segment}
+- Engagement Score: ${data.engagementScore}/100
+- Location: ${data.city ? `${data.city}, ${data.region}` : data.region || "Not specified"}
+- Occupation: ${data.occupation || "Not specified"}
+- Monthly Income: ${data.monthlyIncome ? `N$${data.monthlyIncome.toLocaleString()}` : "Not specified"}
+- Marital Status: ${data.maritalStatus || "Not specified"}
+- Dependents: ${data.dependentsCount || 0}
+- Digital Adoption: ${data.digitalAdoption || "Not specified"}
+- Preferred Language: ${data.preferredLanguage || "Not specified"}
+- Preferred Contact: ${data.preferredContactMethod || "Not specified"}
+
+Policies:
+- Total Policies: ${policies.length} (${activePolicies.length} active)
+- Total Coverage: N$${totalCoverage.toLocaleString()}
+- Total Monthly Premium: N$${totalPremium.toLocaleString()}
+- Policy Types: ${[...new Set(activePolicies.map((p: any) => p.productType))].join(", ") || "None"}
+
+Claims:
+- Total Claims: ${claims.length}
+- Recent Claims: ${claims.slice(0, 3).map((c: any) => `${c.claimType} (${c.status})`).join(", ") || "None"}`;
+      } catch (error) {
+        console.error("Error fetching customer profile:", error);
+        return `Error fetching customer profile: ${error instanceof Error ? error.message : "Unknown error"}. Customer number: ${personaState.customerPersona}`;
+      }
+    },
+  });
+
+  useCopilotAction({
+    name: "getAdvisorProfile",
+    description: "Get the currently selected advisor's profile information including name, specialization, client count, tasks, and performance metrics",
+    parameters: [],
+    handler: async () => {
+      if (!personaState.advisorPersona) {
+        return "No advisor persona selected. Please select an advisor persona first by visiting /advisor/select";
+      }
+
+      try {
+        // Normalize advisor ID format (handle both ADV-001 and ADV001)
+        let advisorId = personaState.advisorPersona;
+        if (advisorId && !advisorId.includes('-')) {
+          // Convert ADV001 to ADV-001 format
+          advisorId = advisorId.replace(/ADV(\d{3})/, 'ADV-$1');
+        }
+
+        // Fetch advisor data, clients, and tasks in parallel
+        const [advisorResponse, clientsResponse, tasksResponse] = await Promise.all([
+          fetch(`/api/advisors?number=${advisorId}`),
+          fetch(`/api/advisors/${advisorId}/clients`).catch(() => null),
+          fetch(`/api/tasks?advisorId=${advisorId}`).catch(() => null),
+        ]);
+        
+        if (!advisorResponse.ok) {
+          if (advisorResponse.status === 404) {
+            return `Advisor ${advisorId} not found. Please select a valid advisor persona.`;
+          }
+          throw new Error(`API returned ${advisorResponse.status}`);
+        }
+
+        const data = await advisorResponse.json();
+        const clients = clientsResponse?.ok ? await clientsResponse.json() : [];
+        const tasks = tasksResponse?.ok ? await tasksResponse.json() : [];
+
+        const openTasks = tasks.filter((t: any) => t.status === "Open" || t.status === "In Progress");
+        const urgentTasks = tasks.filter((t: any) => t.priority === "Urgent" || t.priority === "High");
+
+        return `Advisor Profile:
+- Name: ${data.name}
+- Advisor Number: ${data.advisorNumber || data.id}
+- Specialization: ${data.specialization || "Not specified"}
+- Location: ${data.location || data.region || "Not specified"}
+- Experience: ${data.experience || data.experienceYears ? `${data.experienceYears} years` : "Not specified"}
+- Clients: ${data.clients || data.clientCount || clients.length || 0}
+- Satisfaction Score: ${data.satisfactionScore ? `${data.satisfactionScore}/100` : "Not specified"}
+- Languages: ${data.languages ? data.languages.join(", ") : "Not specified"}
+- Status: ${data.status || "Active"}
+
+Performance:
+- Monthly Target: ${data.monthlyTarget ? `N$${data.monthlyTarget.toLocaleString()}` : "Not set"}
+- Current Sales: ${data.currentSales ? `N$${data.currentSales.toLocaleString()}` : "N$0"}
+- Conversion Rate: ${data.conversionRate ? `${data.conversionRate}%` : "Not available"}
+- Performance Rating: ${data.performanceRating || "Not rated"}
+
+Tasks:
+- Total Tasks: ${tasks.length}
+- Open Tasks: ${openTasks.length}
+- Urgent/High Priority: ${urgentTasks.length}
+
+Clients:
+- Active Clients: ${clients.length}
+- Top Clients: ${clients.slice(0, 3).map((c: any) => c.name || `${c.firstName} ${c.lastName}`).join(", ") || "None"}`;
+      } catch (error) {
+        console.error("Error fetching advisor profile:", error);
+        return `Error fetching advisor profile: ${error instanceof Error ? error.message : "Unknown error"}. Advisor ID: ${personaState.advisorPersona}`;
+      }
+    },
+  });
+
+  useCopilotAction({
+    name: "navigateToPage",
+    description: "Navigate to a specific page in the application. Use this when the user asks to go to a page like policies, claims, products, or their profile.",
+    parameters: [
+      {
+        name: "path",
+        type: "string",
+        description: "The path to navigate to. Examples: '/policies' (customer policies), '/claims' (file a claim), '/products' (view products), '/customer/profile/[id]' (customer profile), '/advisor' (advisor dashboard), '/chat' (AI chat)",
+        required: true,
+      },
+    ],
+    handler: async ({ path }: { path: string }) => {
+      if (typeof window === "undefined") {
+        return "Navigation not available (server-side)";
+      }
+
+      try {
+        // Validate path starts with /
+        const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+        
+        // If navigating to profile pages, use current persona
+        if (normalizedPath.includes("/customer/profile/") && personaState.customerPersona) {
+          window.location.href = `/customer/profile/${personaState.customerPersona}`;
+          return `Navigating to customer profile for ${personaState.customerPersona}...`;
+        }
+        
+        if (normalizedPath.includes("/advisor/profile/") && personaState.advisorPersona) {
+          // Normalize advisor ID format
+          let advisorId = personaState.advisorPersona;
+          if (advisorId && !advisorId.includes('-')) {
+            advisorId = advisorId.replace(/ADV(\d{3})/, 'ADV-$1');
+          }
+          window.location.href = `/advisor/profile/${advisorId}`;
+          return `Navigating to advisor profile for ${advisorId}...`;
+        }
+
+        window.location.href = normalizedPath;
+        return `Navigating to ${normalizedPath}...`;
+      } catch (error) {
+        console.error("Navigation error:", error);
+        return `Error navigating to ${path}: ${error instanceof Error ? error.message : "Unknown error"}`;
+      }
+    },
+  });
+
+  return null; // This component only registers actions
+}
+
+export function CopilotKitProvider({ children }: CopilotKitProviderProps) {
+  // Use shared persona state hook (eliminates duplicate polling)
+  const personaState = usePersonaState();
+
+  // Get the appropriate system prompt based on user type
+  const systemPrompt = personaState.userType === "advisor" 
+    ? ADVISER_SYSTEM_PROMPT 
+    : CUSTOMER_SYSTEM_PROMPT;
+
+  return (
+    <CopilotKit
+      runtimeUrl="/api/copilotkit"
+      publicApiKey={process.env.NEXT_PUBLIC_COPILOTKIT_API_KEY || ""}
+      // Pass persona state as context properties
+      properties={{
+        selectedCustomerPersona: personaState.customerPersona,
+        selectedAdvisorPersona: personaState.advisorPersona,
+        userType: personaState.userType,
+      }}
+    >
+      <CopilotKitActions personaState={personaState} />
+      {/* Floating Chat Widget - Button + Window like old ChatWidget */}
+      <FloatingChatWidget />
+      {children}
+    </CopilotKit>
+  );
+}
+

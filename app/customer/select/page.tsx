@@ -16,9 +16,8 @@ import {
   BriefcaseIcon,
   MapPinIcon,
   CurrencyDollarIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
+import { dispatchPersonaChanged } from "@/lib/hooks/usePersonaState";
 
 export default function CustomerPersonaSelection() {
   const router = useRouter();
@@ -28,8 +27,7 @@ export default function CustomerPersonaSelection() {
   const [error, setError] = useState<string | null>(null);
   const [filterSegment, setFilterSegment] = useState<string>("all");
   const [filterRegion, setFilterRegion] = useState<string>("all");
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const [viewMode, setViewMode] = useState<"grid" | "carousel">("carousel");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   useEffect(() => {
     // Fetch customers from API
@@ -41,17 +39,31 @@ export default function CustomerPersonaSelection() {
         }
         const data = await response.json();
         // Transform data to match expected format
-        const transformed = data.map((customer: any) => ({
-          ...customer,
-          role: customer.occupation || customer.segment,
-          location: customer.city ? `${customer.city}, ${customer.region}` : customer.region,
-          monthlyIncome: customer.monthlyIncome 
-            ? `N$${customer.monthlyIncome.toLocaleString()}` 
-            : "Not specified",
-          family: customer.maritalStatus 
-            ? `${customer.maritalStatus}${customer.dependentsCount > 0 ? `, ${customer.dependentsCount} ${customer.dependentsCount === 1 ? 'child' : 'children'}` : ''}`
-            : "Not specified",
-        }));
+        const transformed = data.map((customer: any) => {
+          // Handle monthlyIncome - check if already formatted (string) or needs formatting (number)
+          let monthlyIncomeDisplay: string;
+          if (!customer.monthlyIncome) {
+            monthlyIncomeDisplay = "Not specified";
+          } else if (typeof customer.monthlyIncome === "string") {
+            // Already formatted by PII mask (e.g., "N$10,000")
+            monthlyIncomeDisplay = customer.monthlyIncome;
+          } else {
+            // Number - format it
+            monthlyIncomeDisplay = `N$${Number(customer.monthlyIncome).toLocaleString()}`;
+          }
+
+          return {
+            ...customer,
+            role: customer.occupation || customer.segment,
+            location: customer.city
+              ? `${customer.city}, ${customer.region}`
+              : customer.region,
+            monthlyIncome: monthlyIncomeDisplay,
+            family: customer.maritalStatus
+              ? `${customer.maritalStatus}${customer.dependentsCount > 0 ? `, ${customer.dependentsCount} ${customer.dependentsCount === 1 ? "child" : "children"}` : ""}`
+              : "Not specified",
+          };
+        });
         setCustomerPersonas(transformed);
       } catch (err) {
         console.error("Error fetching customers:", err);
@@ -83,40 +95,33 @@ export default function CustomerPersonaSelection() {
     return Array.from(regions).sort();
   }, [customerPersonas]);
 
-  // Filter personas based on selected filters
+  // Filter personas based on selected filters and search
   const filteredPersonas = useMemo(() => {
     return customerPersonas.filter((persona) => {
-      const segmentMatch = filterSegment === "all" || persona.segment === filterSegment;
-      const regionMatch = filterRegion === "all" || persona.region === filterRegion;
-      return segmentMatch && regionMatch;
+      const matchesSearch =
+        searchTerm === "" ||
+        persona.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        persona.occupation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        persona.region?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        persona.segment?.toLowerCase().includes(searchTerm.toLowerCase());
+      const segmentMatch =
+        filterSegment === "all" || persona.segment === filterSegment;
+      const regionMatch =
+        filterRegion === "all" || persona.region === filterRegion;
+      return matchesSearch && segmentMatch && regionMatch;
     });
-  }, [customerPersonas, filterSegment, filterRegion]);
-
-  // Carousel navigation
-  const cardsPerPage = 3; // Show 3 cards at a time
-  const maxIndex = Math.max(0, Math.ceil(filteredPersonas.length / cardsPerPage) - 1);
-  
-  const nextCarousel = () => {
-    setCarouselIndex((prev) => Math.min(prev + 1, maxIndex));
-  };
-
-  const prevCarousel = () => {
-    setCarouselIndex((prev) => Math.max(prev - 1, 0));
-  };
-
-  const visiblePersonas = useMemo(() => {
-    if (viewMode === "carousel") {
-      const start = carouselIndex * cardsPerPage;
-      return filteredPersonas.slice(start, start + cardsPerPage);
-    }
-    return filteredPersonas;
-  }, [filteredPersonas, carouselIndex, viewMode]);
+  }, [customerPersonas, filterSegment, filterRegion, searchTerm]);
 
   const handleContinue = () => {
     if (selectedPersona) {
       // Store selected persona in sessionStorage
       const persona = filteredPersonas.find((p) => p.id === selectedPersona);
       if (persona) {
+        // Clear any existing advisor persona to prevent context conflicts
+        sessionStorage.removeItem("selectedAdvisorPersona");
+        sessionStorage.removeItem("advisorPersonaData");
+        dispatchPersonaChanged(); // Notify listeners of persona change
+
         sessionStorage.setItem("selectedCustomerPersona", selectedPersona);
         sessionStorage.setItem("customerPersonaData", JSON.stringify(persona));
       }
@@ -128,10 +133,16 @@ export default function CustomerPersonaSelection() {
   // Note: Persona selection page is always accessible for switching personas
   // No auto-redirect needed as users may want to switch personas
 
-  // Reset carousel index when filters change
+
+  // Clear selection if selected persona is no longer in filtered list
   useEffect(() => {
-    setCarouselIndex(0);
-  }, [filterSegment, filterRegion]);
+    if (
+      selectedPersona &&
+      !filteredPersonas.find((p) => p.id === selectedPersona)
+    ) {
+      setSelectedPersona(null);
+    }
+  }, [filteredPersonas, selectedPersona]);
 
   if (loading) {
     return (
@@ -184,139 +195,79 @@ export default function CustomerPersonaSelection() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <p className="text-lg text-om-grey text-center max-w-2xl mx-auto mb-6">
-              Select a customer persona to experience LifeCompass from their perspective. 
-              Each persona represents a real Namibian customer with unique financial needs and circumstances.
-            </p>
-
-            {/* Filter Dropdowns */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
-              <div className="form-control w-full sm:w-auto max-w-xs">
-                <label className="label">
-                  <span className="label-text text-om-grey">Filter by Segment</span>
-                </label>
-                <select
-                  className="select select-bordered w-full"
-                  value={filterSegment}
-                  onChange={(e) => setFilterSegment(e.target.value)}
-                >
-                  <option value="all">All Segments</option>
-                  {uniqueSegments.map((segment) => (
-                    <option key={segment} value={segment}>
-                      {segment}
-                    </option>
-                  ))}
-                </select>
+            {/* Search & Filters */}
+            <div className="flex flex-col md:flex-row gap-4 items-center mb-6">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Search customers by name, occupation, or region..."
+                  className="input input-bordered w-full input-om"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-
-              <div className="form-control w-full sm:w-auto max-w-xs">
-                <label className="label">
-                  <span className="label-text text-om-grey">Filter by Region</span>
-                </label>
-                <select
-                  className="select select-bordered w-full"
-                  value={filterRegion}
-                  onChange={(e) => setFilterRegion(e.target.value)}
-                >
-                  <option value="all">All Regions</option>
-                  {uniqueRegions.map((region) => (
-                    <option key={region} value={region}>
-                      {region}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* View Mode Toggle */}
-              <div className="form-control w-full sm:w-auto max-w-xs">
-                <label className="label">
-                  <span className="label-text text-om-grey">View Mode</span>
-                </label>
-                <div className="btn-group">
-                  <button
-                    className={`btn ${viewMode === "carousel" ? "btn-active" : ""}`}
-                    onClick={() => setViewMode("carousel")}
-                  >
-                    Carousel
-                  </button>
-                  <button
-                    className={`btn ${viewMode === "grid" ? "btn-active" : ""}`}
-                    onClick={() => setViewMode("grid")}
-                  >
-                    Grid
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center mb-4">
-              <p className="text-sm text-om-grey">
-                Showing {filteredPersonas.length} of {customerPersonas.length} personas
-              </p>
+              <select
+                className="select select-bordered input-om"
+                value={filterSegment}
+                onChange={(e) => setFilterSegment(e.target.value)}
+              >
+                <option value="all">All Segments</option>
+                {uniqueSegments.map((segment) => (
+                  <option key={segment} value={segment}>
+                    {segment}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="select select-bordered input-om"
+                value={filterRegion}
+                onChange={(e) => setFilterRegion(e.target.value)}
+              >
+                <option value="all">All Regions</option>
+                {uniqueRegions.map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
             </div>
           </motion.div>
 
-          {/* Carousel View */}
-          {viewMode === "carousel" && (
-            <div className="mb-8">
-              <div className="relative">
-                {/* Carousel Container */}
-                <div className="flex items-center gap-4 overflow-hidden">
-                  {/* Previous Button */}
-                  <button
-                    onClick={prevCarousel}
-                    disabled={carouselIndex === 0}
-                    className={`btn btn-circle btn-ghost ${carouselIndex === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-                  >
-                    <ChevronLeftIcon className="w-6 h-6" />
-                  </button>
-
-                  {/* Persona Cards */}
-                  <div className="flex-1 grid md:grid-cols-3 gap-6">
-                    {visiblePersonas.map((persona, idx) => (
-                      <PersonaCard
-                        key={persona.id}
-                        persona={persona}
-                        selectedPersona={selectedPersona}
-                        setSelectedPersona={setSelectedPersona}
-                        idx={idx}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
-                    onClick={nextCarousel}
-                    disabled={carouselIndex >= maxIndex}
-                    className={`btn btn-circle btn-ghost ${carouselIndex >= maxIndex ? "opacity-50 cursor-not-allowed" : ""}`}
-                  >
-                    <ChevronRightIcon className="w-6 h-6" />
-                  </button>
-                </div>
-
-                {/* Carousel Indicators */}
-                {maxIndex > 0 && (
-                  <div className="flex justify-center gap-2 mt-6">
-                    {Array.from({ length: maxIndex + 1 }).map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCarouselIndex(idx)}
-                        className={`w-2 h-2 rounded-full transition-all ${
-                          idx === carouselIndex
-                            ? "bg-om-heritage-green w-8"
-                            : "bg-om-grey-30"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+          {/* Customers Grid */}
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-bold text-om-navy">
+              {filteredPersonas.length} Customer{filteredPersonas.length !== 1 ? "s" : ""} Found
+            </h2>
+            <div className="text-sm text-om-grey">
+              Showing {filteredPersonas.length} of {customerPersonas.length} customers
             </div>
-          )}
+          </div>
 
-          {/* Grid View */}
-          {viewMode === "grid" && (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {/* Empty State */}
+          {filteredPersonas.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-4 text-om-grey font-bold">
+                NO CUSTOMERS FOUND
+              </div>
+              <h3 className="text-xl font-bold text-om-navy mb-2">
+                No Customers Found
+              </h3>
+              <p className="text-om-grey mb-4">
+                Try adjusting your search criteria or filters.
+              </p>
+              <button
+                className="btn-om-primary"
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterSegment("all");
+                  setFilterRegion("all");
+                }}
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
               {filteredPersonas.map((persona, idx) => (
                 <PersonaCard
                   key={persona.id}
@@ -336,7 +287,9 @@ export default function CustomerPersonaSelection() {
               size="lg"
               onClick={handleContinue}
               disabled={!selectedPersona}
-              className={!selectedPersona ? "opacity-50 cursor-not-allowed" : ""}
+              className={
+                !selectedPersona ? "opacity-50 cursor-not-allowed" : ""
+              }
             >
               Continue to Profile
             </OMButton>
@@ -347,7 +300,7 @@ export default function CustomerPersonaSelection() {
   );
 }
 
-// Persona Card Component
+// Persona Card Component - Matches advisors page style
 function PersonaCard({
   persona,
   selectedPersona,
@@ -361,57 +314,74 @@ function PersonaCard({
 }) {
   return (
     <motion.div
+      key={persona.id}
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: idx * 0.1 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: idx * 0.1 }}
+      viewport={{ once: true }}
       onClick={() => setSelectedPersona(persona.id)}
-      className={`card-om cursor-pointer transition-all duration-200 ${
+      className={`card-om p-6 cursor-pointer transition-all duration-200 ${
         selectedPersona === persona.id
           ? "ring-2 ring-om-heritage-green shadow-lg"
           : "hover:shadow-md"
       }`}
     >
-      <div className="card-body">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="text-xl font-bold text-om-navy mb-1">
-              {persona.name}
-            </h3>
-            <p className="text-sm text-om-grey">{persona.role}</p>
+      <div className="flex items-start gap-4">
+        {persona.avatarUrl && (
+          <div className="avatar placeholder">
+            <div className="rounded-full w-16 h-16 overflow-hidden ring-2 ring-om-heritage-green/20 aspect-square">
+              <img
+                src={persona.avatarUrl}
+                alt={persona.name}
+                className="w-full h-full object-cover aspect-square"
+              />
+            </div>
           </div>
-          <div
-            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-              selectedPersona === persona.id
-                ? "bg-om-heritage-green border-om-heritage-green"
-                : "border-om-grey"
-            }`}
-          >
-            {selectedPersona === persona.id && (
-              <div className="w-3 h-3 rounded-full bg-white" />
-            )}
-          </div>
-        </div>
+        )}
 
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2 text-om-grey">
-            <MapPinIcon className="w-4 h-4 flex-shrink-0" />
-            <span>{persona.location}</span>
+        <div className="flex-1">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <h3 className="text-xl font-bold text-om-navy">{persona.name}</h3>
+              <p className="text-om-green font-semibold">{persona.segment}</p>
+            </div>
+            <div
+              className={`w-6 h-6 min-w-6 min-h-6 aspect-square rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                selectedPersona === persona.id
+                  ? "bg-om-heritage-green border-om-heritage-green"
+                  : "border-om-grey-15"
+              }`}
+            >
+              {selectedPersona === persona.id && (
+                <div className="w-3 h-3 min-w-3 min-h-3 aspect-square rounded-full bg-white" />
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-om-grey">
-            <BriefcaseIcon className="w-4 h-4 flex-shrink-0" />
-            <span>{persona.occupation}</span>
-          </div>
-          <div className="flex items-center gap-2 text-om-grey">
-            <CurrencyDollarIcon className="w-4 h-4 flex-shrink-0" />
-            <span>{persona.monthlyIncome}</span>
-          </div>
-          <div className="flex items-center gap-2 text-om-grey">
-            <UserIcon className="w-4 h-4 flex-shrink-0" />
-            <span>{persona.family}</span>
+
+          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+            <div>
+              <span className="text-om-grey">Region:</span>
+              <div className="font-semibold text-om-navy">{persona.region}</div>
+            </div>
+            <div>
+              <span className="text-om-grey">Occupation:</span>
+              <div className="font-semibold text-om-navy">
+                {persona.occupation}
+              </div>
+            </div>
+            <div>
+              <span className="text-om-grey">Monthly Income:</span>
+              <div className="font-semibold text-om-navy">
+                {persona.monthlyIncome}
+              </div>
+            </div>
+            <div>
+              <span className="text-om-grey">Family:</span>
+              <div className="font-semibold text-om-navy">{persona.family}</div>
+            </div>
           </div>
         </div>
       </div>
     </motion.div>
   );
 }
-

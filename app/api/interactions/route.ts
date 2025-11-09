@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCustomerInteractions, getCustomerByNumber } from "@/lib/db/neon";
 
 // Force dynamic rendering since we use request.url
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       if (!customer) {
         return NextResponse.json(
           { error: "Customer not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
       // Get interactions for customer
@@ -35,13 +35,19 @@ export async function GET(request: NextRequest) {
       // Get interactions for advisor (requires new helper function)
       // For now, return empty - will need to implement getInteractionsByAdvisor
       return NextResponse.json(
-        { error: "Advisor interactions not yet implemented. Use customerNumber or customerId." },
-        { status: 400 }
+        {
+          error:
+            "Advisor interactions not yet implemented. Use customerNumber or customerId.",
+        },
+        { status: 400 },
       );
     } else {
       return NextResponse.json(
-        { error: "customerNumber, customerId, or advisorId parameter is required" },
-        { status: 400 }
+        {
+          error:
+            "customerNumber, customerId, or advisorId parameter is required",
+        },
+        { status: 400 },
       );
     }
 
@@ -58,7 +64,9 @@ export async function GET(request: NextRequest) {
       intent: interaction.intent,
       outcome: interaction.outcome,
       durationMinutes: interaction.duration_minutes,
-      qualityScore: interaction.quality_score ? parseFloat(interaction.quality_score.toString()) : null,
+      qualityScore: interaction.quality_score
+        ? parseFloat(interaction.quality_score.toString())
+        : null,
       followUpRequired: interaction.follow_up_required || false,
       followUpDate: interaction.follow_up_date,
       customerId: interaction.customer_id,
@@ -71,8 +79,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching interactions:", error);
     return NextResponse.json(
       { error: "Failed to fetch interactions" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

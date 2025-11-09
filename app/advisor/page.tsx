@@ -49,7 +49,9 @@ export default function AdvisorDashboard() {
   const router = useRouter();
   const [selectedAdvisor, setSelectedAdvisor] = useState<Advisor | null>(null);
   const [advisors, setAdvisors] = useState<Advisor[]>([]);
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(
+    null,
+  );
   const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
   const [upcomingMeetings, setUpcomingMeetings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,11 +89,13 @@ export default function AdvisorDashboard() {
         const response = await fetch("/api/advisors");
         if (!response.ok) throw new Error("Failed to fetch advisors");
         const data = await response.json();
-        setAdvisors(data.map((a: any) => ({
-          id: a.id,
-          name: a.name,
-          advisorNumber: a.advisorNumber || a.id,
-        })));
+        setAdvisors(
+          data.map((a: any) => ({
+            id: a.id,
+            name: a.name,
+            advisorNumber: a.advisorNumber || a.id,
+          })),
+        );
       } catch (err) {
         console.error("Error fetching advisors:", err);
       }
@@ -107,10 +111,12 @@ export default function AdvisorDashboard() {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/advisors/${selectedAdvisor.id}/dashboard`);
+        const response = await fetch(
+          `/api/advisors/${selectedAdvisor.id}/dashboard`,
+        );
         if (!response.ok) throw new Error("Failed to fetch dashboard data");
         const data = await response.json();
-        
+
         setDashboardStats(data.stats);
         setRecentTasks(data.recentTasks || []);
         setUpcomingMeetings(data.upcomingMeetings || []);
@@ -195,7 +201,10 @@ export default function AdvisorDashboard() {
                   setSelectedAdvisor(advisor);
                   // Update sessionStorage
                   sessionStorage.setItem("selectedAdvisorPersona", advisor.id);
-                  sessionStorage.setItem("advisorPersonaData", JSON.stringify(advisor));
+                  sessionStorage.setItem(
+                    "advisorPersonaData",
+                    JSON.stringify(advisor),
+                  );
                 }
               }}
             >
@@ -220,7 +229,9 @@ export default function AdvisorDashboard() {
             <div className="card-body p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs sm:text-sm opacity-90">Active Clients</div>
+                  <div className="text-xs sm:text-sm opacity-90">
+                    Active Clients
+                  </div>
                   <div className="text-2xl sm:text-3xl md:text-4xl font-bold">
                     {dashboardStats.activeClients}
                   </div>
@@ -250,7 +261,9 @@ export default function AdvisorDashboard() {
             <div className="card-body p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs sm:text-sm opacity-90">Tasks Today</div>
+                  <div className="text-xs sm:text-sm opacity-90">
+                    Tasks Today
+                  </div>
                   <div className="text-2xl sm:text-3xl md:text-4xl font-bold">
                     {dashboardStats.tasksToday}
                   </div>
@@ -280,7 +293,9 @@ export default function AdvisorDashboard() {
             <div className="card-body p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs sm:text-sm opacity-90">Meetings Today</div>
+                  <div className="text-xs sm:text-sm opacity-90">
+                    Meetings Today
+                  </div>
                   <div className="text-2xl sm:text-3xl md:text-4xl font-bold">
                     {dashboardStats.meetingsScheduled}
                   </div>
@@ -310,7 +325,9 @@ export default function AdvisorDashboard() {
             <div className="card-body p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs sm:text-sm text-om-grey">Satisfaction</div>
+                  <div className="text-xs sm:text-sm text-om-grey">
+                    Satisfaction
+                  </div>
                   <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-om-green">
                     {dashboardStats.clientSatisfaction}
                   </div>
@@ -430,8 +447,8 @@ export default function AdvisorDashboard() {
                 <h2 className="text-lg sm:text-xl font-bold text-om-navy">
                   Today's Meetings
                 </h2>
-                <Link 
-                  href="/advisor/communicate" 
+                <Link
+                  href="/advisor/communicate"
                   className="btn btn-xs sm:btn-sm btn-om-outline w-full sm:w-auto"
                 >
                   Schedule New
@@ -513,7 +530,9 @@ export default function AdvisorDashboard() {
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <h3 className="font-bold text-sm sm:text-base text-om-navy break-words">Find Clients</h3>
+              <h3 className="font-bold text-sm sm:text-base text-om-navy break-words">
+                Find Clients
+              </h3>
             </div>
           </Link>
           <Link
@@ -534,7 +553,9 @@ export default function AdvisorDashboard() {
                   d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
                 />
               </svg>
-              <h3 className="font-bold text-sm sm:text-base text-om-navy break-words">Manage Tasks</h3>
+              <h3 className="font-bold text-sm sm:text-base text-om-navy break-words">
+                Manage Tasks
+              </h3>
             </div>
           </Link>
           <Link
@@ -555,7 +576,9 @@ export default function AdvisorDashboard() {
                   d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                 />
               </svg>
-              <h3 className="font-bold text-sm sm:text-base text-om-navy break-words">View Insights</h3>
+              <h3 className="font-bold text-sm sm:text-base text-om-navy break-words">
+                View Insights
+              </h3>
             </div>
           </Link>
           <Link
@@ -576,7 +599,9 @@ export default function AdvisorDashboard() {
                   d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                 />
               </svg>
-              <h3 className="font-bold text-sm sm:text-base text-om-navy break-words">Knowledge Base</h3>
+              <h3 className="font-bold text-sm sm:text-base text-om-navy break-words">
+                Knowledge Base
+              </h3>
             </div>
           </Link>
         </div>
@@ -584,4 +609,3 @@ export default function AdvisorDashboard() {
     </CorporateLayout>
   );
 }
-

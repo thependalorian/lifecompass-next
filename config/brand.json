@@ -113,17 +113,17 @@
       "primary_vignette": {
         "angle": "90deg",
         "stops": [
-          {"color": "#8dc63f", "position": "0%", "weight": "40%"},
-          {"color": "#009677", "position": "100%", "weight": "60%"}
+          { "color": "#8dc63f", "position": "0%", "weight": "40%" },
+          { "color": "#009677", "position": "100%", "weight": "60%" }
         ],
         "usage": "Headers, hero sections, brand moments"
       },
       "secondary_vignette": {
         "angle": "90deg",
         "stops": [
-          {"color": "#009677", "position": "0%", "weight": "30%"},
-          {"color": "#8dc63f", "position": "55%", "weight": "55%"},
-          {"color": "#f37021", "position": "100%", "weight": "15%"}
+          { "color": "#009677", "position": "0%", "weight": "30%" },
+          { "color": "#8dc63f", "position": "55%", "weight": "55%" },
+          { "color": "#f37021", "position": "100%", "weight": "15%" }
         ],
         "usage": "Print applications only, when matched to imagery"
       }
@@ -492,12 +492,7 @@
   "voice": {
     "tone": "Professional yet approachable",
     "language": "Clear, jargon-free, plain language",
-    "personality": [
-      "Trustworthy",
-      "Helpful",
-      "Empowering",
-      "Forward-thinking"
-    ],
+    "personality": ["Trustworthy", "Helpful", "Empowering", "Forward-thinking"],
     "avoid": [
       "Financial jargon without explanation",
       "Overly formal or corporate speak",

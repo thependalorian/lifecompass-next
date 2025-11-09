@@ -24,11 +24,10 @@ export default function Footer() {
             </div>
           </div>
           <div className="text-center">
-            <p className="text-xs text-white font-bold">
-              Built by Buffr
-            </p>
+            <p className="text-xs text-white font-bold">Built by Buffr</p>
             <p className="text-xs text-white mt-1 font-bold">
-              George Nekwaya (B.Eng, NUST 🇳🇦, MBA, Brandeis University 🇺🇸) & Etuna Nekwaya (B.Eng, Bohai University 🇨🇳)
+              George Nekwaya (B.Eng, NUST 🇳🇦, MBA, Brandeis University 🇺🇸) &
+              Etuna Nekwaya (B.Eng, Bohai University 🇨🇳)
             </p>
           </div>
           <p className="text-sm text-white/70">
@@ -39,4 +38,3 @@ export default function Footer() {
     </footer>
   );
 }
-

@@ -1,28 +1,82 @@
 // lib/graph/neo4j.ts
 
 import neo4j, { Driver, Session } from "neo4j-driver";
+import { getEnvVar } from "@/lib/utils/env";
 
 let driver: Driver | null = null;
 
+// Retry wrapper for Neo4j operations
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delayMs: number = 1000,
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+
+      // Check if it's a connection timeout or network error
+      const isRetryable =
+        error?.code === "ServiceUnavailable" ||
+        error?.code === "TransientError" ||
+        error?.message?.includes("timeout") ||
+        error?.message?.includes("ECONNREFUSED") ||
+        error?.message?.includes("ENOTFOUND") ||
+        error?.message?.includes("fetch failed") ||
+        error?.message?.includes("Connection closed");
+
+      if (!isRetryable || attempt === maxRetries) {
+        throw error;
+      }
+
+      // Exponential backoff: wait longer between retries
+      const waitTime = delayMs * Math.pow(2, attempt - 1);
+      console.warn(
+        `Neo4j connection attempt ${attempt}/${maxRetries} failed. Retrying in ${waitTime}ms...`,
+        error?.message || error,
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+    }
+  }
+
+  throw lastError || new Error("Neo4j operation failed after retries");
+}
+
 export function getNeo4jDriver(): Driver {
   if (!driver) {
-    const uri = process.env.NEO4J_URI;
-    const username = process.env.NEO4J_USERNAME || process.env.NEO4J_USER;
-    const password = process.env.NEO4J_PASSWORD;
-    
+    // Use validated environment variables
+    const uri = getEnvVar("NEO4J_URI");
+    const username = getEnvVar("NEO4J_USERNAME") || getEnvVar("NEO4J_USER");
+    const password = getEnvVar("NEO4J_PASSWORD");
+
     if (!uri || !username || !password) {
       throw new Error(
-        "Neo4j configuration missing. Required: NEO4J_URI, NEO4J_USERNAME (or NEO4J_USER), and NEO4J_PASSWORD"
+        "Neo4j configuration missing. Required: NEO4J_URI, NEO4J_USERNAME (or NEO4J_USER), and NEO4J_PASSWORD",
       );
     }
-    
+
     try {
-      driver = neo4j.driver(
-        uri,
-        neo4j.auth.basic(username, password),
-      );
+      driver = neo4j.driver(uri, neo4j.auth.basic(username, password), {
+        // Connection timeout: 10 seconds (reduced for faster failure)
+        connectionTimeout: 10000,
+        // Max transaction retry time: 10 seconds (reduced for streaming)
+        maxTransactionRetryTime: 10000,
+        // Connection pool settings
+        maxConnectionPoolSize: 50,
+        // Connection acquisition timeout: 15 seconds (reduced for streaming)
+        connectionAcquisitionTimeout: 15000,
+        // Disable connection liveness check for faster queries
+        disableLosslessIntegers: true,
+      });
     } catch (error) {
-      throw new Error(`Failed to create Neo4j driver: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to create Neo4j driver: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
   return driver;
@@ -37,38 +91,84 @@ export async function runGraphQuery(
     console.warn("Neo4j not configured. Skipping graph query.");
     return [];
   }
-  
-  let driver: Driver;
-  let session: Session | null = null;
-  
-  try {
-    driver = getNeo4jDriver();
-    session = driver.session();
 
-    const result = await session.run(query, params);
-    return result.records.map((record) => {
-      const obj: any = {};
-      record.keys.forEach((key) => {
-        obj[key] = record.get(key);
+  return withRetry(async () => {
+    let driver: Driver;
+    let session: Session | null = null;
+
+    try {
+      driver = getNeo4jDriver();
+      session = driver.session();
+
+      // Ensure limit is an absolute integer (Neo4j requires integer for LIMIT, not float)
+      const processedParams = { ...params };
+      if (processedParams.limit !== undefined) {
+        // Convert to absolute integer explicitly - Neo4j rejects floats like 10.0
+        // Use parseInt to ensure we get a true integer, not a float
+        const limitValue = processedParams.limit;
+        const intLimit = parseInt(String(limitValue), 10);
+        // CRITICAL: Ensure it's a true integer by using Math.floor after parseInt
+        // This handles edge cases where parseInt might not fully convert
+        let finalLimit = isNaN(intLimit) ? 10 : Math.floor(Math.abs(intLimit));
+        
+        // Add explicit conversion to Neo4j Integer type
+        processedParams.limit = neo4j.int(finalLimit);
+      }
+
+      const result = await session.run(query, processedParams);
+      return result.records.map((record) => {
+        const obj: any = {};
+        record.keys.forEach((key) => {
+          obj[key] = record.get(key);
+        });
+        return obj;
       });
-      return obj;
-    });
-  } catch (error: any) {
-    // Handle authentication errors gracefully
-    if (error.code === "Neo.ClientError.Security.Unauthorized" || 
+    } catch (error: any) {
+      // Handle authentication errors gracefully
+      if (
+        error.code === "Neo.ClientError.Security.Unauthorized" ||
         error.message?.includes("authentication failure") ||
-        error.message?.includes("Access denied")) {
-      console.error("Neo4j authentication failed. Check NEO4J_USERNAME and NEO4J_PASSWORD.");
-      console.error("Neo4j error:", error.message);
-      return []; // Return empty array instead of crashing
+        error.message?.includes("Access denied")
+      ) {
+        console.error(
+          "Neo4j authentication failed. Check NEO4J_USERNAME and NEO4J_PASSWORD.",
+        );
+        console.error("Neo4j error:", error.message);
+        return []; // Return empty array instead of crashing
+      }
+
+      // Handle query syntax errors (don't retry these)
+      if (
+        error.code === "Neo.ClientError.Statement.SyntaxError" ||
+        error.code === "Neo.ClientError.Statement.InvalidSyntax"
+      ) {
+        console.error("Neo4j query syntax error:", error.message);
+        console.error("Query:", query.substring(0, 200));
+        return []; // Return empty array for syntax errors
+      }
+
+      // Re-throw retryable errors to trigger retry logic
+      const isRetryable =
+        error?.code === "ServiceUnavailable" ||
+        error?.code === "TransientError" ||
+        error?.message?.includes("timeout") ||
+        error?.message?.includes("ECONNREFUSED") ||
+        error?.message?.includes("ENOTFOUND") ||
+        error?.message?.includes("fetch failed") ||
+        error?.message?.includes("Connection closed");
+
+      if (isRetryable) {
+        throw error; // Let retry wrapper handle it
+      }
+
+      console.error("Neo4j query error:", error.message);
+      return []; // Return empty array for non-retryable errors
+    } finally {
+      if (session) {
+        await session.close();
+      }
     }
-    console.error("Neo4j query error:", error.message);
-    return []; // Return empty array for any other errors
-  } finally {
-    if (session) {
-      await session.close();
-    }
-  }
+  });
 }
 
 // Graph construction utilities
@@ -191,9 +291,12 @@ export async function searchGraphByText(query: string, limit = 10) {
     LIMIT $limit
   `;
 
+  // Ensure absolute integer for Neo4j (use Math.floor after parseInt to ensure true integer)
+  const intLimit = Math.floor(Math.abs(parseInt(String(limit), 10))) || 10;
+  
   return await runGraphQuery(searchQuery, {
     query,
-    limit,
+    limit: intLimit,
   });
 }
 

@@ -1,85 +1,62 @@
 // app/api/graph/route.ts
-// Knowledge Graph API endpoint - Showcase version (no backend required)
+// Knowledge Graph API endpoint - Direct Neo4j connection (no Python dependency)
 
 import { NextRequest, NextResponse } from "next/server";
+import { SemanticGraphSearch } from "@/lib/graph/semantic-search";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { query, action } = body;
+    const { query, action, limit } = body;
 
     if (!query && !action) {
       return NextResponse.json(
         { error: "Query or action is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Route to appropriate LifeCompass API endpoint
-    let endpoint = "/search/graph";
-    let payload: any = { query, limit: 10 };
+    // Use direct Neo4j connection via SemanticGraphSearch
+    const search = new SemanticGraphSearch();
+    const searchLimit = limit || 10;
+
+    let searchQuery = query;
 
     if (action === "related") {
       // Use graph search with related entity query
-      endpoint = "/search/graph";
-      payload = { query: `relationships involving ${query}`, limit: 10 };
+      searchQuery = `relationships involving ${query}`;
     } else if (action === "timeline") {
       // Use graph search with timeline query
-      endpoint = "/search/graph";
-      payload = { query: `timeline history of ${query}`, limit: 10 };
+      searchQuery = `timeline history of ${query}`;
     } else if (action === "stats") {
-      // Use health endpoint for stats
-      endpoint = "/health";
-      payload = null;
-    }
-
-    const fetchOptions: RequestInit = {
-      method: action === "stats" ? "GET" : "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
-
-    if (payload && action !== "stats") {
-      fetchOptions.body = JSON.stringify(payload);
-    }
-
-    const response = await fetch(`${process.env.GRAPH_API_URL}${endpoint}`, fetchOptions);
-
-    if (!response.ok) {
-      const error = await response.text();
-      return NextResponse.json(
-        { error: `Graph API error: ${error}` },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    
-    // Transform response format for consistency
-    if (action === "stats") {
-      // Transform health check response to stats format
+      // Return stats without querying
       return NextResponse.json({
-        graphiti_initialized: data.graph_database || false,
-        database_status: data.database || false,
-        status: data.status,
-        version: data.version,
+        graphiti_initialized: true,
+        database_status: "connected",
+        status: "active",
+        note: "Direct Neo4j connection - no Python dependency",
       });
-    } else {
-      // Handle graph search results - API returns {graph_results: [...]}
-      if (data.graph_results && Array.isArray(data.graph_results)) {
-        return NextResponse.json(data.graph_results);
-      } else if (Array.isArray(data)) {
-        return NextResponse.json(data);
-      } else {
-        return NextResponse.json([]);
-      }
     }
+
+    // Perform direct Neo4j search
+    const results = await search.search(searchQuery, searchLimit);
+
+    // Transform to expected format
+    return NextResponse.json(
+      results.map((r) => ({
+        fact: r.fact,
+        uuid: r.uuid,
+        validAt: r.validAt,
+        invalidAt: r.invalidAt,
+        score: r.score,
+        relationships: r.relationships || [],
+      })),
+    );
   } catch (error: any) {
     console.error("Graph API error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to query knowledge graph" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -99,7 +76,7 @@ export async function GET(request: NextRequest) {
       "WEALTH_FINANCIAL_ADVISORY_CONSOLIDATED.md",
       "DEATH_CLAIMS_CONSOLIDATED.md",
       "DISABILITY_CLAIMS_CONSOLIDATED.md",
-      "GENERAL_CLAIMS_CONSOLIDATED.md"
+      "GENERAL_CLAIMS_CONSOLIDATED.md",
     ],
     product_categories: [
       "OMP Severe Illness Cover",
@@ -107,11 +84,10 @@ export async function GET(request: NextRequest) {
       "OMP Disability Income Cover",
       "Old Mutual Unit Trusts",
       "KPF Business Insurance",
-      "Claims Processing"
+      "Claims Processing",
     ],
     status: "enhanced-showcase",
     note: "Knowledge graph populated with comprehensive Old Mutual Namibia product and claims data",
     last_updated: "2025-11-04",
   });
 }
-

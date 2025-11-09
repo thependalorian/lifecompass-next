@@ -28,14 +28,37 @@ const claimData = {
   incidentLocation: "Katutura Shopping Centre, Windhoek",
   policyNumber: "POL-2024-001",
   documents: [
-    { id: "DOC001", name: "Police Report.pdf", uploaded: "2024-10-15", status: "Approved" },
-    { id: "DOC002", name: "Repair Quote.pdf", uploaded: "2024-10-16", status: "Pending Review" },
-    { id: "DOC003", name: "Damage Photos.zip", uploaded: "2024-10-15", status: "Approved" },
+    {
+      id: "DOC001",
+      name: "Police Report.pdf",
+      uploaded: "2024-10-15",
+      status: "Approved",
+    },
+    {
+      id: "DOC002",
+      name: "Repair Quote.pdf",
+      uploaded: "2024-10-16",
+      status: "Pending Review",
+    },
+    {
+      id: "DOC003",
+      name: "Damage Photos.zip",
+      uploaded: "2024-10-15",
+      status: "Approved",
+    },
   ],
   timeline: [
     { date: "2024-10-15", event: "Claim submitted", status: "completed" },
-    { date: "2024-10-16", event: "Initial review completed", status: "completed" },
-    { date: "2024-10-17", event: "Awaiting additional documentation", status: "pending" },
+    {
+      date: "2024-10-16",
+      event: "Initial review completed",
+      status: "completed",
+    },
+    {
+      date: "2024-10-17",
+      event: "Awaiting additional documentation",
+      status: "pending",
+    },
     { date: "2024-10-20", event: "Expected completion", status: "upcoming" },
   ],
 };
@@ -95,15 +118,21 @@ export default function ClaimDetailsPage() {
               <div className="grid md:grid-cols-3 gap-6 mb-6">
                 <div>
                   <div className="text-sm text-om-grey mb-1">Claim Number</div>
-                  <div className="font-semibold text-om-navy text-om-body">{claimData.id}</div>
+                  <div className="font-semibold text-om-navy text-om-body">
+                    {claimData.id}
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm text-om-grey mb-1">Date Filed</div>
-                  <div className="font-semibold text-om-navy text-om-body">{claimData.date}</div>
+                  <div className="font-semibold text-om-navy text-om-body">
+                    {claimData.date}
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm text-om-grey mb-1">Claim Amount</div>
-                  <div className="font-semibold text-om-navy text-om-body">{claimData.amount}</div>
+                  <div className="font-semibold text-om-navy text-om-body">
+                    {claimData.amount}
+                  </div>
                 </div>
               </div>
 
@@ -147,8 +176,12 @@ export default function ClaimDetailsPage() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-om-navy text-om-body">{item.event}</div>
-                      <div className="text-sm text-om-grey text-om-body">{item.date}</div>
+                      <div className="font-semibold text-om-navy text-om-body">
+                        {item.event}
+                      </div>
+                      <div className="text-sm text-om-grey text-om-body">
+                        {item.date}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -175,7 +208,9 @@ export default function ClaimDetailsPage() {
                     <div className="flex items-center gap-4">
                       <DocumentTextIcon className="w-8 h-8 text-om-heritage-green" />
                       <div>
-                        <div className="font-semibold text-om-navy text-om-body">{doc.name}</div>
+                        <div className="font-semibold text-om-navy text-om-body">
+                          {doc.name}
+                        </div>
                         <div className="text-sm text-om-grey text-om-body">
                           Uploaded: {doc.uploaded}
                         </div>
@@ -211,13 +246,15 @@ export default function ClaimDetailsPage() {
               </h3>
               <div className="flex flex-wrap gap-4">
                 <Link href={`/claims/${claimId}/upload`}>
-                  <OMButton variant="outline">Upload Additional Documents</OMButton>
+                  <OMButton variant="outline">
+                    Upload Additional Documents
+                  </OMButton>
                 </Link>
                 <Link href="/chat">
                   <OMButton variant="outline">Chat with AI Assistant</OMButton>
                 </Link>
-                <a 
-                  href="tel:+26461223189" 
+                <a
+                  href="tel:+26461223189"
                   className="btn btn-ghost hover:bg-om-heritage-green hover:text-white"
                 >
                   Contact Claims Team
@@ -230,4 +267,3 @@ export default function ClaimDetailsPage() {
     </CorporateLayout>
   );
 }
-

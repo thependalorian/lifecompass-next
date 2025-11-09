@@ -2,10 +2,16 @@
 // API endpoint for fetching and creating communications
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAdvisorCommunications, getCustomerCommunications, createCommunication, getAdvisorByNumber, incrementTemplateUsage } from "@/lib/db/neon";
+import {
+  getAdvisorCommunications,
+  getCustomerCommunications,
+  createCommunication,
+  getAdvisorByNumber,
+  incrementTemplateUsage,
+} from "@/lib/db/neon";
 
 // Force dynamic rendering since we use request.url
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +31,7 @@ export async function GET(request: NextRequest) {
         if (!advisor) {
           return NextResponse.json(
             { error: "Advisor not found" },
-            { status: 404 }
+            { status: 404 },
           );
         }
         resolvedAdvisorId = advisor.id;
@@ -34,7 +40,7 @@ export async function GET(request: NextRequest) {
       if (!resolvedAdvisorId) {
         return NextResponse.json(
           { error: "advisorId or advisorNumber parameter is required" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -43,42 +49,65 @@ export async function GET(request: NextRequest) {
       communications = await getCustomerCommunications(customerId, limit);
     } else {
       return NextResponse.json(
-        { error: "advisorId, advisorNumber, or customerId parameter is required" },
-        { status: 400 }
+        {
+          error:
+            "advisorId, advisorNumber, or customerId parameter is required",
+        },
+        { status: 400 },
       );
     }
 
     // Transform to match frontend expected format
-    const transformedCommunications = communications.map((comm: any) => ({
-      id: comm.communication_number || comm.id,
-      communicationNumber: comm.communication_number,
-      customerId: comm.customer_id,
-      customerNumber: comm.customer_number,
-      customerName: comm.customer_name,
-      advisorId: comm.advisor_id,
-      type: comm.type,
-      subject: comm.subject,
-      content: comm.content,
-      status: comm.status,
-      sentAt: comm.sent_at,
-      deliveredAt: comm.delivered_at,
-      readAt: comm.read_at,
-      templateId: comm.template_id,
-      createdAt: comm.created_at,
-      // For compatibility with old format
-      client: comm.customer_name,
-      preview: comm.content?.substring(0, 100) || "",
-      date: comm.sent_at || comm.created_at,
-      read: !!comm.read_at,
-      priority: "Medium", // Can be calculated from metadata or other fields
-    }));
+    const transformedCommunications = communications.map((comm: any) => {
+      // Mask customer name for advisors - show customer number instead
+      let customerName = comm.customer_name;
+      let clientName = comm.customer_name;
+
+      // If this is an advisor request, show full customer names with customer number
+      if (advisorId || advisorNumber) {
+        if (comm.customer_number && customerName) {
+          // Show full name with customer number: "Maria Shikongo (CUST-001)"
+          customerName = `${customerName} (${comm.customer_number})`;
+          clientName = customerName;
+        } else if (comm.customer_number) {
+          // Just customer number if no name available
+          customerName = comm.customer_number;
+          clientName = comm.customer_number;
+        }
+        // If no customer number, keep original name (full name visible to advisors)
+      }
+
+      return {
+        id: comm.communication_number || comm.id,
+        communicationNumber: comm.communication_number,
+        customerId: comm.customer_id,
+        customerNumber: comm.customer_number,
+        customerName: customerName,
+        advisorId: comm.advisor_id,
+        type: comm.type,
+        subject: comm.subject,
+        content: comm.content,
+        status: comm.status,
+        sentAt: comm.sent_at,
+        deliveredAt: comm.delivered_at,
+        readAt: comm.read_at,
+        templateId: comm.template_id,
+        createdAt: comm.created_at,
+        // For compatibility with old format
+        client: clientName,
+        preview: comm.content?.substring(0, 100) || "",
+        date: comm.sent_at || comm.created_at,
+        read: !!comm.read_at,
+        priority: "Medium", // Can be calculated from metadata or other fields
+      };
+    });
 
     return NextResponse.json(transformedCommunications);
   } catch (error) {
     console.error("Error fetching communications:", error);
     return NextResponse.json(
       { error: "Failed to fetch communications" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -86,13 +115,25 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { advisorId, advisorNumber, customerId, type, subject, content, status, templateId } = body;
+    const {
+      advisorId,
+      advisorNumber,
+      customerId,
+      type,
+      subject,
+      content,
+      status,
+      templateId,
+    } = body;
 
     // Validate required fields
     if (!customerId || !type || !content) {
       return NextResponse.json(
-        { error: "Missing required fields: customerId, type, and content are required" },
-        { status: 400 }
+        {
+          error:
+            "Missing required fields: customerId, type, and content are required",
+        },
+        { status: 400 },
       );
     }
 
@@ -103,7 +144,7 @@ export async function POST(request: NextRequest) {
       if (!advisor) {
         return NextResponse.json(
           { error: `Advisor not found: ${advisorNumber}` },
-          { status: 404 }
+          { status: 404 },
         );
       }
       resolvedAdvisorId = advisor.id;
@@ -112,7 +153,7 @@ export async function POST(request: NextRequest) {
     if (!resolvedAdvisorId) {
       return NextResponse.json(
         { error: "advisorId or advisorNumber is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -153,15 +194,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(transformedCommunication, { status: 201 });
   } catch (error) {
     console.error("Error creating communication:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { 
+      {
         error: "Failed to create communication",
         message: errorMessage,
         timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

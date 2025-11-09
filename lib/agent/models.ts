@@ -1,5 +1,7 @@
 // lib/agent/models.ts
 
+import type { ChatRequestMetadata } from "@/lib/types/persona";
+
 export enum MessageRole {
   USER = "user",
   ASSISTANT = "assistant",
@@ -39,7 +41,7 @@ export interface AgentDependencies {
     defaultLimit: number;
   };
   voiceMode?: boolean;
-  metadata?: Record<string, any>;
+  metadata?: ChatRequestMetadata;
 }
 
 export interface ChunkResult {
@@ -78,6 +80,6 @@ export interface ChatRequest {
   message: string;
   sessionId?: string;
   userId?: string;
-  metadata?: Record<string, any>;
+  metadata?: ChatRequestMetadata;
   searchType?: SearchType;
 }

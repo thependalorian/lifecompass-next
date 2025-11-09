@@ -13,7 +13,14 @@ import clsx from "clsx";
 
 interface OMBadgeProps extends HTMLAttributes<HTMLSpanElement> {
   children: ReactNode;
-  variant?: "active" | "pending" | "inactive" | "success" | "warning" | "error" | "info";
+  variant?:
+    | "active"
+    | "pending"
+    | "inactive"
+    | "success"
+    | "warning"
+    | "error"
+    | "info";
   size?: "xs" | "sm" | "md" | "lg";
 }
 
@@ -47,7 +54,7 @@ export function OMBadge({
         "badge",
         variantClasses[variant],
         sizeClasses[size],
-        className
+        className,
       )}
       {...props}
     >
@@ -55,4 +62,3 @@ export function OMBadge({
     </span>
   );
 }
-

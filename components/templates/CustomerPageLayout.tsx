@@ -10,7 +10,6 @@
 import { ReactNode } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import ChatWidget from "@/components/ChatWidget";
 
 interface CustomerPageLayoutProps {
   children: ReactNode;
@@ -54,7 +53,8 @@ export function CustomerPageLayout({
               <h1
                 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 drop-shadow-lg"
                 style={{
-                  fontFamily: "Montserrat, Century Gothic, system-ui, sans-serif",
+                  fontFamily:
+                    "Montserrat, Century Gothic, system-ui, sans-serif",
                 }}
               >
                 {heroTitle}
@@ -78,11 +78,10 @@ export function CustomerPageLayout({
       {/* Main Content */}
       <main className="relative">{children}</main>
 
-      {/* Chat Widget - Always available for customer self-service */}
-      {showChat && <ChatWidget />}
+      {/* Chat is now provided by CopilotKitProvider via CopilotSidebar */}
+      {/* The CopilotSidebar is available throughout the app and can be toggled */}
 
       <Footer />
     </div>
   );
 }
-

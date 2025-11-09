@@ -65,7 +65,9 @@ async function getTestAdvisor() {
     `;
     if (advisors && advisors.length > 0) {
       const advisor = advisors[0];
-      logSuccess(`Found advisor: ${advisor.advisor_number} (${advisor.first_name} ${advisor.last_name})`);
+      logSuccess(
+        `Found advisor: ${advisor.advisor_number} (${advisor.first_name} ${advisor.last_name})`,
+      );
       return advisor;
     }
     logError("No advisors found in database");
@@ -86,7 +88,9 @@ async function getTestCustomer() {
     `;
     if (customers && customers.length > 0) {
       const customer = customers[0];
-      logSuccess(`Found customer: ${customer.customer_number} (${customer.first_name} ${customer.last_name})`);
+      logSuccess(
+        `Found customer: ${customer.customer_number} (${customer.first_name} ${customer.last_name})`,
+      );
       return customer;
     }
     logError("No customers found in database");
@@ -99,7 +103,7 @@ async function getTestCustomer() {
 
 async function testAdvisorsAPI(advisor) {
   log("\n📋 Testing Advisors API...", "blue");
-  
+
   // Test 1: Get all advisors
   try {
     const allAdvisors = await sql`
@@ -148,11 +152,15 @@ async function testAdvisorsAPI(advisor) {
         FROM advisors
         WHERE advisor_number = ${advisor.advisor_number}
       `;
-      
+
       if (advisorByNumber && advisorByNumber.length > 0) {
-        logSuccess(`GET /api/advisors?number=${advisor.advisor_number}: Found advisor`);
+        logSuccess(
+          `GET /api/advisors?number=${advisor.advisor_number}: Found advisor`,
+        );
       } else {
-        logError(`GET /api/advisors?number=${advisor.advisor_number}: Advisor not found`);
+        logError(
+          `GET /api/advisors?number=${advisor.advisor_number}: Advisor not found`,
+        );
       }
     } catch (error) {
       logError(`GET /api/advisors?number=...: ${error.message}`);
@@ -162,7 +170,7 @@ async function testAdvisorsAPI(advisor) {
 
 async function testCustomersAPI(customer) {
   log("\n👥 Testing Customers API...", "blue");
-  
+
   // Test 1: Get all customers
   try {
     const allCustomers = await sql`
@@ -177,7 +185,7 @@ async function testCustomersAPI(customer) {
       FROM customers
       LIMIT 100
     `;
-    
+
     if (allCustomers && allCustomers.length > 0) {
       logSuccess(`GET /api/customers: ${allCustomers.length} customers found`);
     } else {
@@ -200,11 +208,15 @@ async function testCustomersAPI(customer) {
         FROM customers
         WHERE customer_number = ${customer.customer_number}
       `;
-      
+
       if (customerByNumber && customerByNumber.length > 0) {
-        logSuccess(`GET /api/customers?number=${customer.customer_number}: Found customer`);
+        logSuccess(
+          `GET /api/customers?number=${customer.customer_number}: Found customer`,
+        );
       } else {
-        logError(`GET /api/customers?number=${customer.customer_number}: Customer not found`);
+        logError(
+          `GET /api/customers?number=${customer.customer_number}: Customer not found`,
+        );
       }
     } catch (error) {
       logError(`GET /api/customers?number=...: ${error.message}`);
@@ -214,7 +226,7 @@ async function testCustomersAPI(customer) {
 
 async function testTasksAPI(advisor) {
   log("\n📝 Testing Tasks API...", "blue");
-  
+
   if (!advisor) {
     logWarning("Skipping tasks test - no advisor available");
     return;
@@ -246,9 +258,11 @@ async function testTasksAPI(advisor) {
       ORDER BY t.due_date ASC NULLS LAST, t.priority DESC
       LIMIT 10
     `;
-    
+
     if (tasksByUuid && tasksByUuid.length > 0) {
-      logSuccess(`GET /api/tasks?advisorId=${advisor.id}: ${tasksByUuid.length} tasks found`);
+      logSuccess(
+        `GET /api/tasks?advisorId=${advisor.id}: ${tasksByUuid.length} tasks found`,
+      );
     } else {
       logWarning(`GET /api/tasks?advisorId=${advisor.id}: No tasks found`);
     }
@@ -262,10 +276,10 @@ async function testTasksAPI(advisor) {
     const advisorRecord = await sql`
       SELECT id::text FROM advisors WHERE advisor_number = ${advisor.advisor_number}
     `;
-    
+
     if (advisorRecord && advisorRecord.length > 0) {
       const advisorId = advisorRecord[0].id;
-      
+
       const tasksByNumber = await sql`
         SELECT
           t.id::text,
@@ -290,14 +304,20 @@ async function testTasksAPI(advisor) {
         ORDER BY t.due_date ASC NULLS LAST, t.priority DESC
         LIMIT 10
       `;
-      
+
       if (tasksByNumber && tasksByNumber.length > 0) {
-        logSuccess(`GET /api/tasks?advisorId=${advisor.advisor_number}: ${tasksByNumber.length} tasks found`);
+        logSuccess(
+          `GET /api/tasks?advisorId=${advisor.advisor_number}: ${tasksByNumber.length} tasks found`,
+        );
       } else {
-        logWarning(`GET /api/tasks?advisorId=${advisor.advisor_number}: No tasks found`);
+        logWarning(
+          `GET /api/tasks?advisorId=${advisor.advisor_number}: No tasks found`,
+        );
       }
     } else {
-      logError(`GET /api/tasks?advisorId=${advisor.advisor_number}: Advisor not found`);
+      logError(
+        `GET /api/tasks?advisorId=${advisor.advisor_number}: Advisor not found`,
+      );
     }
   } catch (error) {
     logError(`GET /api/tasks?advisorId=<number>: ${error.message}`);
@@ -308,10 +328,10 @@ async function testTasksAPI(advisor) {
     const advisorRecord = await sql`
       SELECT id::text FROM advisors WHERE advisor_number = ${advisor.advisor_number}
     `;
-    
+
     if (advisorRecord && advisorRecord.length > 0) {
       const advisorId = advisorRecord[0].id;
-      
+
       const openTasks = await sql`
         SELECT
           t.id::text,
@@ -324,11 +344,15 @@ async function testTasksAPI(advisor) {
           AND (t.status = 'Open' OR t.status = 'In Progress')
         LIMIT 10
       `;
-      
+
       if (openTasks && openTasks.length > 0) {
-        logSuccess(`GET /api/tasks?advisorId=${advisor.advisor_number}&status=open: ${openTasks.length} open tasks found`);
+        logSuccess(
+          `GET /api/tasks?advisorId=${advisor.advisor_number}&status=open: ${openTasks.length} open tasks found`,
+        );
       } else {
-        logWarning(`GET /api/tasks?advisorId=${advisor.advisor_number}&status=open: No open tasks found`);
+        logWarning(
+          `GET /api/tasks?advisorId=${advisor.advisor_number}&status=open: No open tasks found`,
+        );
       }
     }
   } catch (error) {
@@ -338,7 +362,7 @@ async function testTasksAPI(advisor) {
 
 async function testPoliciesAPI(customer) {
   log("\n📄 Testing Policies API...", "blue");
-  
+
   // Test 1: Get all policies
   try {
     const allPolicies = await sql`
@@ -355,7 +379,7 @@ async function testPoliciesAPI(customer) {
       LEFT JOIN customers c ON p.customer_id = c.id
       LIMIT 50
     `;
-    
+
     if (allPolicies && allPolicies.length > 0) {
       logSuccess(`GET /api/policies: ${allPolicies.length} policies found`);
     } else {
@@ -379,11 +403,15 @@ async function testPoliciesAPI(customer) {
         WHERE p.customer_id = ${customer.id}::uuid
         LIMIT 10
       `;
-      
+
       if (customerPolicies && customerPolicies.length > 0) {
-        logSuccess(`GET /api/policies?customerId=${customer.customer_number}: ${customerPolicies.length} policies found`);
+        logSuccess(
+          `GET /api/policies?customerId=${customer.customer_number}: ${customerPolicies.length} policies found`,
+        );
       } else {
-        logWarning(`GET /api/policies?customerId=${customer.customer_number}: No policies found`);
+        logWarning(
+          `GET /api/policies?customerId=${customer.customer_number}: No policies found`,
+        );
       }
     } catch (error) {
       logError(`GET /api/policies?customerId=...: ${error.message}`);
@@ -393,7 +421,7 @@ async function testPoliciesAPI(customer) {
 
 async function testClaimsAPI(customer) {
   log("\n🏥 Testing Claims API...", "blue");
-  
+
   // Test 1: Get all claims
   try {
     const allClaims = await sql`
@@ -410,7 +438,7 @@ async function testClaimsAPI(customer) {
       LEFT JOIN customers cust ON c.customer_id = cust.id
       LIMIT 50
     `;
-    
+
     if (allClaims && allClaims.length > 0) {
       logSuccess(`GET /api/claims: ${allClaims.length} claims found`);
     } else {
@@ -435,11 +463,15 @@ async function testClaimsAPI(customer) {
         WHERE c.customer_id = ${customer.id}::uuid
         LIMIT 10
       `;
-      
+
       if (customerClaims && customerClaims.length > 0) {
-        logSuccess(`GET /api/claims?customerId=${customer.customer_number}: ${customerClaims.length} claims found`);
+        logSuccess(
+          `GET /api/claims?customerId=${customer.customer_number}: ${customerClaims.length} claims found`,
+        );
       } else {
-        logWarning(`GET /api/claims?customerId=${customer.customer_number}: No claims found`);
+        logWarning(
+          `GET /api/claims?customerId=${customer.customer_number}: No claims found`,
+        );
       }
     } catch (error) {
       logError(`GET /api/claims?customerId=...: ${error.message}`);
@@ -449,7 +481,7 @@ async function testClaimsAPI(customer) {
 
 async function testInteractionsAPI(customer) {
   log("\n💬 Testing Interactions API...", "blue");
-  
+
   // Test 1: Get all interactions
   try {
     const allInteractions = await sql`
@@ -465,9 +497,11 @@ async function testInteractionsAPI(customer) {
       ORDER BY i.created_at DESC
       LIMIT 50
     `;
-    
+
     if (allInteractions && allInteractions.length > 0) {
-      logSuccess(`GET /api/interactions: ${allInteractions.length} interactions found`);
+      logSuccess(
+        `GET /api/interactions: ${allInteractions.length} interactions found`,
+      );
     } else {
       logWarning("GET /api/interactions: No interactions returned");
     }
@@ -490,11 +524,15 @@ async function testInteractionsAPI(customer) {
         ORDER BY i.created_at DESC
         LIMIT 10
       `;
-      
+
       if (customerInteractions && customerInteractions.length > 0) {
-        logSuccess(`GET /api/interactions?customerId=${customer.customer_number}: ${customerInteractions.length} interactions found`);
+        logSuccess(
+          `GET /api/interactions?customerId=${customer.customer_number}: ${customerInteractions.length} interactions found`,
+        );
       } else {
-        logWarning(`GET /api/interactions?customerId=${customer.customer_number}: No interactions found`);
+        logWarning(
+          `GET /api/interactions?customerId=${customer.customer_number}: No interactions found`,
+        );
       }
     } catch (error) {
       logError(`GET /api/interactions?customerId=...: ${error.message}`);
@@ -504,7 +542,7 @@ async function testInteractionsAPI(customer) {
 
 async function testAdvisorClientsAPI(advisor) {
   log("\n👨‍💼 Testing Advisor Clients API...", "blue");
-  
+
   if (!advisor) {
     logWarning("Skipping advisor clients test - no advisor available");
     return;
@@ -525,11 +563,15 @@ async function testAdvisorClientsAPI(advisor) {
       ORDER BY c.engagement_score DESC
       LIMIT 50
     `;
-    
+
     if (clients && clients.length > 0) {
-      logSuccess(`GET /api/advisors/${advisor.advisor_number}/clients: ${clients.length} clients found`);
+      logSuccess(
+        `GET /api/advisors/${advisor.advisor_number}/clients: ${clients.length} clients found`,
+      );
     } else {
-      logWarning(`GET /api/advisors/${advisor.advisor_number}/clients: No clients found`);
+      logWarning(
+        `GET /api/advisors/${advisor.advisor_number}/clients: No clients found`,
+      );
     }
   } catch (error) {
     logError(`GET /api/advisors/.../clients: ${error.message}`);
@@ -538,7 +580,7 @@ async function testAdvisorClientsAPI(advisor) {
 
 async function testAdvisorDashboardAPI(advisor) {
   log("\n📊 Testing Advisor Dashboard API...", "blue");
-  
+
   if (!advisor) {
     logWarning("Skipping advisor dashboard test - no advisor available");
     return;
@@ -551,7 +593,7 @@ async function testAdvisorDashboardAPI(advisor) {
       FROM customers
       WHERE primary_advisor_id = ${advisor.id}::uuid
     `;
-    
+
     // Get open tasks
     const openTasks = await sql`
       SELECT COUNT(*) as count
@@ -559,7 +601,7 @@ async function testAdvisorDashboardAPI(advisor) {
       WHERE advisor_id = ${advisor.id}::uuid
         AND (status = 'Open' OR status = 'In Progress')
     `;
-    
+
     // Get recent interactions
     const recentInteractions = await sql`
       SELECT COUNT(*) as count
@@ -568,14 +610,20 @@ async function testAdvisorDashboardAPI(advisor) {
       WHERE c.primary_advisor_id = ${advisor.id}::uuid
         AND i.created_at > NOW() - INTERVAL '7 days'
     `;
-    
+
     if (totalClients && totalClients.length > 0) {
-      logSuccess(`GET /api/advisors/${advisor.advisor_number}/dashboard: Data retrieved`);
+      logSuccess(
+        `GET /api/advisors/${advisor.advisor_number}/dashboard: Data retrieved`,
+      );
       logInfo(`  - Total clients: ${totalClients[0].count}`);
       logInfo(`  - Open tasks: ${openTasks[0]?.count || 0}`);
-      logInfo(`  - Recent interactions (7 days): ${recentInteractions[0]?.count || 0}`);
+      logInfo(
+        `  - Recent interactions (7 days): ${recentInteractions[0]?.count || 0}`,
+      );
     } else {
-      logWarning(`GET /api/advisors/${advisor.advisor_number}/dashboard: No data found`);
+      logWarning(
+        `GET /api/advisors/${advisor.advisor_number}/dashboard: No data found`,
+      );
     }
   } catch (error) {
     logError(`GET /api/advisors/.../dashboard: ${error.message}`);
@@ -584,7 +632,7 @@ async function testAdvisorDashboardAPI(advisor) {
 
 async function testDocumentsAPI() {
   log("\n📚 Testing Documents API...", "blue");
-  
+
   // Test 1: Get all documents
   try {
     const allDocuments = await sql`
@@ -599,7 +647,7 @@ async function testDocumentsAPI() {
       ORDER BY filename
       LIMIT 50
     `;
-    
+
     if (allDocuments && allDocuments.length > 0) {
       logSuccess(`GET /api/documents: ${allDocuments.length} documents found`);
     } else {
@@ -612,14 +660,14 @@ async function testDocumentsAPI() {
 
 async function testGraphAPI() {
   log("\n🕸️  Testing Graph API...", "blue");
-  
+
   try {
     // Test if Neo4j is configured
     if (!process.env.NEO4J_URI || !process.env.NEO4J_PASSWORD) {
       logWarning("Neo4j not configured - Graph API will return empty results");
       return;
     }
-    
+
     logInfo("Neo4j is configured - Graph API should work");
     logSuccess("GET /api/graph: Configuration check passed");
   } catch (error) {
@@ -629,17 +677,17 @@ async function testGraphAPI() {
 
 async function testKnowledgeAPI() {
   log("\n🔍 Testing Knowledge API...", "blue");
-  
+
   try {
     // Test vector search capability
     const documents = await sql`
       SELECT COUNT(*) as count FROM documents
     `;
-    
+
     const chunks = await sql`
       SELECT COUNT(*) as count FROM chunks WHERE embedding IS NOT NULL
     `;
-    
+
     if (documents && documents.length > 0) {
       logSuccess(`GET /api/knowledge: Knowledge base available`);
       logInfo(`  - Documents: ${documents[0].count}`);
@@ -692,4 +740,3 @@ runAllTests().catch((error) => {
   console.error(error);
   process.exit(1);
 });
-

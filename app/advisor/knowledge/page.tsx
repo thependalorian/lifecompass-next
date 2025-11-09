@@ -15,19 +15,22 @@ const defaultCategories = [
     id: "investments",
     name: "Investment & Retirement",
     count: 0,
-    description: "Unit trusts, retirement plans, education savings, and investment strategies",
+    description:
+      "Unit trusts, retirement plans, education savings, and investment strategies",
   },
   {
     id: "insurance",
     name: "Insurance Products",
     count: 0,
-    description: "Life insurance, funeral cover, disability, and health insurance solutions",
+    description:
+      "Life insurance, funeral cover, disability, and health insurance solutions",
   },
   {
     id: "business",
     name: "Business Solutions",
     count: 0,
-    description: "Business insurance, employee benefits, and corporate financial planning",
+    description:
+      "Business insurance, employee benefits, and corporate financial planning",
   },
   {
     id: "wealth",
@@ -45,7 +48,8 @@ const defaultCategories = [
     id: "health",
     name: "Health & Short-term",
     count: 0,
-    description: "Medical aid, short-term insurance, and health-related products",
+    description:
+      "Medical aid, short-term insurance, and health-related products",
   },
 ];
 
@@ -53,7 +57,8 @@ export default function AdvisorKnowledgePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showGraph, setShowGraph] = useState(false);
-  const [knowledgeCategories, setKnowledgeCategories] = useState(defaultCategories);
+  const [knowledgeCategories, setKnowledgeCategories] =
+    useState(defaultCategories);
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [popularSearches, setPopularSearches] = useState<string[]>([]);
   const [categoryDocuments, setCategoryDocuments] = useState<any[]>([]);
@@ -70,7 +75,7 @@ export default function AdvisorKnowledgePage() {
         const docsResponse = await fetch("/api/documents");
         if (docsResponse.ok) {
           const documents = await docsResponse.json();
-          
+
           // Group documents by category and calculate counts
           const categoryMap = new Map<string, number>();
           documents.forEach((doc: any) => {
@@ -83,8 +88,10 @@ export default function AdvisorKnowledgePage() {
           // Update categories with real counts
           const updatedCategories = defaultCategories.map((cat) => {
             // Try to match category name
-            const matchingCategory = Array.from(categoryMap.entries()).find(([key]) => 
-              key.toLowerCase().includes(cat.id) || cat.name.toLowerCase().includes(key.toLowerCase())
+            const matchingCategory = Array.from(categoryMap.entries()).find(
+              ([key]) =>
+                key.toLowerCase().includes(cat.id) ||
+                cat.name.toLowerCase().includes(key.toLowerCase()),
             );
             return {
               ...cat,
@@ -100,7 +107,10 @@ export default function AdvisorKnowledgePage() {
               // Extract key terms from titles
               const words = doc.title.toLowerCase().split(/\s+/);
               words.forEach((word: string) => {
-                if (word.length > 4 && !['guide', 'complete', 'reference'].includes(word)) {
+                if (
+                  word.length > 4 &&
+                  !["guide", "complete", "reference"].includes(word)
+                ) {
                   searchTerms.add(word);
                 }
               });
@@ -123,10 +133,13 @@ export default function AdvisorKnowledgePage() {
             .filter((doc: any) => doc.isActive !== false)
             .slice(0, 5)
             .map((doc: any, idx: number) => ({
-              id: doc.documentNumber || `ART-${String(idx + 1).padStart(3, "0")}`,
+              id:
+                doc.documentNumber || `ART-${String(idx + 1).padStart(3, "0")}`,
               title: doc.title,
               category: doc.category || "General",
-              date: doc.createdAt ? new Date(doc.createdAt).toISOString().split('T')[0] : "2025-11-04",
+              date: doc.createdAt
+                ? new Date(doc.createdAt).toISOString().split("T")[0]
+                : "2025-11-04",
               views: doc.viewCount || Math.floor(Math.random() * 200) + 50,
               summary: doc.description || doc.title,
               documentNumber: doc.documentNumber, // Add document number for opening
@@ -167,21 +180,25 @@ export default function AdvisorKnowledgePage() {
       try {
         // Map category ID to database category
         const categoryMap: Record<string, string> = {
-          "investments": "Investment",
-          "insurance": "Insurance",
-          "business": "Business",
-          "wealth": "Wealth",
-          "claims": "Claims",
-          "health": "Health",
+          investments: "Investment",
+          insurance: "Insurance",
+          business: "Business",
+          wealth: "Wealth",
+          claims: "Claims",
+          health: "Health",
         };
 
         const dbCategory = categoryMap[selectedCategory] || selectedCategory;
-        
+
         // Fetch documents for this category
-        const response = await fetch(`/api/documents?category=${encodeURIComponent(dbCategory)}`);
+        const response = await fetch(
+          `/api/documents?category=${encodeURIComponent(dbCategory)}`,
+        );
         if (response.ok) {
           const docs = await response.json();
-          setCategoryDocuments(docs.filter((doc: any) => doc.isActive !== false));
+          setCategoryDocuments(
+            docs.filter((doc: any) => doc.isActive !== false),
+          );
         } else {
           toast.error("Failed to load documents for this category");
         }
@@ -212,16 +229,16 @@ export default function AdvisorKnowledgePage() {
       <section className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-          <p className="opacity-90">
-            Access product information, guides, and resources
-          </p>
-            </div>
-            <button
-              onClick={() => setShowGraph(!showGraph)}
-              className="btn btn-outline btn-sm border-white/30 text-white hover:bg-white/20"
-            >
-              {showGraph ? "Hide" : "Show"} Knowledge Graph
-            </button>
+            <p className="opacity-90">
+              Access product information, guides, and resources
+            </p>
+          </div>
+          <button
+            onClick={() => setShowGraph(!showGraph)}
+            className="btn btn-outline btn-sm border-white/30 text-white hover:bg-white/20"
+          >
+            {showGraph ? "Hide" : "Show"} Knowledge Graph
+          </button>
         </div>
       </section>
 
@@ -243,7 +260,7 @@ export default function AdvisorKnowledgePage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input input-bordered flex-1 input-om input-lg"
             />
-            <button 
+            <button
               className="btn btn-om-primary btn-lg"
               onClick={async () => {
                 if (!searchQuery.trim()) {
@@ -251,10 +268,14 @@ export default function AdvisorKnowledgePage() {
                   return;
                 }
                 try {
-                  const response = await fetch(`/api/knowledge?query=${encodeURIComponent(searchQuery)}`);
+                  const response = await fetch(
+                    `/api/knowledge?query=${encodeURIComponent(searchQuery)}`,
+                  );
                   if (response.ok) {
                     const results = await response.json();
-                    toast.success(`Found ${results.total_results || 0} results`);
+                    toast.success(
+                      `Found ${results.total_results || 0} results`,
+                    );
                     // In production, display results in a modal or results section
                   } else {
                     toast.error("Search failed");
@@ -352,7 +373,8 @@ export default function AdvisorKnowledgePage() {
         <section className="container mx-auto px-4 pb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-om-navy">
-              {knowledgeCategories.find(c => c.id === selectedCategory)?.name || "Documents"}
+              {knowledgeCategories.find((c) => c.id === selectedCategory)
+                ?.name || "Documents"}
             </h2>
             <button
               onClick={() => setSelectedCategory(null)}
@@ -367,7 +389,9 @@ export default function AdvisorKnowledgePage() {
             </div>
           ) : categoryDocuments.length === 0 ? (
             <div className="card-om p-6 text-center">
-              <p className="text-om-grey">No documents found in this category</p>
+              <p className="text-om-grey">
+                No documents found in this category
+              </p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -386,7 +410,9 @@ export default function AdvisorKnowledgePage() {
                       <div className="badge badge-sm">{doc.documentType}</div>
                     </div>
                     {doc.description && (
-                      <p className="text-sm text-om-grey mb-3">{doc.description}</p>
+                      <p className="text-sm text-om-grey mb-3">
+                        {doc.description}
+                      </p>
                     )}
                     <div className="flex items-center gap-2 text-xs text-om-grey mb-3">
                       <span>{doc.viewCount || 0} views</span>
@@ -432,93 +458,93 @@ export default function AdvisorKnowledgePage() {
         ) : (
           <div className="space-y-4">
             {recentArticles.map((article) => (
-            <div key={article.id} className="card-om">
-              <div className="card-body">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-bold text-om-navy">
-                        {article.title}
-                      </h3>
-                      <div className="badge badge-sm">{article.category}</div>
-                    </div>
-                    <p className="text-om-grey mb-3">{article.summary}</p>
-                    <div className="flex items-center gap-4 text-sm text-om-grey">
-                      <div className="flex items-center">
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
-                        {article.date}
+              <div key={article.id} className="card-om">
+                <div className="card-body">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-lg font-bold text-om-navy">
+                          {article.title}
+                        </h3>
+                        <div className="badge badge-sm">{article.category}</div>
                       </div>
-                      <div className="flex items-center">
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                        {article.views} views
+                      <p className="text-om-grey mb-3">{article.summary}</p>
+                      <div className="flex items-center gap-4 text-sm text-om-grey">
+                        <div className="flex items-center">
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                          {article.date}
+                        </div>
+                        <div className="flex items-center">
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                          {article.views} views
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex gap-2">
-                    {article.documentNumber && (
-                      <>
-                        <a
-                          href={`/api/documents/${article.documentNumber}/view`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                    <div className="flex gap-2">
+                      {article.documentNumber && (
+                        <>
+                          <a
+                            href={`/api/documents/${article.documentNumber}/view`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-om-primary"
+                          >
+                            View PDF
+                          </a>
+                          <a
+                            href={`/api/documents/${article.documentNumber}/download`}
+                            download
+                            className="btn btn-sm btn-outline"
+                          >
+                            Download
+                          </a>
+                        </>
+                      )}
+                      {!article.documentNumber && (
+                        <button
                           className="btn btn-sm btn-om-primary"
+                          onClick={() => {
+                            toast.error("Document not available");
+                          }}
                         >
-                          View PDF
-                        </a>
-                        <a
-                          href={`/api/documents/${article.documentNumber}/download`}
-                          download
-                          className="btn btn-sm btn-outline"
-                        >
-                          Download
-                        </a>
-                      </>
-                    )}
-                    {!article.documentNumber && (
-                      <button 
-                        className="btn btn-sm btn-om-primary"
-                        onClick={() => {
-                          toast.error("Document not available");
-                        }}
-                      >
-                        Read Article
-                      </button>
-                    )}
+                          Read Article
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
             ))}
           </div>
         )}
@@ -528,7 +554,10 @@ export default function AdvisorKnowledgePage() {
       <section className="container mx-auto px-4 pb-20">
         <h2 className="text-xl font-bold text-om-navy mb-4">Quick Links</h2>
         <div className="grid md:grid-cols-4 gap-4">
-          <Link href="/products" className="card-om hover:shadow-xl transition-shadow cursor-pointer">
+          <Link
+            href="/products"
+            className="card-om hover:shadow-xl transition-shadow cursor-pointer"
+          >
             <div className="card-body items-center text-center">
               <svg
                 className="w-12 h-12 text-om-green mb-2"
@@ -547,7 +576,10 @@ export default function AdvisorKnowledgePage() {
             </div>
           </Link>
 
-          <Link href="/api/documents" className="card-om hover:shadow-xl transition-shadow cursor-pointer">
+          <Link
+            href="/api/documents"
+            className="card-om hover:shadow-xl transition-shadow cursor-pointer"
+          >
             <div className="card-body items-center text-center">
               <svg
                 className="w-12 h-12 text-om-navy mb-2"
@@ -566,9 +598,9 @@ export default function AdvisorKnowledgePage() {
             </div>
           </Link>
 
-          <a 
-            href="https://www.oldmutual.com/namibia/support/training" 
-            target="_blank" 
+          <a
+            href="https://www.oldmutual.com/namibia/support/training"
+            target="_blank"
             rel="noopener noreferrer"
             className="card-om hover:shadow-xl transition-shadow cursor-pointer"
           >
@@ -590,7 +622,10 @@ export default function AdvisorKnowledgePage() {
             </div>
           </a>
 
-          <Link href="/chat" className="card-om hover:shadow-xl transition-shadow cursor-pointer">
+          <Link
+            href="/chat"
+            className="card-om hover:shadow-xl transition-shadow cursor-pointer"
+          >
             <div className="card-body items-center text-center">
               <svg
                 className="w-12 h-12 text-om-green mb-2"

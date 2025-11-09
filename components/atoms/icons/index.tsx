@@ -1,9 +1,9 @@
 /**
  * Old Mutual Brand Icons
- * 
+ *
  * Custom icon components using Heroicons aligned with Old Mutual brand guidelines.
  * All icons follow consistent sizing (24px default) and color usage (om-navy, om-green).
- * 
+ *
  * Location: /components/icons/index.tsx
  */
 
@@ -67,15 +67,15 @@ import {
 export const ProductIcons = {
   "life-insurance": ShieldCheckIcon,
   "term-life": ShieldCheckIcon,
-  "funeral": HeartIcon,
+  funeral: HeartIcon,
   "whole-life": BuildingOfficeIcon,
-  "investment": ChartBarIcon,
+  investment: ChartBarIcon,
   "unit-trusts": ChartBarIcon,
-  "retirement": BeakerIcon,
-  "education": AcademicCapIcon,
-  "vehicle": TruckIcon,
-  "property": HomeIcon,
-  "business": BuildingOffice2Icon,
+  retirement: BeakerIcon,
+  education: AcademicCapIcon,
+  vehicle: TruckIcon,
+  property: HomeIcon,
+  business: BuildingOffice2Icon,
   "short-term": BriefcaseIcon,
 };
 
@@ -137,7 +137,12 @@ interface IconProps {
   solid?: boolean;
 }
 
-export function Icon({ Icon: IconComponent, className = "", size = 24, solid = false }: IconProps) {
+export function Icon({
+  Icon: IconComponent,
+  className = "",
+  size = 24,
+  solid = false,
+}: IconProps) {
   const Component = IconComponent;
   return (
     <Component
@@ -156,7 +161,11 @@ interface ProductIconProps {
   size?: number;
 }
 
-export function ProductIcon({ type, className = "", size = 24 }: ProductIconProps) {
+export function ProductIcon({
+  type,
+  className = "",
+  size = 24,
+}: ProductIconProps) {
   const IconComponent = ProductIcons[type] || ShieldCheckIcon;
   const Component = IconComponent;
   return (
@@ -176,15 +185,22 @@ interface StatusIconProps {
   size?: number;
 }
 
-export function StatusIcon({ status, className = "", size = 24 }: StatusIconProps) {
+export function StatusIcon({
+  status,
+  className = "",
+  size = 24,
+}: StatusIconProps) {
   const IconComponent = StatusIcons[status] || InformationCircleIcon;
   const Component = IconComponent;
-  const colorClass = 
-    status === "active" || status === "success" ? "text-om-heritage-green" :
-    status === "pending" || status === "warning" ? "text-om-naartjie" :
-    status === "error" ? "text-om-cerise" :
-    "text-om-grey-60";
-  
+  const colorClass =
+    status === "active" || status === "success"
+      ? "text-om-heritage-green"
+      : status === "pending" || status === "warning"
+        ? "text-om-naartjie"
+        : status === "error"
+          ? "text-om-cerise"
+          : "text-om-grey-60";
+
   return (
     <Component
       className={`${colorClass} ${className}`}
@@ -242,4 +258,3 @@ export {
   HeartIcon,
   LightBulbIcon,
 };
-

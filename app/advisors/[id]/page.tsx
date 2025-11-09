@@ -35,14 +35,21 @@ export default function AdvisorProfilePage() {
           name: advisor.name,
           specialization: advisor.specialization,
           region: advisor.location || advisor.region || "Namibia",
-          experience: advisor.experience || `${advisor.experienceYears || 0} years`,
+          experience:
+            advisor.experience || `${advisor.experienceYears || 0} years`,
           languages: [], // Not in API, can be added to database schema later
-          rating: advisor.satisfactionScore ? parseFloat((advisor.satisfactionScore / 20).toFixed(1)) : 4.5,
+          rating: advisor.satisfactionScore
+            ? parseFloat((advisor.satisfactionScore / 20).toFixed(1))
+            : 4.5,
           clients: advisor.clients || 0,
           specialties: advisor.specialization ? [advisor.specialization] : [],
           availability: "Available now", // Can be calculated from schedule
-          avatar: advisor.avatarUrl || `/avatars/${advisor.name.toLowerCase().replace(/\s+/g, "_")}.png`,
-          bio: advisor.description || `${advisor.specialization} with ${advisor.experienceYears || 0} years of experience serving clients in ${advisor.region || "Namibia"}.`,
+          avatar:
+            advisor.avatarUrl ||
+            `/avatars/${advisor.name.toLowerCase().replace(/\s+/g, "_")}.png`,
+          bio:
+            advisor.description ||
+            `${advisor.specialization} with ${advisor.experienceYears || 0} years of experience serving clients in ${advisor.region || "Namibia"}.`,
           education: [], // Not in database schema, can be added later
           achievements: [], // Not in database schema, can be added later
           reviews: [], // Not in database schema, can be added later
@@ -89,7 +96,9 @@ export default function AdvisorProfilePage() {
         ]}
       >
         <div className="container mx-auto px-4 py-12 text-center">
-          <div className="alert alert-error">{error || "Advisor not found"}</div>
+          <div className="alert alert-error">
+            {error || "Advisor not found"}
+          </div>
         </div>
       </CorporateLayout>
     );
@@ -173,7 +182,8 @@ export default function AdvisorProfilePage() {
                     <div>
                       <div className="text-sm text-om-grey">Languages</div>
                       <div className="font-semibold text-om-navy text-om-body">
-                        {advisorData.languages && advisorData.languages.length > 0 
+                        {advisorData.languages &&
+                        advisorData.languages.length > 0
                           ? advisorData.languages.join(", ")
                           : "English"}
                       </div>
@@ -181,7 +191,10 @@ export default function AdvisorProfilePage() {
                   </div>
 
                   <div className="flex gap-3">
-                    <Link href={`/advisors/${advisorId}/book`} className="flex-1">
+                    <Link
+                      href={`/advisors/${advisorId}/book`}
+                      className="flex-1"
+                    >
                       <OMButton variant="primary" className="w-full">
                         Book Consultation
                       </OMButton>
@@ -206,19 +219,25 @@ export default function AdvisorProfilePage() {
             </h2>
             <div className="grid md:grid-cols-3 gap-4">
               {advisorData.specialties && advisorData.specialties.length > 0 ? (
-                advisorData.specialties.map((specialty: string, idx: number) => (
-                  <div key={idx} className="card-om p-4">
-                    <div className="flex items-center gap-3">
-                      <CheckCircleIcon className="w-6 h-6 text-om-heritage-green flex-shrink-0" />
-                      <span className="font-semibold text-om-navy text-om-body">{specialty}</span>
+                advisorData.specialties.map(
+                  (specialty: string, idx: number) => (
+                    <div key={idx} className="card-om p-4">
+                      <div className="flex items-center gap-3">
+                        <CheckCircleIcon className="w-6 h-6 text-om-heritage-green flex-shrink-0" />
+                        <span className="font-semibold text-om-navy text-om-body">
+                          {specialty}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ),
+                )
               ) : (
                 <div className="card-om p-4">
                   <div className="flex items-center gap-3">
                     <CheckCircleIcon className="w-6 h-6 text-om-heritage-green flex-shrink-0" />
-                    <span className="font-semibold text-om-navy text-om-body">{advisorData.specialization}</span>
+                    <span className="font-semibold text-om-navy text-om-body">
+                      {advisorData.specialization}
+                    </span>
                   </div>
                 </div>
               )}
@@ -240,14 +259,19 @@ export default function AdvisorProfilePage() {
                   {advisorData.education && advisorData.education.length > 0 ? (
                     <ul className="space-y-3">
                       {advisorData.education.map((edu: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-3 text-om-body">
+                        <li
+                          key={idx}
+                          className="flex items-start gap-3 text-om-body"
+                        >
                           <CheckCircleIcon className="w-5 h-5 text-om-heritage-green flex-shrink-0 mt-0.5" />
                           <span>{edu}</span>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-om-grey text-om-body">Education information not available</p>
+                    <p className="text-om-grey text-om-body">
+                      Education information not available
+                    </p>
                   )}
                 </div>
               </div>
@@ -257,17 +281,25 @@ export default function AdvisorProfilePage() {
                   Achievements
                 </h2>
                 <div className="card-om p-6">
-                  {advisorData.achievements && advisorData.achievements.length > 0 ? (
+                  {advisorData.achievements &&
+                  advisorData.achievements.length > 0 ? (
                     <ul className="space-y-3">
-                      {advisorData.achievements.map((achievement: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-3 text-om-body">
-                          <StarIcon className="w-5 h-5 text-om-naartjie fill-current flex-shrink-0 mt-0.5" />
-                          <span>{achievement}</span>
-                        </li>
-                      ))}
+                      {advisorData.achievements.map(
+                        (achievement: string, idx: number) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-3 text-om-body"
+                          >
+                            <StarIcon className="w-5 h-5 text-om-naartjie fill-current flex-shrink-0 mt-0.5" />
+                            <span>{achievement}</span>
+                          </li>
+                        ),
+                      )}
                     </ul>
                   ) : (
-                    <p className="text-om-grey text-om-body">Achievements information not available</p>
+                    <p className="text-om-grey text-om-body">
+                      Achievements information not available
+                    </p>
                   )}
                 </div>
               </div>
@@ -289,8 +321,12 @@ export default function AdvisorProfilePage() {
                   <div key={review.id} className="card-om p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <div className="font-semibold text-om-navy text-om-body">{review.client}</div>
-                        <div className="text-sm text-om-grey text-om-body">{review.date}</div>
+                        <div className="font-semibold text-om-navy text-om-body">
+                          {review.client}
+                        </div>
+                        <div className="text-sm text-om-grey text-om-body">
+                          {review.date}
+                        </div>
                       </div>
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
@@ -311,7 +347,9 @@ export default function AdvisorProfilePage() {
               </div>
             ) : (
               <div className="card-om p-6">
-                <p className="text-om-grey text-om-body text-center">No reviews available yet</p>
+                <p className="text-om-grey text-om-body text-center">
+                  No reviews available yet
+                </p>
               </div>
             )}
           </div>
@@ -320,4 +358,3 @@ export default function AdvisorProfilePage() {
     </CorporateLayout>
   );
 }
-

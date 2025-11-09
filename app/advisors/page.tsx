@@ -9,271 +9,73 @@ import { motion } from "framer-motion";
 import { StarIcon } from "@/components/atoms/icons";
 import { OMButton } from "@/components/atoms/brand";
 
-// Hardcoded advisors - will be replaced by API fetch
+// Hardcoded advisors - fallback if API fails (matches database: 5 advisors)
+// Note: This is a fallback only - the page fetches from /api/advisors which returns 5 advisors
 const defaultAdvisors = [
   {
     id: "ADV-001",
-    name: "Thomas Shikongo",
-    specialization: "Informal Sector Specialist",
-    region: "Windhoek",
-    experience: "12 years",
-    languages: ["English", "Afrikaans", "Oshiwambo"],
-    rating: 4.9,
-    clients: 150,
-    specialties: [
-      "Funeral Insurance",
-      "Business Insurance",
-      "Savings Products",
-    ],
-    availability: "Available now",
-    avatar: "/avatars/thomas_shikongo.png",
-  },
-  {
-    id: "ADV-002",
-    name: "Helvi Bezuidenhout",
-    specialization: "Investment & Retirement Specialist",
+    name: "Petrus van der Merwe",
+    specialization: "Life Insurance Specialist",
     region: "Windhoek",
     experience: "15 years",
     languages: ["English", "Afrikaans"],
-    rating: 4.8,
-    clients: 200,
-    specialties: ["Unit Trusts", "Retirement Annuities", "Tax Planning"],
-    availability: "Available today",
-    avatar: "/avatars/helvi_bezuidenhout.png",
-  },
-  {
-    id: "ADV-003",
-    name: "David Ndjavera",
-    specialization: "Agricultural & Rural Specialist",
-    region: "Tsumeb",
-    experience: "10 years",
-    languages: ["English", "Oshiwambo", "Herero"],
-    rating: 4.7,
-    clients: 95,
-    specialties: ["Crop Insurance", "Livestock Insurance", "Rural Savings"],
-    availability: "Available tomorrow",
-    avatar: "/avatars/david_ndjavera.png",
-  },
-  {
-    id: "ADV-004",
-    name: "Fatima Isaacks",
-    specialization: "Family & Education Specialist",
-    region: "Oshakati",
-    experience: "8 years",
-    languages: ["English", "Oshiwambo", "Portuguese"],
-    rating: 4.9,
+    rating: 4.6,
     clients: 120,
-    specialties: ["Education Savings", "Family Insurance", "Life Insurance"],
+    specialties: ["Life Insurance", "Term Life", "Whole Life"],
     availability: "Available now",
-    avatar: "/avatars/fatima_isaacks.png",
-  },
-  {
-    id: "ADV-005",
-    name: "John-Paul !Gaeb",
-    specialization: "Maritime & Fisheries Specialist",
-    region: "Swakopmund",
-    experience: "9 years",
-    languages: ["English", "Afrikaans", "Nama"],
-    rating: 4.8,
-    clients: 110,
-    specialties: ["Marine Insurance", "Income Protection", "Savings Plans"],
-    availability: "Available now",
-    avatar: "/avatars/john_paul_gaeb.png",
-  },
-  {
-    id: "ADV-006",
-    name: "Maria Shikongo",
-    specialization: "Small Business Specialist",
-    region: "Windhoek",
-    experience: "11 years",
-    languages: ["English", "Oshiwambo", "Afrikaans"],
-    rating: 4.9,
-    clients: 180,
-    specialties: ["Business Insurance", "Key Person Insurance", "Group Benefits"],
-    availability: "Available today",
-    avatar: "/avatars/maria_shikongo.png",
-  },
-  {
-    id: "ADV-007",
-    name: "Petrus van der Merwe",
-    specialization: "Estate Planning Specialist",
-    region: "Windhoek",
-    experience: "18 years",
-    languages: ["English", "Afrikaans"],
-    rating: 4.9,
-    clients: 250,
-    specialties: ["Estate Planning", "Life Insurance", "Trust Services"],
-    availability: "Available tomorrow",
     avatar: "/avatars/petrus_van_der_merwe.png",
   },
   {
-    id: "ADV-008",
-    name: "Amina Nangombe",
-    specialization: "Health & Wellness Specialist",
-    region: "Oshakati",
-    experience: "7 years",
-    languages: ["English", "Oshiwambo", "Herero"],
-    rating: 4.8,
-    clients: 100,
-    specialties: ["Health Insurance", "Disability Cover", "Critical Illness"],
-    availability: "Available now",
-    avatar: "/avatars/amina_nangombe.png",
-  },
-  {
-    id: "ADV-009",
-    name: "Christoph Müller",
-    specialization: "Expatriate Services Specialist",
-    region: "Windhoek",
-    experience: "13 years",
-    languages: ["English", "German", "Afrikaans"],
-    rating: 4.7,
-    clients: 140,
-    specialties: ["International Coverage", "Travel Insurance", "Expat Solutions"],
-    availability: "Available today",
-    avatar: "/avatars/christoph_muller.png",
-  },
-  {
-    id: "ADV-010",
-    name: "Lydia Geingob",
-    specialization: "Women's Financial Empowerment",
-    region: "Windhoek",
-    experience: "10 years",
-    languages: ["English", "Oshiwambo", "Afrikaans"],
-    rating: 4.9,
-    clients: 160,
-    specialties: ["Women's Insurance", "Education Planning", "Retirement Planning"],
-    availability: "Available now",
-    avatar: "/avatars/lydia_geingob.png",
-  },
-  {
-    id: "ADV-011",
-    name: "Francois Coetzee",
-    specialization: "High Net Worth Specialist",
-    region: "Windhoek",
-    experience: "20 years",
-    languages: ["English", "Afrikaans"],
-    rating: 5.0,
-    clients: 300,
-    specialties: ["Wealth Management", "Estate Planning", "Tax Optimization"],
-    availability: "Available today",
-    avatar: "/avatars/francois_coetzee.jpg",
-  },
-  {
-    id: "ADV-012",
-    name: "Selma Katjijere",
-    specialization: "Youth Financial Planning",
-    region: "Oshakati",
-    experience: "6 years",
-    languages: ["English", "Oshiwambo", "Herero"],
-    rating: 4.8,
-    clients: 85,
-    specialties: ["Education Savings", "First Job Benefits", "Young Professional Plans"],
-    availability: "Available now",
-    avatar: "/avatars/selma_katjijere.png",
-  },
-  {
-    id: "ADV-013",
-    name: "Willem Botha",
-    specialization: "Agricultural Finance Specialist",
-    region: "Tsumeb",
-    experience: "14 years",
-    languages: ["English", "Afrikaans", "Oshiwambo"],
-    rating: 4.8,
-    clients: 170,
-    specialties: ["Farm Insurance", "Agricultural Loans", "Crop Protection"],
-    availability: "Available tomorrow",
-    avatar: "/avatars/willem_botha.png",
-  },
-  {
-    id: "ADV-014",
-    name: "Hilma Shikwambi",
-    specialization: "Micro-Enterprise Specialist",
-    region: "Windhoek",
-    experience: "9 years",
-    languages: ["English", "Oshiwambo", "Damara"],
-    rating: 4.9,
-    clients: 135,
-    specialties: ["Micro Insurance", "Business Loans", "Group Schemes"],
-    availability: "Available now",
-    avatar: "/avatars/hilma_shikwambi.png",
-  },
-  {
-    id: "ADV-015",
-    name: "Pieter Swart",
-    specialization: "Retirement Planning Specialist",
-    region: "Windhoek",
-    experience: "16 years",
-    languages: ["English", "Afrikaans"],
-    rating: 4.9,
-    clients: 220,
-    specialties: ["Retirement Annuities", "Pension Plans", "Estate Planning"],
-    availability: "Available today",
-    avatar: "/avatars/pieter_swart.jpg",
-  },
-  {
-    id: "ADV-016",
-    name: "Esther Mwandingi",
-    specialization: "Family Protection Specialist",
-    region: "Oshakati",
-    experience: "8 years",
-    languages: ["English", "Oshiwambo", "Herero"],
-    rating: 4.8,
-    clients: 125,
-    specialties: ["Family Insurance", "Child Education", "Survivor Benefits"],
-    availability: "Available now",
-    avatar: "/avatars/esther_mwandingi.png",
-  },
-  {
-    id: "ADV-017",
+    id: "ADV-002",
     name: "Andreas Fischer",
-    specialization: "Corporate Benefits Specialist",
+    specialization: "Investment Advisor",
     region: "Windhoek",
     experience: "12 years",
     languages: ["English", "German", "Afrikaans"],
-    rating: 4.7,
-    clients: 150,
-    specialties: ["Group Life", "Employee Benefits", "Corporate Packages"],
+    rating: 4.5,
+    clients: 95,
+    specialties: ["Unit Trusts", "Retirement Annuities", "Investment Planning"],
     availability: "Available today",
     avatar: "/avatars/andreas_fischer.png",
   },
   {
-    id: "ADV-018",
-    name: "Rebecca Katjimune",
-    specialization: "Education Planning Specialist",
+    id: "ADV-003",
+    name: "Thomas Shikongo",
+    specialization: "Informal Sector Specialist",
     region: "Windhoek",
-    experience: "7 years",
+    experience: "10 years",
     languages: ["English", "Oshiwambo", "Afrikaans"],
-    rating: 4.9,
-    clients: 105,
-    specialties: ["Education Savings", "School Fees Planning", "University Funding"],
+    rating: 4.7,
+    clients: 130,
+    specialties: ["Funeral Insurance", "Micro Insurance", "Savings Products"],
     availability: "Available now",
-    avatar: "/avatars/rebecca_katjimune.png",
+    avatar: "/avatars/thomas_shikongo.png",
   },
   {
-    id: "ADV-019",
-    name: "Stephanus Groenewaldt",
-    specialization: "Property & Asset Protection",
-    region: "Swakopmund",
-    experience: "11 years",
-    languages: ["English", "Afrikaans", "German"],
-    rating: 4.8,
-    clients: 145,
-    specialties: ["Home Insurance", "Property Insurance", "Asset Protection"],
-    availability: "Available tomorrow",
-    avatar: "/avatars/stephanus_groenewaldt.png",
-  },
-  {
-    id: "ADV-020",
-    name: "Joyce Nakale",
-    specialization: "Comprehensive Financial Planning",
+    id: "ADV-004",
+    name: "Esther Mwandingi",
+    specialization: "Personal Financial Planning",
     region: "Windhoek",
-    experience: "15 years",
-    languages: ["English", "Oshiwambo", "Herero"],
-    rating: 4.9,
-    clients: 200,
-    specialties: ["Full Financial Planning", "Portfolio Management", "Life Insurance"],
+    experience: "18 years",
+    languages: ["English", "Oshiwambo"],
+    rating: 4.7,
+    clients: 85,
+    specialties: ["Financial Planning", "Retirement Planning", "Estate Planning"],
+    availability: "Available today",
+    avatar: "/avatars/esther_mwandingi.png",
+  },
+  {
+    id: "ADV-005",
+    name: "Francois Coetzee",
+    specialization: "Business Solutions",
+    region: "Windhoek",
+    experience: "10 years",
+    languages: ["English", "Afrikaans"],
+    rating: 4.5,
+    clients: 110,
+    specialties: ["Business Insurance", "Group Benefits", "Corporate Packages"],
     availability: "Available now",
-    avatar: "/avatars/joyce_nakale.png",
+    avatar: "/avatars/francois_coetzee.jpg",
   },
 ];
 
@@ -305,22 +107,27 @@ export default function AdvisorsPage() {
         const response = await fetch("/api/advisors");
         if (!response.ok) throw new Error("Failed to fetch advisors");
         const data = await response.json();
-        
+
         // Transform API data to match expected format
         const transformedAdvisors = data.map((advisor: any) => ({
           id: advisor.id || advisor.advisorNumber,
           name: advisor.name,
           specialization: advisor.specialization,
           region: advisor.location || advisor.region || "Namibia",
-          experience: advisor.experience || `${advisor.experienceYears || 0} years`,
+          experience:
+            advisor.experience || `${advisor.experienceYears || 0} years`,
           languages: [], // Not in API response, can be added later
-          rating: advisor.satisfactionScore ? parseFloat((advisor.satisfactionScore / 20).toFixed(1)) : 4.5, // Convert 0-100 to 0-5 scale
+          rating: advisor.satisfactionScore
+            ? parseFloat((advisor.satisfactionScore / 20).toFixed(1))
+            : 4.5, // Convert 0-100 to 0-5 scale
           clients: advisor.clients || 0,
           specialties: advisor.specialization ? [advisor.specialization] : [],
           availability: "Available now", // Can be calculated from schedule
-          avatar: advisor.avatarUrl || `/avatars/${advisor.name.toLowerCase().replace(/\s+/g, "_")}.png`,
+          avatar:
+            advisor.avatarUrl ||
+            `/avatars/${advisor.name.toLowerCase().replace(/\s+/g, "_")}.png`,
         }));
-        
+
         setAdvisors(transformedAdvisors);
       } catch (err) {
         console.error("Error fetching advisors:", err);
@@ -529,22 +336,30 @@ export default function AdvisorsPage() {
                         Specialties:
                       </h4>
                       <div className="flex flex-wrap gap-2">
-                        {advisor.specialties.map((specialty: string, specialtyIdx: number) => (
-                          <span
-                            key={specialtyIdx}
-                            className="badge badge-outline badge-sm"
-                          >
-                            {specialty}
-                          </span>
-                        ))}
+                        {advisor.specialties.map(
+                          (specialty: string, specialtyIdx: number) => (
+                            <span
+                              key={specialtyIdx}
+                              className="badge badge-outline badge-sm"
+                            >
+                              {specialty}
+                            </span>
+                          ),
+                        )}
                       </div>
                     </div>
 
                     <div className="flex gap-2">
-                      <Link href={`/advisors/${advisor.id}/book`} className="btn-om-primary btn-sm flex-1">
+                      <Link
+                        href={`/advisors/${advisor.id}/book`}
+                        className="btn-om-primary btn-sm flex-1"
+                      >
                         Book Consultation
                       </Link>
-                      <Link href={`/advisors/${advisor.id}`} className="btn-om-outline btn-sm">
+                      <Link
+                        href={`/advisors/${advisor.id}`}
+                        className="btn-om-outline btn-sm"
+                      >
                         View Profile
                       </Link>
                     </div>
@@ -593,13 +408,12 @@ export default function AdvisorsPage() {
             </p>
             <Link href="/chat">
               <OMButton variant="primary" size="lg">
-              Get AI Matching Assistance
+                Get AI Matching Assistance
               </OMButton>
             </Link>
           </div>
         </div>
       </section>
-
     </CorporateLayout>
   );
 }

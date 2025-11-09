@@ -22,10 +22,30 @@ const claimData = {
   type: "Vehicle Accident",
   status: "Under Review",
   requiredDocuments: [
-    { id: "POLICE_REPORT", name: "Police Report", required: true, uploaded: false },
-    { id: "REPAIR_QUOTE", name: "Repair Quote", required: true, uploaded: true },
-    { id: "DAMAGE_PHOTOS", name: "Damage Photos", required: true, uploaded: true },
-    { id: "VEHICLE_REG", name: "Vehicle Registration", required: false, uploaded: false },
+    {
+      id: "POLICE_REPORT",
+      name: "Police Report",
+      required: true,
+      uploaded: false,
+    },
+    {
+      id: "REPAIR_QUOTE",
+      name: "Repair Quote",
+      required: true,
+      uploaded: true,
+    },
+    {
+      id: "DAMAGE_PHOTOS",
+      name: "Damage Photos",
+      required: true,
+      uploaded: true,
+    },
+    {
+      id: "VEHICLE_REG",
+      name: "Vehicle Registration",
+      required: false,
+      uploaded: false,
+    },
   ],
 };
 
@@ -123,9 +143,13 @@ export default function UploadDocumentsPage() {
                         <DocumentTextIcon className="w-6 h-6 text-om-grey" />
                       )}
                       <div>
-                        <div className="font-semibold text-om-navy text-om-body">{doc.name}</div>
+                        <div className="font-semibold text-om-navy text-om-body">
+                          {doc.name}
+                        </div>
                         {doc.required && (
-                          <div className="text-xs text-om-naartjie">Required</div>
+                          <div className="text-xs text-om-naartjie">
+                            Required
+                          </div>
                         )}
                       </div>
                     </div>
@@ -175,7 +199,8 @@ export default function UploadDocumentsPage() {
                   />
                 </label>
                 <p className="text-xs text-om-grey mt-4 text-om-body">
-                  Supported formats: PDF, JPG, PNG, DOC, DOCX (Max 10MB per file)
+                  Supported formats: PDF, JPG, PNG, DOC, DOCX (Max 10MB per
+                  file)
                 </p>
               </div>
             </div>
@@ -195,7 +220,9 @@ export default function UploadDocumentsPage() {
                       <div className="flex items-center gap-4">
                         <DocumentTextIcon className="w-6 h-6 text-om-heritage-green" />
                         <div>
-                          <div className="font-semibold text-om-navy text-om-body">{file.name}</div>
+                          <div className="font-semibold text-om-navy text-om-body">
+                            {file.name}
+                          </div>
                           <div className="text-xs text-om-grey text-om-body">
                             {(file.file.size / 1024 / 1024).toFixed(2)} MB
                           </div>
@@ -232,4 +259,3 @@ export default function UploadDocumentsPage() {
     </CorporateLayout>
   );
 }
-

@@ -55,7 +55,9 @@ export default function AdvisorClientsPage() {
     const fetchClients = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/advisors/${selectedPersona}/clients`);
+        const response = await fetch(
+          `/api/advisors/${selectedPersona}/clients`,
+        );
         if (!response.ok) throw new Error("Failed to fetch clients");
         const data = await response.json();
         setClients(data);
@@ -193,8 +195,10 @@ export default function AdvisorClientsPage() {
               <div className="text-3xl font-bold text-om-navy">
                 {filteredClients.length > 0
                   ? Math.round(
-                      filteredClients.reduce((sum, c) => sum + c.engagementScore, 0) /
-                        filteredClients.length,
+                      filteredClients.reduce(
+                        (sum, c) => sum + c.engagementScore,
+                        0,
+                      ) / filteredClients.length,
                     )
                   : 0}
                 %
@@ -207,7 +211,8 @@ export default function AdvisorClientsPage() {
               <div className="text-3xl font-bold text-om-gold">
                 N$
                 {Math.round(
-                  filteredClients.reduce((sum, c) => sum + c.lifetimeValue, 0) / 1000,
+                  filteredClients.reduce((sum, c) => sum + c.lifetimeValue, 0) /
+                    1000,
                 ).toLocaleString()}
                 K
               </div>
@@ -217,11 +222,13 @@ export default function AdvisorClientsPage() {
             <div className="card-body">
               <div className="text-sm text-om-grey">High Risk Clients</div>
               <div className="text-3xl font-bold text-om-cerise">
-                {filteredClients.filter((c) => {
-                  // Check if client has churnRisk property
-                  const risk = (c as any).churnRisk || "Low";
-                  return risk === "High";
-                }).length}
+                {
+                  filteredClients.filter((c) => {
+                    // Check if client has churnRisk property
+                    const risk = (c as any).churnRisk || "Low";
+                    return risk === "High";
+                  }).length
+                }
               </div>
             </div>
           </div>
@@ -231,12 +238,16 @@ export default function AdvisorClientsPage() {
       {/* Client Analytics Visualizations */}
       {filteredClients.length > 0 && (
         <section className="container mx-auto px-4 pb-6">
-          <h2 className="text-xl font-bold text-om-navy mb-4">Client Portfolio Analytics</h2>
+          <h2 className="text-xl font-bold text-om-navy mb-4">
+            Client Portfolio Analytics
+          </h2>
           <div className="grid md:grid-cols-2 gap-6">
             {/* Segment Distribution */}
             <div className="card-om">
               <div className="card-body">
-                <h3 className="font-bold text-om-navy mb-4">Segment Distribution</h3>
+                <h3 className="font-bold text-om-navy mb-4">
+                  Segment Distribution
+                </h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -246,15 +257,19 @@ export default function AdvisorClientsPage() {
                           const seg = c.segment || "Unknown";
                           segmentCounts[seg] = (segmentCounts[seg] || 0) + 1;
                         });
-                        return Object.entries(segmentCounts).map(([name, value]) => ({
-                          name,
-                          value,
-                        }));
+                        return Object.entries(segmentCounts).map(
+                          ([name, value]) => ({
+                            name,
+                            value,
+                          }),
+                        );
                       })()}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={(entry: any) => `${entry.name} (${((entry.percent || 0) * 100).toFixed(0)}%)`}
+                      label={(entry: any) =>
+                        `${entry.name} (${((entry.percent || 0) * 100).toFixed(0)}%)`
+                      }
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
@@ -265,12 +280,22 @@ export default function AdvisorClientsPage() {
                           const seg = c.segment || "Unknown";
                           segmentCounts[seg] = (segmentCounts[seg] || 0) + 1;
                         });
-                        return Object.entries(segmentCounts).map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={["#009677", "#50b848", "#8dc63f", "#00c0e8", "#f37021"][index % 5]}
-                          />
-                        ));
+                        return Object.entries(segmentCounts).map(
+                          (entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={
+                                [
+                                  "#009677",
+                                  "#50b848",
+                                  "#8dc63f",
+                                  "#00c0e8",
+                                  "#f37021",
+                                ][index % 5]
+                              }
+                            />
+                          ),
+                        );
                       })()}
                     </Pie>
                     <Tooltip />
@@ -282,14 +307,21 @@ export default function AdvisorClientsPage() {
             {/* Churn Risk Distribution */}
             <div className="card-om">
               <div className="card-body">
-                <h3 className="font-bold text-om-navy mb-4">Churn Risk Distribution</h3>
+                <h3 className="font-bold text-om-navy mb-4">
+                  Churn Risk Distribution
+                </h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
                       data={(() => {
-                        const riskCounts: Record<string, number> = { Low: 0, Medium: 0, High: 0 };
+                        const riskCounts: Record<string, number> = {
+                          Low: 0,
+                          Medium: 0,
+                          High: 0,
+                        };
                         filteredClients.forEach((c) => {
-                          const risk = ((c as any).churnRisk || "Low") as string;
+                          const risk = ((c as any).churnRisk ||
+                            "Low") as string;
                           riskCounts[risk] = (riskCounts[risk] || 0) + 1;
                         });
                         return Object.entries(riskCounts)
@@ -316,9 +348,14 @@ export default function AdvisorClientsPage() {
                       dataKey="value"
                     >
                       {(() => {
-                        const riskCounts: Record<string, number> = { Low: 0, Medium: 0, High: 0 };
+                        const riskCounts: Record<string, number> = {
+                          Low: 0,
+                          Medium: 0,
+                          High: 0,
+                        };
                         filteredClients.forEach((c) => {
-                          const risk = ((c as any).churnRisk || "Low") as string;
+                          const risk = ((c as any).churnRisk ||
+                            "Low") as string;
                           riskCounts[risk] = (riskCounts[risk] || 0) + 1;
                         });
                         return Object.entries(riskCounts)
@@ -346,7 +383,9 @@ export default function AdvisorClientsPage() {
             {/* Engagement Score Distribution */}
             <div className="card-om md:col-span-2">
               <div className="card-body">
-                <h3 className="font-bold text-om-navy mb-4">Engagement Score Distribution</h3>
+                <h3 className="font-bold text-om-navy mb-4">
+                  Engagement Score Distribution
+                </h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart
                     data={(() => {
@@ -360,7 +399,9 @@ export default function AdvisorClientsPage() {
                       return ranges.map((r) => ({
                         range: r.range,
                         count: filteredClients.filter(
-                          (c) => c.engagementScore >= r.min && c.engagementScore <= r.max
+                          (c) =>
+                            c.engagementScore >= r.min &&
+                            c.engagementScore <= r.max,
                         ).length,
                       }));
                     })()}
@@ -410,11 +451,11 @@ export default function AdvisorClientsPage() {
                   </div>
                   <div className="flex-1">
                     <div className="font-bold text-om-navy">{client.name}</div>
-                    <div className="text-xs text-om-grey">{client.customerNumber}</div>
+                    <div className="text-xs text-om-grey">
+                      {client.customerNumber}
+                    </div>
                   </div>
-                  <div className="badge badge-om-active">
-                    Active
-                  </div>
+                  <div className="badge badge-om-active">Active</div>
                 </div>
 
                 {/* Client Stats */}
@@ -447,7 +488,10 @@ export default function AdvisorClientsPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2 mt-4">
-                  <Link href={`/advisor/client/${client.customerNumber}`} className="flex-1">
+                  <Link
+                    href={`/advisor/client/${client.customerNumber}`}
+                    className="flex-1"
+                  >
                     <OMButton variant="primary" size="sm" className="w-full">
                       View 360° Profile
                     </OMButton>
@@ -490,7 +534,9 @@ export default function AdvisorClientsPage() {
                 <p className="text-om-grey">{selectedClient.customerNumber}</p>
                 <div className="flex gap-2 mt-2">
                   <span className="badge">{selectedClient.segment}</span>
-                  <span className="badge">Engagement: {Math.round(selectedClient.engagementScore)}%</span>
+                  <span className="badge">
+                    Engagement: {Math.round(selectedClient.engagementScore)}%
+                  </span>
                 </div>
               </div>
             </div>
@@ -501,7 +547,8 @@ export default function AdvisorClientsPage() {
                 <div className="card-body p-4">
                   <div className="text-sm text-om-grey">Lifetime Value</div>
                   <div className="text-2xl font-bold text-om-green">
-                    N${Math.round(selectedClient.lifetimeValue).toLocaleString()}
+                    N$
+                    {Math.round(selectedClient.lifetimeValue).toLocaleString()}
                   </div>
                 </div>
               </div>
@@ -540,7 +587,10 @@ export default function AdvisorClientsPage() {
 
             {/* Actions */}
             <div className="modal-action">
-              <Link href={`/advisor/client/${selectedClient.customerNumber}`} className="btn btn-om-primary">
+              <Link
+                href={`/advisor/client/${selectedClient.customerNumber}`}
+                className="btn btn-om-primary"
+              >
                 View Full Profile
               </Link>
               <button className="btn btn-om-outline">Send Message</button>

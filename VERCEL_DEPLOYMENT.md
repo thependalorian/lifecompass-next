@@ -5,16 +5,19 @@
 ### Option A: Using Vercel CLI (Recommended)
 
 1. **Install Vercel CLI** (if not already installed):
+
 ```bash
 npm i -g vercel
 ```
 
 2. **Login to Vercel**:
+
 ```bash
 vercel login
 ```
 
 3. **Deploy from project directory**:
+
 ```bash
 cd lifecompass-next
 vercel
@@ -29,6 +32,7 @@ vercel
    - Override settings? **No**
 
 5. **For production deployment**:
+
 ```bash
 vercel --prod
 ```
@@ -80,6 +84,7 @@ GRAPH_API_URL=http://localhost:8058 (if using backend)
 3. **Add these records** (Vercel will provide exact values):
 
 #### For Root Domain (theshandi.com):
+
 ```
 Type: A
 Host: @
@@ -88,6 +93,7 @@ TTL: Automatic (or 30 min)
 ```
 
 #### For www Subdomain:
+
 ```
 Type: CNAME
 Host: www
@@ -96,6 +102,7 @@ TTL: Automatic (or 30 min)
 ```
 
 #### For SSL (Vercel will handle this automatically):
+
 - Vercel automatically provisions SSL certificates via Let's Encrypt
 - No manual SSL configuration needed
 
@@ -122,14 +129,14 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: '/:path*',
+        source: "/:path*",
         has: [
           {
-            type: 'host',
-            value: 'www.theshandi.com',
+            type: "host",
+            value: "www.theshandi.com",
           },
         ],
-        destination: 'https://theshandi.com/:path*',
+        destination: "https://theshandi.com/:path*",
         permanent: true,
       },
     ];
@@ -142,17 +149,20 @@ export default nextConfig;
 ## Troubleshooting
 
 ### Domain not connecting?
+
 1. Verify DNS records are correct in Namecheap
 2. Wait for DNS propagation (can take up to 48 hours)
 3. Check Vercel domain status page
 4. Ensure no conflicting records exist
 
 ### Build errors?
+
 1. Check environment variables are set
 2. Verify `package.json` has correct build script
 3. Check Vercel build logs for errors
 
 ### SSL certificate issues?
+
 - Vercel handles SSL automatically
 - If issues persist, contact Vercel support
 
@@ -177,4 +187,3 @@ vercel ls
 2. **Monitor deployments**: Check Vercel dashboard
 3. **Set up automatic deployments**: Push to GitHub → Auto-deploy on Vercel
 4. **Configure custom domain**: Follow Step 3 above
-

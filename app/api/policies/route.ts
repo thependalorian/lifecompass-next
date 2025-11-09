@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCustomerPolicies, getCustomerByNumber } from "@/lib/db/neon";
 
 // Force dynamic rendering since we use request.url
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,28 +13,62 @@ export async function GET(request: NextRequest) {
     const customerNumber = searchParams.get("customerNumber");
     const customerId = searchParams.get("customerId");
 
+    // Input validation: ensure at least one parameter is provided
+    if (!customerNumber && !customerId) {
+      return NextResponse.json(
+        { error: "customerNumber or customerId parameter is required" },
+        { status: 400 },
+      );
+    }
+
+    // Sanitize inputs
+    const sanitizedCustomerNumber = customerNumber?.trim();
+    const sanitizedCustomerId = customerId?.trim();
+
+    // Validate customer number format if provided
+    if (
+      sanitizedCustomerNumber &&
+      (sanitizedCustomerNumber.length === 0 ||
+        sanitizedCustomerNumber.length > 50)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid customer number format" },
+        { status: 400 },
+      );
+    }
+
+    // Validate customer ID format if provided (should be UUID or valid ID)
+    if (
+      sanitizedCustomerId &&
+      (sanitizedCustomerId.length === 0 || sanitizedCustomerId.length > 100)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid customer ID format" },
+        { status: 400 },
+      );
+    }
+
     let policies;
 
-    if (customerNumber) {
+    if (sanitizedCustomerNumber) {
       // Get customer by number first
-      const customer = await getCustomerByNumber(customerNumber);
+      const customer = await getCustomerByNumber(sanitizedCustomerNumber);
       if (!customer) {
         return NextResponse.json(
           { error: "Customer not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
       // Get policies for customer
       policies = await getCustomerPolicies(customer.id);
-    } else if (customerId) {
+    } else if (sanitizedCustomerId) {
       // Get policies directly by customer ID (UUID)
-      policies = await getCustomerPolicies(customerId);
+      policies = await getCustomerPolicies(sanitizedCustomerId);
     } else {
-      // Get all policies (for admin/advisor view)
-      // Note: This requires a new helper function - for now return empty
+      // This should not happen due to validation above, but keep as safety check
       return NextResponse.json(
         { error: "customerNumber or customerId parameter is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -45,13 +79,19 @@ export async function GET(request: NextRequest) {
       type: policy.product_type,
       subtype: policy.product_subtype,
       status: policy.status,
-      coverageAmount: policy.coverage_amount ? parseFloat(policy.coverage_amount.toString()) : null,
-      premiumAmount: policy.premium_amount ? parseFloat(policy.premium_amount.toString()) : null,
+      coverageAmount: policy.coverage_amount
+        ? parseFloat(policy.coverage_amount.toString())
+        : null,
+      premiumAmount: policy.premium_amount
+        ? parseFloat(policy.premium_amount.toString())
+        : null,
       premiumFrequency: policy.premium_frequency || "Monthly",
       startDate: policy.start_date,
       endDate: policy.end_date,
       renewalDate: policy.renewal_date,
-      sumAssured: policy.sum_assured ? parseFloat(policy.sum_assured.toString()) : null,
+      sumAssured: policy.sum_assured
+        ? parseFloat(policy.sum_assured.toString())
+        : null,
       beneficiaries: policy.beneficiaries || [],
       underwritingClass: policy.underwriting_class,
       paymentMethod: policy.payment_method,
@@ -64,10 +104,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(transformedPolicies);
   } catch (error) {
     console.error("Error fetching policies:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch policies" },
-      { status: 500 }
+      {
+        error: "Failed to fetch policies",
+        message:
+          process.env.NODE_ENV === "development"
+            ? errorMessage
+            : "Unable to load policies. Please try again or contact support if the problem persists.",
+      },
+      { status: 500 },
     );
   }
 }
-

@@ -34,16 +34,54 @@ const productDocumentMap: Record<string, string | null> = {
   "OMP Funeral Insurance": "DOC-001", // Extended Family Funeral Cover
   "OMP Disability Income Cover": "DOC-005",
   "Unit Trusts": "DOC-024", // Unit Trust Individual Buying Form
-  "Retirement Solutions": null, // May need to search for retirement docs
-  "Education Savings Plans": null, // May need to search for education docs
-  "Business Insurance": null, // May need to search for business docs
-  "Health Insurance": null, // May need to search for health docs
-  "Short-term Insurance": null, // May need to search for short-term docs
+  "Retirement Solutions": null, // Search: Investment brochures (Growth Fund, Money Fund)
+  "Education Savings Plans": null, // Search: Investment products
+  "Business Insurance": "DOC-013", // OMP Business Expense Cover
+  "Health Insurance": null, // Search: Injury/Illness forms, general insurance guides
+  "Short-term Insurance": "DOC-041", // Travelsure Brochure (travel insurance)
+};
+
+// Product to search keywords mapping (for products without direct document mappings)
+const productSearchKeywords: Record<string, string[]> = {
+  "Retirement Solutions": [
+    "retirement",
+    "pension",
+    "annuity",
+    "growth fund",
+    "money fund",
+    "investment",
+  ],
+  "Education Savings Plans": [
+    "education",
+    "savings",
+    "investment",
+    "unit trust",
+    "growth fund",
+  ],
+  "Health Insurance": [
+    "health",
+    "medical",
+    "illness",
+    "injury",
+    "disability",
+    "income cover",
+  ],
+  "Short-term Insurance": [
+    "short-term",
+    "travel",
+    "motor",
+    "property",
+    "vehicle",
+    "accident",
+    "theft",
+  ],
 };
 
 export default function ProductsPage() {
   const router = useRouter();
   const [documents, setDocuments] = useState<Record<string, any>>({});
+  const [allDocuments, setAllDocuments] = useState<any[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
 
   useEffect(() => {
     // Check if persona is selected
@@ -57,13 +95,22 @@ export default function ProductsPage() {
     // Fetch product guides and forms for products that have document mappings
     const fetchDocuments = async () => {
       try {
-        // Fetch Insurance Product Guides
-        const insuranceResponse = await fetch("/api/documents?category=Insurance&type=Product Guide");
-        // Fetch Investment Forms (for Unit Trusts)
-        const investmentResponse = await fetch("/api/documents?category=Investment&type=Form");
-        
+        // Fetch all relevant document categories
+        const [insuranceResponse, investmentResponse, allDocsResponse] =
+          await Promise.all([
+            fetch("/api/documents?category=Insurance&type=Product Guide"),
+            fetch("/api/documents?category=Investment&type=Form"),
+            fetch("/api/documents"), // Fetch all for keyword searching
+          ]);
+
         const docsMap: Record<string, any> = {};
-        
+        let allDocs: any[] = [];
+
+        // Get all documents for keyword searching
+        if (allDocsResponse.ok) {
+          allDocs = await allDocsResponse.json();
+        }
+
         // Process Insurance Product Guides
         if (insuranceResponse.ok) {
           const insuranceDocs = await insuranceResponse.json();
@@ -79,15 +126,28 @@ export default function ProductsPage() {
               if (title.includes("extended") || title.includes("family")) {
                 docsMap["OMP Funeral Insurance"] = doc;
               }
-            } else if (title.includes("disability") && title.includes("income")) {
+            } else if (
+              title.includes("disability") &&
+              title.includes("income")
+            ) {
               docsMap["OMP Disability Income Cover"] = doc;
+            } else if (title.includes("business expense")) {
+              docsMap["Business Insurance"] = doc;
+            } else if (
+              title.includes("travel") ||
+              title.includes("travelsure")
+            ) {
+              docsMap["Short-term Insurance"] = doc;
             }
           });
         } else {
-          console.error("Failed to fetch insurance documents:", insuranceResponse.status);
+          console.error(
+            "Failed to fetch insurance documents:",
+            insuranceResponse.status,
+          );
           toast.error("Failed to load product guides");
         }
-        
+
         // Process Investment Forms (for Unit Trusts)
         if (investmentResponse.ok) {
           const investmentDocs = await investmentResponse.json();
@@ -104,11 +164,44 @@ export default function ProductsPage() {
             }
           });
         } else {
-          console.error("Failed to fetch investment documents:", investmentResponse.status);
+          console.error(
+            "Failed to fetch investment documents:",
+            investmentResponse.status,
+          );
         }
-        
+
+        // Search for products without direct mappings using keywords
+        Object.entries(productSearchKeywords).forEach(
+          ([productName, keywords]) => {
+            if (!docsMap[productName]) {
+              // Find document that matches any keyword
+              const matchingDoc = allDocs.find((doc: any) => {
+                if (!doc.isActive) return false;
+                const title = doc.title.toLowerCase();
+                const description = (doc.description || "").toLowerCase();
+                const category = (doc.category || "").toLowerCase();
+
+                return keywords.some(
+                  (keyword) =>
+                    title.includes(keyword.toLowerCase()) ||
+                    description.includes(keyword.toLowerCase()) ||
+                    category.includes(keyword.toLowerCase()),
+                );
+              });
+
+              if (matchingDoc) {
+                docsMap[productName] = matchingDoc;
+              }
+            }
+          },
+        );
+
         setDocuments(docsMap);
-        console.log("Documents loaded:", Object.keys(docsMap).length, "documents");
+        console.log(
+          "Documents loaded:",
+          Object.keys(docsMap).length,
+          "documents",
+        );
       } catch (error) {
         console.error("Error fetching documents:", error);
       }
@@ -117,17 +210,71 @@ export default function ProductsPage() {
     fetchDocuments();
   }, [router]);
 
-  const handleLearnMore = (productName: string) => {
+  // Fetch all documents for policies and forms listing
+  useEffect(() => {
+    const fetchAllDocuments = async () => {
+      setLoadingDocuments(true);
+      try {
+        // Fetch all documents grouped by category
+        const [allDocsResponse, policiesResponse, formsResponse] =
+          await Promise.all([
+            fetch("/api/documents"),
+            fetch("/api/documents?category=Insurance"),
+            fetch("/api/documents?type=Form"),
+          ]);
+
+        if (allDocsResponse.ok) {
+          const allDocs = await allDocsResponse.json();
+          setAllDocuments(allDocs.filter((doc: any) => doc.isActive !== false));
+        }
+      } catch (error) {
+        console.error("Error fetching all documents:", error);
+      } finally {
+        setLoadingDocuments(false);
+      }
+    };
+
+    fetchAllDocuments();
+  }, []);
+
+  const handleLearnMore = async (productName: string) => {
     // Try to find document by product name or document number
     const docNumber = productDocumentMap[productName];
-    const doc = docNumber ? documents[docNumber] : documents[productName];
-    
+    let doc = docNumber ? documents[docNumber] : documents[productName];
+
+    // If not found in documents map, search in allDocuments using keywords
+    if (!doc && allDocuments.length > 0) {
+      const keywords = productSearchKeywords[productName] || [];
+      if (keywords.length > 0) {
+        doc = allDocuments.find((d: any) => {
+          if (!d.isActive) return false;
+          const title = d.title.toLowerCase();
+          const description = (d.description || "").toLowerCase();
+          const category = (d.category || "").toLowerCase();
+
+          return keywords.some(
+            (keyword) =>
+              title.includes(keyword.toLowerCase()) ||
+              description.includes(keyword.toLowerCase()) ||
+              category.includes(keyword.toLowerCase()),
+          );
+        });
+      }
+    }
+
     if (doc) {
       // Open PDF viewer in new tab
       window.open(`/api/documents/${doc.documentNumber}/view`, "_blank");
     } else {
-      // Fallback: search for product in chat or show message
-      alert(`Product guide for "${productName}" is being prepared. Please contact an advisor for more information.`);
+      // Fallback: redirect to chat with product context or show message
+      const chatUrl = `/chat?query=${encodeURIComponent(`Tell me about ${productName}`)}`;
+      if (
+        confirm(
+          `Product guide for "${productName}" is being prepared. Would you like to chat with our AI assistant about this product?`,
+        )
+      ) {
+        router.push(chatUrl);
+      }
     }
   };
 
@@ -141,11 +288,13 @@ export default function ProductsPage() {
         if (persona.primaryAdvisorId) {
           // Normalize advisor ID format (handle both ADV-001 and ADV001)
           let advisorId = persona.primaryAdvisorId;
-          if (advisorId && !advisorId.includes('-')) {
+          if (advisorId && !advisorId.includes("-")) {
             // Convert ADV001 to ADV-001 format
-            advisorId = advisorId.replace(/ADV(\d{3})/, 'ADV-$1');
+            advisorId = advisorId.replace(/ADV(\d{3})/, "ADV-$1");
           }
-          router.push(`/advisors/${advisorId}/book?product=${encodeURIComponent(productName)}`);
+          router.push(
+            `/advisors/${advisorId}/book?product=${encodeURIComponent(productName)}`,
+          );
         } else {
           // Go to advisor selection with product context
           router.push(`/advisors?product=${encodeURIComponent(productName)}`);
@@ -178,13 +327,24 @@ export default function ProductsPage() {
           name: "OMP Funeral Insurance",
           description:
             "Complete funeral coverage with extended family protection and cashback benefits.",
-          features: ["Extended family coverage", "Cashback benefits", "Premium holidays", "Flexible premiums"],
+          features: [
+            "Extended family coverage",
+            "Cashback benefits",
+            "Premium holidays",
+            "Flexible premiums",
+          ],
           Icon: HeartIcon,
         },
         {
           name: "OMP Disability Income Cover",
-          description: "Monthly income replacement for disability with comprehensive support services.",
-          features: ["75% income replacement", "Rehabilitation support", "Tax-efficient benefits", "Flexible terms"],
+          description:
+            "Monthly income replacement for disability with comprehensive support services.",
+          features: [
+            "75% income replacement",
+            "Rehabilitation support",
+            "Tax-efficient benefits",
+            "Flexible terms",
+          ],
           Icon: BuildingOfficeIcon,
         },
       ],
@@ -194,14 +354,26 @@ export default function ProductsPage() {
       items: [
         {
           name: "Unit Trusts",
-          description: "Professional investment portfolios with diversification across asset classes and markets.",
-          features: ["Professional management", "Multi-asset options", "Daily liquidity", "Tax-efficient structures"],
+          description:
+            "Professional investment portfolios with diversification across asset classes and markets.",
+          features: [
+            "Professional management",
+            "Multi-asset options",
+            "Daily liquidity",
+            "Tax-efficient structures",
+          ],
           Icon: ChartBarIcon,
         },
         {
           name: "Retirement Solutions",
-          description: "Comprehensive retirement planning with pension funds, annuities, and preservation options.",
-          features: ["Tax-deductible contributions", "Professional management", "Flexible withdrawal options", "Guaranteed income streams"],
+          description:
+            "Comprehensive retirement planning with pension funds, annuities, and preservation options.",
+          features: [
+            "Tax-deductible contributions",
+            "Professional management",
+            "Flexible withdrawal options",
+            "Guaranteed income streams",
+          ],
           Icon: BeakerIcon,
         },
         {
@@ -223,7 +395,8 @@ export default function ProductsPage() {
       items: [
         {
           name: "Business Insurance",
-          description: "Comprehensive business protection including key person, liability, and property coverage.",
+          description:
+            "Comprehensive business protection including key person, liability, and property coverage.",
           features: [
             "Key person protection",
             "Business interruption coverage",
@@ -234,7 +407,8 @@ export default function ProductsPage() {
         },
         {
           name: "Health Insurance",
-          description: "Medical aid and health insurance solutions with comprehensive coverage options.",
+          description:
+            "Medical aid and health insurance solutions with comprehensive coverage options.",
           features: [
             "Hospitalization coverage",
             "Outpatient benefits",
@@ -245,7 +419,8 @@ export default function ProductsPage() {
         },
         {
           name: "Short-term Insurance",
-          description: "Vehicle, property, and liability insurance with comprehensive protection.",
+          description:
+            "Vehicle, property, and liability insurance with comprehensive protection.",
           features: [
             "Comprehensive coverage",
             "24/7 assistance",
@@ -333,7 +508,9 @@ export default function ProductsPage() {
                     <div className="flex gap-2">
                       {(() => {
                         const docNumber = productDocumentMap[product.name];
-                        const doc = docNumber ? documents[docNumber] : documents[product.name];
+                        const doc = docNumber
+                          ? documents[docNumber]
+                          : documents[product.name];
                         return (
                           <>
                             {doc && (
@@ -342,8 +519,8 @@ export default function ProductsPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
-                                <OMButton 
-                                  variant="outline" 
+                                <OMButton
+                                  variant="outline"
                                   size="sm"
                                   className="rounded-full text-center"
                                 >
@@ -351,16 +528,16 @@ export default function ProductsPage() {
                                 </OMButton>
                               </a>
                             )}
-                            <OMButton 
-                              variant="primary" 
-                              size="sm" 
+                            <OMButton
+                              variant="primary"
+                              size="sm"
                               className="flex-1 rounded-full text-center"
                               onClick={() => handleLearnMore(product.name)}
                             >
                               Learn More
                             </OMButton>
-                            <OMButton 
-                              variant="outline" 
+                            <OMButton
+                              variant="outline"
                               size="sm"
                               className="rounded-full text-center"
                               onClick={() => handleGetQuote(product.name)}
@@ -376,6 +553,107 @@ export default function ProductsPage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Policies & Forms Library */}
+      <section className="py-20 bg-om-light-grey">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl font-bold text-om-navy mb-4">
+              Policies & Forms Library
+            </h2>
+            <p className="text-xl text-om-grey max-w-2xl mx-auto">
+              Browse and download all available policy documents, product
+              guides, and application forms
+            </p>
+          </motion.div>
+
+          {loadingDocuments ? (
+            <div className="text-center py-12">
+              <div className="loading loading-spinner loading-lg text-om-green"></div>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {allDocuments
+                .filter(
+                  (doc: any) =>
+                    doc.documentType === "Product Guide" ||
+                    doc.documentType === "Form" ||
+                    doc.documentType === "Policy Document",
+                )
+                .slice(0, 12)
+                .map((doc: any, idx: number) => (
+                  <motion.div
+                    key={doc.documentNumber}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: idx * 0.05 }}
+                    className="card-om p-6"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-om-navy text-lg mb-1">
+                          {doc.title}
+                        </h3>
+                        <div className="flex gap-2 mb-2">
+                          <span className="badge badge-sm badge-outline">
+                            {doc.category}
+                          </span>
+                          <span className="badge badge-sm badge-outline">
+                            {doc.documentType}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {doc.description && (
+                      <p className="text-sm text-om-grey mb-4 line-clamp-2">
+                        {doc.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-om-grey mb-4">
+                      <span>{doc.viewCount || 0} views</span>
+                      <span>•</span>
+                      <span>{doc.downloadCount || 0} downloads</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <a
+                        href={`/api/documents/${doc.documentNumber}/view`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-sm btn-om-primary flex-1"
+                      >
+                        View
+                      </a>
+                      <a
+                        href={`/api/documents/${doc.documentNumber}/download`}
+                        download
+                        className="btn btn-sm btn-outline"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  </motion.div>
+                ))}
+            </div>
+          )}
+
+          {allDocuments.length > 12 && (
+            <div className="text-center mt-8">
+              <Link href="/advisor/knowledge">
+                <OMButton variant="outline" size="lg">
+                  View All Documents
+                </OMButton>
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
@@ -405,7 +683,6 @@ export default function ProductsPage() {
           </div>
         </div>
       </section>
-
     </CorporateLayout>
   );
 }

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 import { ToastProvider } from "@/components/providers/ToastProvider";
+import ChatWidget from "@/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: "LifeCompass by Old Mutual | Navigate Your Financial Future",
@@ -35,6 +36,7 @@ export default function RootLayout({
     <html lang="en" data-theme="lifecompass">
       <body className="font-sans">
         {children}
+        <ChatWidget />
         <ToastProvider />
       </body>
     </html>

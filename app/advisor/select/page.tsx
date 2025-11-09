@@ -17,6 +17,7 @@ import {
   MapPinIcon,
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
+import { dispatchPersonaChanged } from "@/lib/hooks/usePersonaState";
 
 export default function AdvisorPersonaSelection() {
   const router = useRouter();
@@ -48,12 +49,32 @@ export default function AdvisorPersonaSelection() {
     fetchAdvisors();
   }, []);
 
+  const handleSelectPersona = (selectedPersona: string) => {
+    // Clear any existing customer persona to prevent context conflicts
+    sessionStorage.removeItem("selectedCustomerPersona");
+    sessionStorage.removeItem("customerPersonaData");
+    dispatchPersonaChanged(); // Notify listeners of persona change
+
+    // Store selected persona in sessionStorage
+    sessionStorage.setItem("selectedAdvisorPersona", selectedPersona);
+
+    // Fetch full advisor data and store it
+    fetch(`/api/advisors/${selectedPersona}`)
+      .then((res) => res.json())
+      .then((data) => {
+        sessionStorage.setItem("advisorPersonaData", JSON.stringify(data));
+        router.push(`/advisor/profile/${selectedPersona}`);
+      })
+      .catch((err) => {
+        console.error("Error fetching advisor data:", err);
+        setError("Failed to load advisor data. Please try again.");
+      });
+  };
+
   const handleContinue = () => {
     if (selectedPersona) {
-      // Store selected persona in sessionStorage
-      sessionStorage.setItem("selectedAdvisorPersona", selectedPersona);
-      // Navigate to advisor profile page
-      router.push(`/advisor/profile/${selectedPersona}`);
+      // Call handleSelectPersona to store the selected advisor and navigate
+      handleSelectPersona(selectedPersona);
     }
   };
 
@@ -109,8 +130,9 @@ export default function AdvisorPersonaSelection() {
             className="mb-8"
           >
             <p className="text-lg text-om-grey text-center max-w-2xl mx-auto">
-              Select an advisor persona to experience LifeCompass from their perspective. 
-              Each advisor has unique specializations and manages a portfolio of clients.
+              Select an advisor persona to experience LifeCompass from their
+              perspective. Each advisor has unique specializations and manages a
+              portfolio of clients.
             </p>
           </motion.div>
 
@@ -142,7 +164,8 @@ export default function AdvisorPersonaSelection() {
                             target.style.display = "none";
                             const parent = target.parentElement;
                             if (parent) {
-                              parent.className = "w-16 h-16 rounded-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-xl font-bold ring-2 ring-om-heritage-green/20 flex-shrink-0 aspect-square";
+                              parent.className =
+                                "w-16 h-16 rounded-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-xl font-bold ring-2 ring-om-heritage-green/20 flex-shrink-0 aspect-square";
                               parent.textContent = persona.name
                                 .split(" ")
                                 .map((n: string) => n[0])
@@ -213,7 +236,9 @@ export default function AdvisorPersonaSelection() {
               size="lg"
               onClick={handleContinue}
               disabled={!selectedPersona}
-              className={!selectedPersona ? "opacity-50 cursor-not-allowed" : ""}
+              className={
+                !selectedPersona ? "opacity-50 cursor-not-allowed" : ""
+              }
             >
               Continue to Profile
             </OMButton>
@@ -223,4 +248,3 @@ export default function AdvisorPersonaSelection() {
     </CorporateLayout>
   );
 }
-

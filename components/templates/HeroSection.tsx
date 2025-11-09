@@ -173,4 +173,3 @@ export function HeroSection({
     </section>
   );
 }
-

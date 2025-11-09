@@ -8,7 +8,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronRightIcon, ChevronLeftIcon, HomeIcon } from "@heroicons/react/24/outline";
+import {
+  ChevronRightIcon,
+  ChevronLeftIcon,
+  HomeIcon,
+} from "@heroicons/react/24/outline";
 
 interface BreadcrumbItem {
   label: string;
@@ -69,7 +73,10 @@ export function Breadcrumbs({
           {breadcrumbs.map((crumb, index) => {
             const isLast = index === breadcrumbs.length - 1;
             return (
-              <div key={crumb.href} className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+              <div
+                key={crumb.href}
+                className="flex items-center gap-1 md:gap-2 flex-shrink-0"
+              >
                 {isLast ? (
                   <span className="text-om-navy font-medium text-xs md:text-sm whitespace-nowrap">
                     {crumb.label}
@@ -106,10 +113,10 @@ function generateBreadcrumbs(pathname: string): BreadcrumbItem[] {
   let currentPath = "";
   paths.forEach((path, index) => {
     currentPath += `/${path}`;
-    
+
     // Format label (capitalize and replace hyphens)
     const label = formatPathLabel(path);
-    
+
     breadcrumbs.push({
       label,
       href: currentPath,
@@ -142,11 +149,14 @@ function formatPathLabel(path: string): string {
   };
 
   // Check if it's a UUID or ID
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path)) {
+  if (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path)
+  ) {
     return "Details";
   }
 
   // Use mapped label or capitalize
-  return labelMap[path.toLowerCase()] || path.charAt(0).toUpperCase() + path.slice(1);
+  return (
+    labelMap[path.toLowerCase()] || path.charAt(0).toUpperCase() + path.slice(1)
+  );
 }
-

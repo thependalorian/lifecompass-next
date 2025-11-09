@@ -85,4 +85,3 @@ export function TargetIcon({ className = "w-6 h-6", ...props }: IconProps) {
     </svg>
   );
 }
-

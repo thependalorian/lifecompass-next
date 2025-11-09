@@ -3,6 +3,7 @@
 ## Overview
 
 This document outlines the PII masking strategy implemented for the LifeCompass platform. PII masking is critical for:
+
 - **Privacy Protection**: Protecting customer and advisor personal information
 - **Regulatory Compliance**: Meeting data protection requirements (GDPR, POPIA, etc.)
 - **Security**: Reducing risk of data breaches and identity theft
@@ -11,6 +12,7 @@ This document outlines the PII masking strategy implemented for the LifeCompass 
 ## What is PII?
 
 Personally Identifiable Information (PII) includes:
+
 - **National ID Numbers** - Never exposed
 - **Email Addresses** - Masked (e.g., `j***@example.com`)
 - **Phone Numbers** - Masked (e.g., `+264 *** *** 4567`)
@@ -22,9 +24,11 @@ Personally Identifiable Information (PII) includes:
 ## Masking Levels
 
 ### 1. **Public Level** (Maximum Masking)
+
 **Use Case**: Public-facing APIs, demo/hackathon, unauthenticated access
 
 **Masking Applied**:
+
 - ✅ Email: `j***@example.com`
 - ✅ Phone: `+264 *** *** 4567`
 - ✅ Date of Birth: `Age 39` (not full date)
@@ -33,6 +37,7 @@ Personally Identifiable Information (PII) includes:
 - ✅ National ID: `null` (never exposed)
 
 **Example**:
+
 ```json
 {
   "email": "j***@oldmutual.com.na",
@@ -45,9 +50,11 @@ Personally Identifiable Information (PII) includes:
 ```
 
 ### 2. **Advisor Level** (Moderate Masking)
+
 **Use Case**: Advisor viewing client data (authenticated advisor)
 
 **Masking Applied**:
+
 - ✅ Email: `j***@example.com` (partial)
 - ✅ Phone: `+264 *** *** 4567` (last 4 digits visible)
 - ✅ Date of Birth: `Age 39` (age shown, not full date)
@@ -58,9 +65,11 @@ Personally Identifiable Information (PII) includes:
 **Rationale**: Advisors need some contact info but not full PII for relationship management.
 
 ### 3. **Customer Level** (Minimal Masking)
+
 **Use Case**: Customer viewing their own data (authenticated customer)
 
 **Masking Applied**:
+
 - ❌ Email: Full email shown (customer's own data)
 - ❌ Phone: Full phone shown (customer's own data)
 - ⚠️ Date of Birth: Full date shown (customer's own data)
@@ -71,13 +80,16 @@ Personally Identifiable Information (PII) includes:
 **Rationale**: Customers can see their own data, but national ID is never exposed.
 
 ### 4. **Admin Level** (No Masking)
+
 **Use Case**: Internal admin/system access (requires strict authentication)
 
 **Masking Applied**:
+
 - ❌ All fields: Full data shown
 - ⚠️ National ID: Full ID shown (only for admin/system operations)
 
 **Warning**: Admin level should only be used with:
+
 - Strong authentication (MFA required)
 - Audit logging of all access
 - Role-based access control (RBAC)
@@ -109,12 +121,14 @@ Located in `/lib/utils/pii-mask.ts`:
 ### Current Implementation Status
 
 ✅ **Implemented**:
+
 - PII masking utility functions
 - Customer API endpoints masked
 - Advisor API endpoints masked
 - Advisor clients endpoint masked
 
 ⚠️ **To Be Implemented** (for production):
+
 - Authentication-based masking level selection
 - Role-based access control (RBAC)
 - Audit logging of PII access
@@ -124,12 +138,14 @@ Located in `/lib/utils/pii-mask.ts`:
 ## Demo/Hackathon Considerations
 
 For the **Old Mutual Tech Innovation Hackathon**, we use **Public Level** masking by default because:
+
 1. No authentication system is implemented
 2. All data is demo/seed data (not real PII)
 3. Safe for public demonstration
 4. Shows realistic data without privacy risks
 
 **Note**: Even with demo data, masking is important to:
+
 - Demonstrate privacy-conscious development
 - Show compliance awareness
 - Protect against accidental real data exposure
@@ -167,12 +183,14 @@ For production deployment, implement:
 ## Compliance Notes
 
 ### GDPR (General Data Protection Regulation)
+
 - ✅ Data minimization (only collect necessary PII)
 - ✅ Purpose limitation (use PII only for stated purpose)
 - ✅ Storage limitation (retain PII only as long as necessary)
 - ✅ Security measures (masking, encryption, access controls)
 
 ### POPIA (Protection of Personal Information Act - South Africa/Namibia)
+
 - ✅ Lawful processing (legitimate purpose)
 - ✅ Purpose specification (clear purpose for data collection)
 - ✅ Information quality (accurate, complete data)
@@ -208,7 +226,7 @@ curl http://localhost:3000/api/advisors?number=ADV-001
 ## Questions?
 
 For questions about PII masking implementation, contact the development team or refer to:
+
 - `/lib/utils/pii-mask.ts` - Masking utility functions
 - `/app/api/*/route.ts` - API endpoint implementations
 - This document - Policy and guidelines
-

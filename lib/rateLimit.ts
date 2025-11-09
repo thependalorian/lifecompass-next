@@ -70,11 +70,7 @@ export function getClientIdentifier(request: Request): string {
 
   // Use first IP from forwarded header, or fallback to other headers
   const ip =
-    forwarded?.split(",")[0]?.trim() ||
-    realIp ||
-    cfConnectingIp ||
-    "unknown";
+    forwarded?.split(",")[0]?.trim() || realIp || cfConnectingIp || "unknown";
 
   return `rate_limit:${ip}`;
 }
-

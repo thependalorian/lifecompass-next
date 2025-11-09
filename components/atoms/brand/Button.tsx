@@ -58,7 +58,7 @@ export function OMButton({
         fullWidth && "w-full",
         disabled && "btn-disabled",
         "flex items-center justify-center gap-2 text-center",
-        className
+        className,
       )}
       disabled={disabled}
       {...props}
@@ -69,4 +69,3 @@ export function OMButton({
     </button>
   );
 }
-

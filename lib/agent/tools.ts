@@ -1,458 +1,296 @@
 // lib/agent/tools.ts
+// Tool functions for agent use - wraps database and search functions
+// Purpose: Provide consistent interface for all agent tools
 
-import { neon } from "@neondatabase/serverless";
-import { embeddingProvider } from "./providers";
-import { ChunkResult, GraphSearchResult } from "./models";
-import { runGraphQuery } from "@/lib/graph/neo4j";
+import type { ChunkResult, GraphSearchResult } from "./models";
 import {
   getCustomerByNumber,
   getAdvisorByNumber,
+  getAdvisorById,
+  getAllAdvisors,
   getCustomerPolicies,
   getCustomerClaims,
   getCustomerInteractions,
   getAdvisorTasks,
   getAdvisorClients,
   getAllDocuments,
+  getSqlClient,
 } from "@/lib/db/neon";
+import { SemanticGraphSearch } from "@/lib/graph/semantic-search";
+import { getEmbeddingProvider } from "./providers";
 
-const sql = neon(process.env.DATABASE_URL!);
+// ============================================================================
+// Search Tools
+// ============================================================================
 
-// Tool input interfaces
-export interface VectorSearchInput {
+/**
+ * Vector search tool - searches using embeddings only
+ */
+export async function vectorSearchTool(params: {
   query: string;
   limit?: number;
+}): Promise<ChunkResult[]> {
+  try {
+    const embeddingProvider = getEmbeddingProvider();
+    const embedding = await embeddingProvider.generateEmbedding(params.query);
+    const limit = params.limit || 10;
+
+    // Convert embedding to PostgreSQL vector format: '[1.0,2.0,3.0]'
+    const embeddingStr = "[" + embedding.join(",") + "]";
+
+    const client = getSqlClient();
+    const results = (await client`
+      SELECT
+        c.id::text as chunk_id,
+        c.document_id::text as document_id,
+        c.content,
+        (1 - (c.embedding <=> ${embeddingStr}::vector))::double precision as similarity,
+        c.metadata,
+        d.title as document_title,
+        d.source as document_source
+      FROM chunks c
+      JOIN documents d ON c.document_id = d.id
+      WHERE c.embedding IS NOT NULL
+      ORDER BY c.embedding <=> ${embeddingStr}::vector
+      LIMIT ${limit}
+    `) as Array<{
+      chunk_id: string;
+      document_id: string;
+      content: string;
+      similarity: number;
+      metadata: any;
+      document_title: string;
+      document_source: string;
+    }>;
+
+    return results.map((r) => ({
+      chunkId: r.chunk_id,
+      documentId: r.document_id,
+      content: r.content,
+      score: r.similarity,
+      metadata: r.metadata || {},
+      documentTitle: r.document_title || "",
+      documentSource: r.document_source || "",
+    }));
+  } catch (error) {
+    console.error("[Tools] Vector search failed:", error);
+    return [];
+  }
 }
 
-export interface GraphSearchInput {
-  query: string;
-}
-
-export interface HybridSearchInput {
+/**
+ * Hybrid search tool - combines vector and keyword search
+ */
+export async function hybridSearchTool(params: {
   query: string;
   limit?: number;
   textWeight?: number;
-}
-
-export interface DocumentInput {
-  documentId: string;
-}
-
-export interface EntityRelationshipInput {
-  entityName: string;
-  depth?: number;
-}
-
-// Vector Search Tool
-// Uses the match_chunks PostgreSQL function from schema_ollama.sql
-export async function vectorSearchTool(
-  input: VectorSearchInput,
-): Promise<ChunkResult[]> {
+}): Promise<ChunkResult[]> {
   try {
-    const { query, limit = 10 } = input;
+    const embeddingProvider = getEmbeddingProvider();
+    const embedding = await embeddingProvider.generateEmbedding(params.query);
+    const limit = params.limit || 10;
+    const textWeight = params.textWeight || 0.3;
 
-    // Generate embedding (must be 768 dimensions to match schema)
-    const embedding = await embeddingProvider.generateEmbedding(query);
-    
-    // Verify embedding dimension (should be 768)
-    if (embedding.length !== 768) {
-      console.warn(`Embedding dimension mismatch: expected 768, got ${embedding.length}. Using raw SQL fallback.`);
-      // Fallback to raw SQL if dimension doesn't match
-      const embeddingStr = "[" + embedding.join(",") + "]";
-      const results = await sql`
-        SELECT
-          c.id::text as chunk_id,
-          c.document_id::text,
-          c.content,
-          d.title as document_title,
-          d.source as document_source,
-          c.metadata,
-          1 - (c.embedding <=> ${embeddingStr}::vector) AS similarity
-        FROM chunks c
-        JOIN documents d ON c.document_id = d.id
-        WHERE 1 - (c.embedding <=> ${embeddingStr}::vector) > 0.7
-        ORDER BY c.embedding <=> ${embeddingStr}::vector
-        LIMIT ${limit}
-      `;
-      return results.map((r) => ({
-        chunkId: r.chunk_id,
-        documentId: r.document_id,
-        content: r.content,
-        score: Number(r.similarity),
-        metadata: r.metadata as Record<string, any>,
-        documentTitle: r.document_title,
-        documentSource: r.document_source,
-      }));
-    }
-
-    // Use the match_chunks function from schema (optimized)
+    // Convert embedding to PostgreSQL vector format: '[1.0,2.0,3.0]'
     const embeddingStr = "[" + embedding.join(",") + "]";
-    const results = await sql`
-      SELECT
-        chunk_id::text,
-        document_id::text,
-        content,
-        similarity,
-        metadata,
-        document_title,
-        document_source
-      FROM match_chunks(
-        ${embeddingStr}::vector(768),
-        ${limit}
-      )
-      WHERE similarity > 0.7
-      ORDER BY similarity DESC
-    `;
 
-    return results.map((r) => ({
-      chunkId: r.chunk_id,
-      documentId: r.document_id,
-      content: r.content,
-      score: Number(r.similarity),
-      metadata: r.metadata as Record<string, any>,
-      documentTitle: r.document_title,
-      documentSource: r.document_source,
-    }));
-  } catch (error) {
-    console.error("Vector search failed:", error);
-    // Fallback to basic text search if vector search fails
-    return [];
-  }
-}
-
-// Hybrid Search Tool
-// Uses the hybrid_search PostgreSQL function from schema_ollama.sql
-export async function hybridSearchTool(
-  input: HybridSearchInput,
-): Promise<ChunkResult[]> {
-  try {
-    const { query, limit = 10, textWeight = 0.3 } = input;
-
-    // Generate embedding (must be 768 dimensions to match schema)
-    const embedding = await embeddingProvider.generateEmbedding(query);
-    
-    // Verify embedding dimension (should be 768)
-    if (embedding.length !== 768) {
-      console.warn(`Embedding dimension mismatch: expected 768, got ${embedding.length}. Using raw SQL fallback.`);
-      // Fallback to raw SQL if dimension doesn't match
-      const embeddingStr = "[" + embedding.join(",") + "]";
-      const results = await sql`
-        WITH vector_search AS (
-          SELECT
-            c.id,
-            c.content,
-            c.document_id,
-            c.metadata,
-            d.title as document_title,
-            d.source as document_source,
-            1 - (c.embedding <=> ${embeddingStr}::vector) AS vector_score
-          FROM chunks c
-          JOIN documents d ON c.document_id = d.id
-          ORDER BY c.embedding <=> ${embeddingStr}::vector
-          LIMIT ${limit * 2}
-        ),
-        text_search AS (
-          SELECT
-            c.id,
-            c.content,
-            c.document_id,
-            c.metadata,
-            d.title as document_title,
-            d.source as document_source,
-            ts_rank_cd(
-              to_tsvector('english', c.content),
-              plainto_tsquery('english', ${query})
-            ) AS text_score
-          FROM chunks c
-          JOIN documents d ON c.document_id = d.id
-          WHERE to_tsvector('english', c.content) @@ plainto_tsquery('english', ${query})
-          ORDER BY text_score DESC
-          LIMIT ${limit * 2}
-        )
-        SELECT
-          COALESCE(v.id, t.id)::text AS chunk_id,
-          COALESCE(v.document_id, t.document_id)::text AS document_id,
-          COALESCE(v.content, t.content) AS content,
-          COALESCE(v.document_title, t.document_title) AS document_title,
-          COALESCE(v.document_source, t.document_source) AS document_source,
-          COALESCE(v.metadata, t.metadata) AS metadata,
-          (COALESCE(v.vector_score, 0) * ${1 - textWeight} +
-           COALESCE(t.text_score, 0) * ${textWeight}) AS combined_score
-        FROM vector_search v
-        FULL OUTER JOIN text_search t ON v.id = t.id
-        ORDER BY combined_score DESC
-        LIMIT ${limit}
-      `;
-      return results.map((r) => ({
-        chunkId: r.chunk_id,
-        documentId: r.document_id,
-        content: r.content,
-        score: Number(r.combined_score),
-        metadata: r.metadata as Record<string, any>,
-        documentTitle: r.document_title,
-        documentSource: r.document_source,
-      }));
-    }
-
-    // Use the hybrid_search function from schema (optimized)
-    const embeddingStr = "[" + embedding.join(",") + "]";
-    const results = await sql`
-      SELECT
-        chunk_id::text,
-        document_id::text,
-        content,
-        combined_score,
-        vector_similarity,
-        text_similarity,
-        metadata,
-        document_title,
-        document_source
-      FROM hybrid_search(
-        ${embeddingStr}::vector(768),
-        ${query},
+    const client = getSqlClient();
+    const results = (await client`
+      SELECT * FROM hybrid_search(
+        ${embeddingStr}::vector,
+        ${params.query},
         ${limit},
         ${textWeight}
       )
-      ORDER BY combined_score DESC
-    `;
+    `) as Array<{
+      chunk_id: string;
+      document_id: string;
+      content: string;
+      combined_score: number;
+      vector_similarity: number;
+      text_similarity: number;
+      metadata: any;
+      document_title: string;
+      document_source: string;
+    }>;
 
     return results.map((r) => ({
       chunkId: r.chunk_id,
       documentId: r.document_id,
       content: r.content,
-      score: Number(r.combined_score),
-      metadata: r.metadata as Record<string, any>,
-      documentTitle: r.document_title,
-      documentSource: r.document_source,
+      score: r.combined_score,
+      metadata: r.metadata || {},
+      documentTitle: r.document_title || "",
+      documentSource: r.document_source || "",
     }));
   } catch (error) {
-    console.error("Hybrid search failed:", error);
-    // Fallback to vector search only if hybrid search fails
-    return vectorSearchTool({ query: input.query, limit: input.limit });
-  }
-}
-
-// Graph Search Tool
-export async function graphSearchTool(
-  input: GraphSearchInput,
-): Promise<GraphSearchResult[]> {
-  try {
-    const { query } = input;
-
-    // Option 1: Use Python Graphiti API if available (semantic search)
-    const graphApiUrl = process.env.GRAPH_API_URL;
-    if (graphApiUrl) {
-      try {
-        const response = await fetch(`${graphApiUrl}/search/graph`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ query, limit: 10 }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // Handle both {graph_results: [...]} and direct array formats
-          const results = data.graph_results || data;
-          
-          if (Array.isArray(results) && results.length > 0) {
-            return results.map((r: any) => ({
-              fact: r.fact || r.fact_text || "",
-              uuid: r.uuid || r.id || "",
-              validAt: r.valid_at || r.validAt || null,
-              invalidAt: r.invalid_at || r.invalidAt || null,
-              sourceNodeUuid: r.source_node_uuid || r.sourceNodeUuid || r.uuid || null,
-            }));
-          }
-        }
-      } catch (apiError) {
-        console.warn("Graphiti API unavailable, using semantic search:", apiError);
-        // Fall through to semantic search
-      }
-    }
-
-    // Option 2: Use semantic search (enhanced text matching + relationship traversal)
-    // This provides better results than basic text matching
-    const { getSemanticGraphSearch } = await import("../graph/semantic-search");
-    const semanticSearch = getSemanticGraphSearch();
-    
-    const results = await semanticSearch.search(query, 10);
-    
-    // Map to GraphSearchResult format (compatible with existing interface)
-    return results.map((r) => ({
-      fact: r.fact,
-      uuid: r.uuid,
-      validAt: r.validAt ?? undefined, // Convert null to undefined
-      invalidAt: r.invalidAt ?? undefined, // Convert null to undefined
-      sourceNodeUuid: r.uuid, // Use same uuid as source
-    })).filter((r) => r.fact); // Filter out empty results
-  } catch (error) {
-    console.error("Graph search failed:", error);
+    console.error("[Tools] Hybrid search failed:", error);
     return [];
   }
 }
 
-// Get Document Tool
-// Uses the get_document_chunks PostgreSQL function from schema_ollama.sql
-export async function getDocumentTool(
-  input: DocumentInput,
-): Promise<any | null> {
+/**
+ * Graph search tool - searches Neo4j knowledge graph
+ */
+export async function graphSearchTool(params: {
+  query: string;
+  limit?: number;
+}): Promise<GraphSearchResult[]> {
   try {
-    const { documentId } = input;
+    const search = new SemanticGraphSearch();
+    // Ensure limit is always an absolute integer (Neo4j requires integer, not float)
+    // Use Math.floor after parseInt to ensure true integer (handles edge cases)
+    const limit = Math.floor(Math.abs(parseInt(String(params.limit || 10), 10)));
+    const results = await search.search(params.query, limit);
 
-    const [document] = await sql`
+    return results.map((r) => ({
+      fact: r.fact,
+      uuid: r.uuid,
+      validAt: r.validAt || undefined,
+      invalidAt: r.invalidAt || undefined,
+      sourceNodeUuid: r.relationships?.[0]?.target,
+    }));
+  } catch (error) {
+    console.error("[Tools] Graph search failed:", error);
+    return [];
+  }
+}
+
+/**
+ * Get document tool - retrieves a specific document by ID
+ */
+export async function getDocumentTool(params: {
+  documentId: string;
+}): Promise<any> {
+  try {
+    const client = getSqlClient();
+    const result = (await client`
       SELECT
         id::text,
         title,
         source,
-        content,
+        category,
+        document_type,
+        file_path,
+        file_size,
         metadata,
-        created_at,
-        updated_at
+        created_at
       FROM documents
-      WHERE id = ${documentId}::uuid
-    `;
+      WHERE id = ${params.documentId}::uuid
+    `) as Array<any>;
 
-    if (!document) return null;
-
-    // Get chunks using the get_document_chunks function from schema (optimized)
-    const chunks = await sql`
-      SELECT
-        chunk_id::text,
-        content,
-        chunk_index,
-        metadata
-      FROM get_document_chunks(${documentId}::uuid)
-      ORDER BY chunk_index
-    `;
-
-    return {
-      ...document,
-      chunks: chunks.map((c: any) => ({
-        chunkId: c.chunk_id,
-        content: c.content,
-        chunkIndex: c.chunk_index,
-        metadata: c.metadata,
-      })),
-    };
+    return result[0] || null;
   } catch (error) {
-    console.error("Document retrieval failed:", error);
+    console.error("[Tools] Get document failed:", error);
     return null;
   }
 }
 
-// Get Entity Relationships Tool
-export async function getEntityRelationshipsTool(
-  input: EntityRelationshipInput,
-): Promise<any> {
-  const { entityName, depth = 2 } = input;
-
+/**
+ * Get entity relationships tool - finds relationships for an entity
+ */
+export async function getEntityRelationshipsTool(params: {
+  entityName: string;
+  relationshipType?: string;
+  depth?: number;
+}): Promise<any[]> {
   try {
-    const cypherQuery = `
-      MATCH path = (e:Entity {name: $entityName})-[*1..${depth}]-(related)
-      RETURN e, related, relationships(path) as rels
-      LIMIT 50
-    `;
+    const search = new SemanticGraphSearch();
+    const results = await search.searchEntities(params.entityName);
 
-    const results = await runGraphQuery(cypherQuery, { entityName });
+    if (params.relationshipType) {
+      return results.filter((r) =>
+        r.relationships?.some((rel) => rel.type === params.relationshipType),
+      );
+    }
 
-    return {
-      centralEntity: entityName,
-      relatedEntities: results,
-      depth,
-    };
+    return results;
   } catch (error) {
-    console.error("Entity relationship query failed:", error);
-    return {
-      centralEntity: entityName,
-      relatedEntities: [],
-      error: String(error),
-    };
+    console.error("[Tools] Get entity relationships failed:", error);
+    return [];
   }
 }
 
-// List Documents Tool (RAG documents - for knowledge base)
-export async function listDocumentsTool(limit = 20, offset = 0) {
+/**
+ * List available documents tool
+ */
+export async function listAvailableDocumentsTool(params?: {
+  limit?: number;
+  category?: string;
+  documentType?: string;
+}): Promise<any[]> {
   try {
-    const documents = await sql`
-      SELECT
-        d.id::text,
-        d.title,
-        d.source,
-        d.metadata,
-        d.created_at,
-        d.updated_at,
-        COUNT(c.id) AS chunk_count
-      FROM documents d
-      LEFT JOIN chunks c ON d.id = c.document_id
-      GROUP BY d.id, d.title, d.source, d.metadata, d.created_at, d.updated_at
-      ORDER BY d.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
-
+    const documents = await getAllDocuments(
+      params?.category,
+      params?.documentType,
+    );
     return documents;
   } catch (error) {
-    console.error("Document listing failed:", error);
+    console.error("[Tools] List documents failed:", error);
+    return [];
+  }
+}
+
+/**
+ * Search documents tool - searches document metadata
+ */
+export async function searchDocumentsTool(params: {
+  query: string;
+  limit?: number;
+  category?: string;
+}): Promise<any[]> {
+  try {
+    // Use hybrid search to find relevant documents
+    const results = await hybridSearchTool({
+      query: params.query,
+      limit: params.limit || 10,
+    });
+
+    // Group by document and return unique documents
+    const documentMap = new Map<string, any>();
+    for (const result of results) {
+      // Filter by category if provided
+      if (params.category && result.metadata?.category !== params.category) {
+        continue;
+      }
+
+      if (!documentMap.has(result.documentId)) {
+        documentMap.set(result.documentId, {
+          documentId: result.documentId,
+          documentTitle: result.documentTitle,
+          documentSource: result.documentSource,
+          metadata: result.metadata,
+        });
+      }
+    }
+
+    return Array.from(documentMap.values());
+  } catch (error) {
+    console.error("[Tools] Search documents failed:", error);
     return [];
   }
 }
 
 // ============================================================================
-// CRM Data Access Tools
+// CRM Tools - Customer
 // ============================================================================
-// Note: CRM functions are imported at the top of the file
 
-// Tool input interfaces
-export interface CustomerProfileInput {
+/**
+ * Get customer profile tool - retrieves complete customer profile with policies, claims, interactions
+ */
+export async function getCustomerProfileTool(params: {
   customerNumber: string;
-}
-
-export interface CustomerPoliciesInput {
-  customerNumber: string;
-}
-
-export interface CustomerClaimsInput {
-  customerNumber: string;
-}
-
-export interface CustomerInteractionsInput {
-  customerNumber: string;
-  limit?: number;
-}
-
-export interface AdvisorProfileInput {
-  advisorNumber: string;
-}
-
-export interface AdvisorTasksInput {
-  advisorNumber: string;
-  status?: "open" | "completed" | "cancelled";
-  priority?: "high" | "medium" | "low";
-}
-
-export interface ListDocumentsInput {
-  category?: string;
-  documentType?: string;
-}
-
-export interface SearchDocumentsInput {
-  query: string;
-  category?: string;
-}
-
-// Get Customer Profile Tool
-export async function getCustomerProfileTool(
-  input: CustomerProfileInput
-): Promise<any> {
+}): Promise<any> {
   try {
-    const customer = await getCustomerByNumber(input.customerNumber);
+    const customer = await getCustomerByNumber(params.customerNumber);
     if (!customer) {
-      return { error: `Customer ${input.customerNumber} not found` };
+      return { error: `Customer ${params.customerNumber} not found` };
     }
 
     const policies = await getCustomerPolicies(customer.id);
     const claims = await getCustomerClaims(customer.id);
-    const interactions = await getCustomerInteractions(customer.id, 5);
+    const interactions = await getCustomerInteractions(customer.id, 10);
 
     return {
       customer,
@@ -464,156 +302,192 @@ export async function getCustomerProfileTool(
       interactionCount: interactions.length,
     };
   } catch (error) {
-    console.error("Get customer profile failed:", error);
+    console.error("[Tools] Get customer profile failed:", error);
     return { error: "Failed to retrieve customer profile" };
   }
 }
 
-// Get Customer Policies Tool
-export async function getCustomerPoliciesTool(
-  input: CustomerPoliciesInput
-): Promise<any[]> {
+/**
+ * Get customer policies tool
+ */
+export async function getCustomerPoliciesTool(params: {
+  customerNumber: string;
+}): Promise<any[]> {
   try {
-    const customer = await getCustomerByNumber(input.customerNumber);
+    const customer = await getCustomerByNumber(params.customerNumber);
     if (!customer) {
       return [];
     }
 
-    return await getCustomerPolicies(customer.id);
+    const policies = await getCustomerPolicies(customer.id);
+    return policies;
   } catch (error) {
-    console.error("Get customer policies failed:", error);
+    console.error("[Tools] Get customer policies failed:", error);
     return [];
   }
 }
 
-// Get Customer Claims Tool
-export async function getCustomerClaimsTool(
-  input: CustomerClaimsInput
-): Promise<any[]> {
+/**
+ * Get customer claims tool
+ */
+export async function getCustomerClaimsTool(params: {
+  customerNumber: string;
+}): Promise<any[]> {
   try {
-    const customer = await getCustomerByNumber(input.customerNumber);
+    const customer = await getCustomerByNumber(params.customerNumber);
     if (!customer) {
       return [];
     }
 
-    return await getCustomerClaims(customer.id);
+    const claims = await getCustomerClaims(customer.id);
+    return claims;
   } catch (error) {
-    console.error("Get customer claims failed:", error);
+    console.error("[Tools] Get customer claims failed:", error);
     return [];
   }
 }
 
-// Get Customer Interactions Tool
-export async function getCustomerInteractionsTool(
-  input: CustomerInteractionsInput
-): Promise<any[]> {
+/**
+ * Get customer interactions tool
+ */
+export async function getCustomerInteractionsTool(params: {
+  customerNumber: string;
+  limit?: number;
+}): Promise<any[]> {
   try {
-    const customer = await getCustomerByNumber(input.customerNumber);
+    const customer = await getCustomerByNumber(params.customerNumber);
     if (!customer) {
       return [];
     }
 
-    return await getCustomerInteractions(customer.id, input.limit || 10);
+    const limit = params.limit || 10;
+    const interactions = await getCustomerInteractions(customer.id, limit);
+    return interactions;
   } catch (error) {
-    console.error("Get customer interactions failed:", error);
+    console.error("[Tools] Get customer interactions failed:", error);
     return [];
   }
 }
 
-// Get Advisor Profile Tool
-export async function getAdvisorProfileTool(
-  input: AdvisorProfileInput
-): Promise<any> {
+// ============================================================================
+// CRM Tools - Advisor
+// ============================================================================
+
+/**
+ * Get advisor profile tool
+ */
+export async function getAdvisorProfileTool(params: {
+  advisorNumber: string;
+}): Promise<any> {
   try {
-    const advisor = await getAdvisorByNumber(input.advisorNumber);
+    const advisor = await getAdvisorByNumber(params.advisorNumber);
     if (!advisor) {
-      return { error: `Advisor ${input.advisorNumber} not found` };
+      return { error: `Advisor ${params.advisorNumber} not found` };
     }
 
-    const clients = await getAdvisorClients(advisor.id);
-    const tasks = await getAdvisorTasks(advisor.id, "open");
+    const clients = await getAdvisorClients(advisor.id, 50);
 
     return {
       advisor,
+      clients,
       clientCount: clients.length,
-      openTaskCount: tasks.length,
-      clients: clients.slice(0, 10), // Limit to first 10
-      recentTasks: tasks.slice(0, 5), // Limit to first 5
     };
   } catch (error) {
-    console.error("Get advisor profile failed:", error);
+    console.error("[Tools] Get advisor profile failed:", error);
     return { error: "Failed to retrieve advisor profile" };
   }
 }
 
-// Get Advisor Tasks Tool
-export async function getAdvisorTasksTool(
-  input: AdvisorTasksInput
-): Promise<any[]> {
+/**
+ * Get advisor tasks tool
+ */
+export async function getAdvisorTasksTool(params: {
+  advisorNumber: string;
+  status?: "open" | "completed" | "cancelled" | "in_progress";
+  priority?: "high" | "medium" | "low" | "urgent";
+}): Promise<any[]> {
   try {
-    const advisor = await getAdvisorByNumber(input.advisorNumber);
+    const advisor = await getAdvisorByNumber(params.advisorNumber);
     if (!advisor) {
       return [];
     }
 
-    return await getAdvisorTasks(
+    const tasks = await getAdvisorTasks(
       advisor.id,
-      input.status,
-      input.priority
+      params.status,
+      params.priority,
     );
+    return tasks;
   } catch (error) {
-    console.error("Get advisor tasks failed:", error);
+    console.error("[Tools] Get advisor tasks failed:", error);
     return [];
   }
 }
 
-// List Available Documents Tool (PDF documents)
-export async function listAvailableDocumentsTool(
-  input: ListDocumentsInput
-): Promise<any[]> {
+/**
+ * Recommend advisors tool - finds advisors based on specialization and customer needs
+ */
+export async function recommendAdvisorsTool(params: {
+  specialization?: string;
+  customerSegment?: string;
+  region?: string;
+  limit?: number;
+}): Promise<any[]> {
   try {
-    const documents = await getAllDocuments(input.category, input.documentType);
+    const allAdvisors = await getAllAdvisors();
+    let recommendations = [...allAdvisors];
 
-    return documents.map((doc: any) => ({
-      documentNumber: doc.document_number,
-      title: doc.title,
-      category: doc.category,
-      documentType: doc.document_type,
-      description: doc.description || "",
-      downloadUrl: `/api/documents/${doc.document_number}/download`,
-      viewUrl: `/api/documents/${doc.document_number}/view`,
-    }));
-  } catch (error) {
-    console.error("List documents failed:", error);
-    return [];
-  }
-}
+    // Filter by specialization if provided
+    if (params.specialization) {
+      const specializationLower = params.specialization.toLowerCase();
+      recommendations = recommendations.filter((advisor) => {
+        if (!advisor.specialization) return false;
+        return advisor.specialization
+          .toLowerCase()
+          .includes(specializationLower);
+      });
+    }
 
-// Search Documents Tool (PDF documents)
-export async function searchDocumentsTool(
-  input: SearchDocumentsInput
-): Promise<any[]> {
-  try {
-    // Get all documents and filter by query
-    const allDocs = await getAllDocuments(input.category);
-    
-    const queryLower = input.query.toLowerCase();
-    const filtered = allDocs.filter((doc: any) => {
-      const titleMatch = doc.title?.toLowerCase().includes(queryLower);
-      const descMatch = doc.description?.toLowerCase().includes(queryLower);
-      return titleMatch || descMatch;
+    // Filter by region if provided
+    if (params.region) {
+      const regionLower = params.region.toLowerCase();
+      recommendations = recommendations.filter((advisor) => {
+        if (!advisor.region) return false;
+        return advisor.region.toLowerCase().includes(regionLower);
+      });
+    }
+
+    // Sort by performance (satisfaction_score, then active_clients)
+    recommendations.sort((a, b) => {
+      const scoreA =
+        (a.satisfaction_score ? Number(a.satisfaction_score) : 0) +
+        (a.active_clients ? Number(a.active_clients) : 0) * 0.1;
+      const scoreB =
+        (b.satisfaction_score ? Number(b.satisfaction_score) : 0) +
+        (b.active_clients ? Number(b.active_clients) : 0) * 0.1;
+      return scoreB - scoreA;
     });
 
-    return filtered.map((doc: any) => ({
-      documentNumber: doc.document_number,
-      title: doc.title,
-      category: doc.category,
-      documentType: doc.document_type,
-      description: doc.description || "",
-      downloadUrl: `/api/documents/${doc.document_number}/download`,
+    // Limit results
+    const limit = params.limit || 5;
+    recommendations = recommendations.slice(0, limit);
+
+    // Format response
+    return recommendations.map((advisor) => ({
+      advisor_number: advisor.advisor_number,
+      name: `${advisor.first_name} ${advisor.last_name}`,
+      specialization: advisor.specialization || "General",
+      experience_years: advisor.experience_years || 0,
+      region: advisor.region || "Not specified",
+      branch: advisor.branch || "Not specified",
+      phone: advisor.phone || "Not available",
+      email: advisor.email || "Not available",
+      active_clients: advisor.active_clients || 0,
+      satisfaction_score: advisor.satisfaction_score || 0,
+      performance_rating: advisor.performance_rating || "Not rated",
     }));
   } catch (error) {
-    console.error("Search documents failed:", error);
+    console.error("[Tools] Recommend advisors failed:", error);
     return [];
   }
 }
@@ -622,186 +496,76 @@ export async function searchDocumentsTool(
 // Calculator Tool
 // ============================================================================
 
-export interface CalculatorInput {
-  expression: string;
-  calculationType?: "basic" | "financial" | "premium" | "return" | "coverage";
-  variables?: Record<string, number>;
-}
-
-// Calculator Tool for financial calculations
-export async function calculatorTool(
-  input: CalculatorInput
-): Promise<any> {
-  try {
-    const { expression, calculationType = "basic", variables = {} } = input;
-
-    // Replace variables in expression (e.g., "premium * 12" with variables: { premium: 100 })
-    let processedExpression = expression;
-    for (const [key, value] of Object.entries(variables)) {
-      const regex = new RegExp(`\\b${key}\\b`, "g");
-      processedExpression = processedExpression.replace(regex, String(value));
-    }
-
-    // Remove any non-math characters for safety (allow numbers, operators, parentheses, spaces, decimal points)
-    const sanitized = processedExpression.replace(/[^0-9+\-*/().\s]/g, "");
-
-    let result: number;
-    let formula: string;
-
-    if (calculationType === "financial" || calculationType === "premium") {
-      // Financial calculations
-      result = evaluateFinancialExpression(sanitized, variables);
-      formula = processedExpression;
-    } else if (calculationType === "return") {
-      // Investment return calculations
-      result = calculateReturn(sanitized, variables);
-      formula = processedExpression;
-    } else if (calculationType === "coverage") {
-      // Coverage calculations
-      result = calculateCoverage(sanitized, variables);
-      formula = processedExpression;
-    } else {
-      // Basic math evaluation (safely)
-      result = evaluateBasicMath(sanitized);
-      formula = processedExpression;
-    }
-
-    return {
-      result,
-      formula,
-      expression: processedExpression,
-      calculationType,
-      variables,
-    };
-  } catch (error) {
-    console.error("Calculator tool failed:", error);
-    return {
-      error: "Failed to calculate",
-      message: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
-
-// Safe basic math evaluation
-function evaluateBasicMath(expression: string): number {
-  try {
-    // Use Function constructor for safe evaluation (only allows math operations)
-    // This is safer than eval() but still requires careful validation
-    const sanitized = expression.replace(/[^0-9+\-*/().\s]/g, "");
-    
-    // Validate expression contains only safe characters
-    if (!/^[0-9+\-*/().\s]+$/.test(sanitized)) {
-      throw new Error("Invalid expression");
-    }
-
-    // Use Function for evaluation (more secure than eval)
-    const func = new Function("return " + sanitized);
-    const result = func();
-    
-    if (typeof result !== "number" || !isFinite(result)) {
-      throw new Error("Invalid calculation result");
-    }
-    
-    return result;
-  } catch (error) {
-    throw new Error(`Calculation error: ${error instanceof Error ? error.message : "Unknown error"}`);
-  }
-}
-
-// Financial calculations (premiums, interest, etc.)
-function evaluateFinancialExpression(expression: string, variables: Record<string, number>): number {
-  // For financial calculations, we can implement specific formulas
-  // For now, fall back to basic math evaluation
-  return evaluateBasicMath(expression);
-}
-
-// Investment return calculation
-function calculateReturn(expression: string, variables: Record<string, number>): number {
-  // Simple return calculation: (current_value - initial_value) / initial_value * 100
-  if (variables.currentValue && variables.initialValue) {
-    return ((variables.currentValue - variables.initialValue) / variables.initialValue) * 100;
-  }
-  return evaluateBasicMath(expression);
-}
-
-// Coverage calculation
-function calculateCoverage(expression: string, variables: Record<string, number>): number {
-  // Coverage calculations (e.g., coverage amount based on income)
-  if (variables.monthlyIncome && variables.coverageMultiplier) {
-    return variables.monthlyIncome * variables.coverageMultiplier;
-  }
-  return evaluateBasicMath(expression);
-}
-
-// Helper function to extract numbers from text
+/**
+ * Extract calculation from text
+ */
 export function extractCalculationFromText(text: string): {
   hasCalculation: boolean;
   expression?: string;
-  calculationType?: "basic" | "financial" | "premium" | "return" | "coverage";
+  calculationType?: string;
   variables?: Record<string, number>;
 } {
-  const textLower = text.toLowerCase();
+  // Simple pattern matching for calculations
+  const calcPattern = /(\d+(?:\.\d+)?)\s*([+\-*/])\s*(\d+(?:\.\d+)?)/;
+  const match = text.match(calcPattern);
 
-  // Check for calculation keywords
-  const hasCalculate = /calculate|compute|work out|what is|how much/i.test(text);
-  const hasMath = /[\d+\-*/().]+/.test(text);
-  
-  if (!hasCalculate && !hasMath) {
-    return { hasCalculation: false };
+  if (match) {
+    const [, num1, op, num2] = match;
+    return {
+      hasCalculation: true,
+      expression: `${num1} ${op} ${num2}`,
+      calculationType: "arithmetic",
+      variables: {},
+    };
   }
 
-  // Extract calculation type
-  let calculationType: "basic" | "financial" | "premium" | "return" | "coverage" = "basic";
-  
-  if (/premium|monthly payment|payment/i.test(textLower)) {
-    calculationType = "premium";
-  } else if (/return|interest|yield|profit/i.test(textLower)) {
-    calculationType = "return";
-  } else if (/coverage|benefit|sum assured/i.test(textLower)) {
-    calculationType = "coverage";
-  } else if (/financial|investment|loan|mortgage/i.test(textLower)) {
-    calculationType = "financial";
-  }
+  // Check for "calculate" keyword with numbers
+  const calculateMatch = text.match(
+    /calculate|compute|work out|what is|how much/i,
+  );
+  if (calculateMatch && /\d/.test(text)) {
+    // Extract numbers and operators
+    const numbers = text.match(/\d+(?:\.\d+)?/g) || [];
+    const operators = text.match(/[+\-*/]/g) || [];
 
-  // Extract numbers and basic math expressions
-  const mathPattern = /[\d+\-*/().\s]+/g;
-  const matches = text.match(mathPattern);
-  
-  if (matches && matches.length > 0) {
-    // Find the most complete math expression
-    const expression = matches
-      .filter((m) => /[\d+\-*/().]/.test(m))
-      .sort((a, b) => b.length - a.length)[0];
-    
-    if (expression) {
+    if (numbers.length >= 2) {
       return {
         hasCalculation: true,
-        expression: expression.trim(),
-        calculationType,
+        expression: `${numbers[0]} ${operators[0] || "+"} ${numbers[1]}`,
+        calculationType: "arithmetic",
+        variables: {},
       };
     }
   }
 
-  // Extract variables if mentioned (e.g., "premium of 100", "income of 5000")
-  const variables: Record<string, number> = {};
-  const premiumMatch = text.match(/premium\s+(?:of|is|:)?\s*\$?([\d,]+\.?\d*)/i);
-  if (premiumMatch) {
-    variables.premium = parseFloat(premiumMatch[1].replace(/,/g, ""));
-  }
+  return { hasCalculation: false };
+}
 
-  const incomeMatch = text.match(/(?:monthly\s+)?income\s+(?:of|is|:)?\s*\$?([\d,]+\.?\d*)/i);
-  if (incomeMatch) {
-    variables.monthlyIncome = parseFloat(incomeMatch[1].replace(/,/g, ""));
-  }
+/**
+ * Calculator tool - performs calculations
+ */
+export async function calculatorTool(params: {
+  expression: string;
+  calculationType?: string;
+  variables?: Record<string, number>;
+}): Promise<any> {
+  try {
+    // Simple safe evaluation (only basic arithmetic)
+    const sanitized = params.expression.replace(/[^0-9+\-*/().\s]/g, "");
 
-  const coverageMatch = text.match(/coverage\s+(?:of|is|:)?\s*\$?([\d,]+\.?\d*)/i);
-  if (coverageMatch) {
-    variables.coverageAmount = parseFloat(coverageMatch[1].replace(/,/g, ""));
-  }
+    // Use Function constructor for safe evaluation (no eval)
+    const result = Function(`"use strict"; return (${sanitized})`)();
 
-  return {
-    hasCalculation: hasCalculate || hasMath,
-    calculationType,
-    variables: Object.keys(variables).length > 0 ? variables : undefined,
-  };
+    return {
+      expression: params.expression,
+      result,
+      calculationType: params.calculationType || "arithmetic",
+    };
+  } catch (error) {
+    console.error("[Tools] Calculator failed:", error);
+    return {
+      expression: params.expression,
+      error: "Failed to calculate",
+    };
+  }
 }

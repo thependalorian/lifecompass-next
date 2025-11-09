@@ -27,14 +27,22 @@ export class SemanticGraphSearch {
    * 2. Vector similarity using PostgreSQL embeddings (if available)
    * 3. Basic text matching (final fallback)
    */
-  async search(query: string, limit: number = 10): Promise<GraphSearchResult[]> {
+  async search(
+    query: string,
+    limit: number = 10,
+  ): Promise<GraphSearchResult[]> {
+    // Ensure limit is always an absolute integer (Neo4j requires integer, not float)
+    // Use Math.floor after parseInt to ensure true integer (handles edge cases)
+    const intLimit = Math.floor(Math.abs(parseInt(String(limit), 10))) || 10;
     try {
       // Step 1: Try enhanced text search with relationship traversal (most reliable)
-      const textResults = await this.enhancedTextSearch(query, limit);
-      
+      const textResults = await this.enhancedTextSearch(query, intLimit);
+
       if (textResults.length > 0) {
-        console.log(`[Graph] Enhanced text search found ${textResults.length} results`);
-        
+        console.log(
+          `[Graph] Enhanced text search found ${textResults.length} results`,
+        );
+
         // Optionally enhance with vector similarity if we have embeddings
         // For now, return text results as they're most reliable
         return textResults;
@@ -42,11 +50,11 @@ export class SemanticGraphSearch {
 
       // Step 2: Fallback to basic text search
       console.log("[Graph] Falling back to basic text search");
-      return this.basicTextSearch(query, limit);
+      return this.basicTextSearch(query, intLimit);
     } catch (error) {
       console.error("[Graph] Semantic search failed:", error);
       // Final fallback: basic text search without error
-      return this.basicTextSearch(query, limit);
+      return this.basicTextSearch(query, intLimit);
     }
   }
 
@@ -55,9 +63,15 @@ export class SemanticGraphSearch {
    * Better than basic CONTAINS - uses multiple properties + relationships
    * This works with the actual Graphiti schema (fact, uuid, valid_at, etc.)
    */
-  private async enhancedTextSearch(query: string, limit: number): Promise<GraphSearchResult[]> {
+  private async enhancedTextSearch(
+    query: string,
+    limit: number,
+  ): Promise<GraphSearchResult[]> {
+    // Ensure limit is always an absolute integer (Neo4j requires integer, not float)
+    // Use Math.floor after parseInt to ensure true integer (handles edge cases)
+    const intLimit = Math.floor(Math.abs(parseInt(String(limit), 10))) || 10;
     const queryLower = query.toLowerCase();
-    const queryWords = queryLower.split(/\s+/).filter(w => w.length > 2);
+    const queryWords = queryLower.split(/\s+/).filter((w) => w.length > 2);
 
     const cypherQuery = `
       MATCH (n)
@@ -101,10 +115,11 @@ export class SemanticGraphSearch {
     `;
 
     try {
+      // Pass the already-converted intLimit (no need to convert again)
       const results = await runGraphQuery(cypherQuery, {
         query: queryLower,
         queryWords,
-        limit,
+        limit: intLimit, // Already converted to integer above
       });
 
       return results.map((r: any) => ({
@@ -125,7 +140,13 @@ export class SemanticGraphSearch {
    * Basic text search - simplest fallback
    * Works with Graphiti schema: fact, uuid, valid_at, invalid_at
    */
-  private async basicTextSearch(query: string, limit: number): Promise<GraphSearchResult[]> {
+  private async basicTextSearch(
+    query: string,
+    limit: number,
+  ): Promise<GraphSearchResult[]> {
+    // Ensure limit is always an absolute integer (Neo4j requires integer, not float)
+    // Use Math.floor after parseInt to ensure true integer (handles edge cases)
+    const intLimit = Math.floor(Math.abs(parseInt(String(limit), 10))) || 10;
     const cypherQuery = `
       MATCH (n)
       WHERE n.fact IS NOT NULL AND (
@@ -144,7 +165,10 @@ export class SemanticGraphSearch {
     `;
 
     try {
-      const results = await runGraphQuery(cypherQuery, { query, limit });
+      const results = await runGraphQuery(cypherQuery, {
+        query,
+        limit: intLimit, // Ensure integer for Neo4j
+      });
       return results.map((r: any) => ({
         fact: r.fact || "",
         uuid: r.uuid || "",
@@ -165,16 +189,20 @@ export class SemanticGraphSearch {
    * 1. Generates embedding for query
    * 2. Fetches facts from Neo4j
    * 3. Calculates similarity in memory (or uses PostgreSQL vector search)
-   * 
+   *
    * Note: Graphiti doesn't store embeddings on Neo4j nodes, but we can:
    * - Use PostgreSQL embeddings if chunks are stored there
    * - Calculate similarity in memory after fetching facts
    */
-  async vectorSearch(query: string, limit: number = 10): Promise<GraphSearchResult[]> {
+  async vectorSearch(
+    query: string,
+    limit: number = 10,
+  ): Promise<GraphSearchResult[]> {
     try {
       // Generate query embedding
-      const queryEmbedding = await this.embeddingProvider.generateEmbedding(query);
-      
+      const queryEmbedding =
+        await this.embeddingProvider.generateEmbedding(query);
+
       // Get all facts from Neo4j (we'll filter by similarity in memory)
       // For better performance, we could first do text search to narrow down
       const cypherQuery = `
@@ -189,16 +217,17 @@ export class SemanticGraphSearch {
       `;
 
       const allFacts = await runGraphQuery(cypherQuery, {});
-      
+
       if (allFacts.length === 0) {
         return [];
       }
 
       // For now, return text-based results as we don't have fact embeddings stored
       // Future: Could store fact embeddings in PostgreSQL and do vector similarity there
-      console.warn("[Graph] Vector search not fully implemented - fact embeddings not stored in Neo4j");
+      console.warn(
+        "[Graph] Vector search not fully implemented - fact embeddings not stored in Neo4j",
+      );
       return this.enhancedTextSearch(query, limit);
-      
     } catch (error) {
       console.error("[Graph] Vector search failed:", error);
       return [];
@@ -208,16 +237,16 @@ export class SemanticGraphSearch {
   /**
    * Entity-focused search - find entities and their relationships
    * Useful for questions like "What does Old Mutual offer?"
-   * 
+   *
    * Note: Graphiti extracts entities automatically, but we need to query by entity labels
    * or by searching for entity names in facts
    */
   async searchEntities(
     entityName: string,
-    limit: number = 5
+    limit: number = 5,
   ): Promise<GraphSearchResult[]> {
     const queryLower = entityName.toLowerCase();
-    
+
     // Graphiti creates entities, but we'll search facts that mention the entity
     const cypherQuery = `
       MATCH (n)
@@ -247,9 +276,12 @@ export class SemanticGraphSearch {
     `;
 
     try {
+      // Ensure limit is always an absolute integer (Neo4j requires integer, not float)
+      // Use parseInt to ensure we get a true integer, not a float
+      const intLimit = Math.abs(Math.floor(parseInt(String(limit), 10))) || 5;
       const results = await runGraphQuery(cypherQuery, {
         query: queryLower,
-        limit,
+        limit: intLimit, // Ensure absolute integer for Neo4j
       });
 
       return results.map((r: any) => ({
@@ -269,21 +301,21 @@ export class SemanticGraphSearch {
   /**
    * Relationship traversal - find connected knowledge
    * Example: "What are the requirements for life insurance?"
-   * 
+   *
    * Graphiti creates relationships like: OWNS, SUBJECTS_TO, REQUIRES, PAYS, USES
    */
   async searchByRelationship(
     sourceQuery: string,
     relationshipType?: string,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<GraphSearchResult[]> {
     const queryLower = sourceQuery.toLowerCase();
-    
+
     // Build relationship filter
-    const relationshipFilter = relationshipType 
+    const relationshipFilter = relationshipType
       ? `type(r) = '${relationshipType}'`
       : `type(r) IN ['OWNS', 'SUBJECTS_TO', 'REQUIRES', 'PAYS', 'USES', 'RELATED_TO']`;
-    
+
     const cypherQuery = `
       MATCH (source)
       WHERE source.fact IS NOT NULL AND (
@@ -310,9 +342,12 @@ export class SemanticGraphSearch {
     `;
 
     try {
+      // Ensure limit is always an absolute integer (Neo4j requires integer, not float)
+      // Use parseInt to ensure we get a true integer, not a float
+      const intLimit = Math.abs(Math.floor(parseInt(String(limit), 10))) || 10;
       const results = await runGraphQuery(cypherQuery, {
         query: queryLower,
-        limit,
+        limit: intLimit, // Ensure absolute integer for Neo4j
       });
 
       return results.map((r: any) => ({
@@ -339,4 +374,3 @@ export function getSemanticGraphSearch(): SemanticGraphSearch {
   }
   return _semanticGraphSearch;
 }
-

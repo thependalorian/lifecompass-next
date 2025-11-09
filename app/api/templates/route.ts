@@ -3,10 +3,14 @@
 // Uses templates table from database
 
 import { NextRequest, NextResponse } from "next/server";
-import { getAllTemplates, createTemplate, getAdvisorByNumber } from "@/lib/db/neon";
+import {
+  getAllTemplates,
+  createTemplate,
+  getAdvisorByNumber,
+} from "@/lib/db/neon";
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,7 +33,10 @@ export async function GET(request: NextRequest) {
     // Fetch templates from database
     let templates;
     try {
-      templates = await getAllTemplates(resolvedAdvisorId, category || undefined);
+      templates = await getAllTemplates(
+        resolvedAdvisorId,
+        category || undefined,
+      );
     } catch (error) {
       // If templates table doesn't exist yet, return default templates
       console.warn("Templates table not found, using defaults:", error);
@@ -39,7 +46,8 @@ export async function GET(request: NextRequest) {
           templateNumber: "TPL-001",
           name: "Welcome Message",
           category: "Onboarding",
-          content: "Welcome to Old Mutual! I'm your dedicated advisor and I'm here to help you with all your insurance needs.",
+          content:
+            "Welcome to Old Mutual! I'm your dedicated advisor and I'm here to help you with all your insurance needs.",
           isGlobal: true,
         },
         {
@@ -47,7 +55,8 @@ export async function GET(request: NextRequest) {
           templateNumber: "TPL-002",
           name: "Renewal Reminder",
           category: "Policy Management",
-          content: "Your policy is due for renewal. Please contact me to discuss your options and ensure continuous coverage.",
+          content:
+            "Your policy is due for renewal. Please contact me to discuss your options and ensure continuous coverage.",
           isGlobal: true,
         },
         {
@@ -55,16 +64,19 @@ export async function GET(request: NextRequest) {
           templateNumber: "TPL-003",
           name: "Claim Update",
           category: "Claims",
-          content: "Your claim has been processed. Here are the details of the payout and next steps.",
+          content:
+            "Your claim has been processed. Here are the details of the payout and next steps.",
           isGlobal: true,
         },
       ];
-      
+
       let filteredTemplates = defaultTemplates;
       if (category) {
-        filteredTemplates = defaultTemplates.filter((t) => t.category === category);
+        filteredTemplates = defaultTemplates.filter(
+          (t) => t.category === category,
+        );
       }
-      
+
       return NextResponse.json(filteredTemplates);
     }
 
@@ -82,7 +94,9 @@ export async function GET(request: NextRequest) {
     // Filter by category if provided
     let filteredTemplates = transformedTemplates;
     if (category) {
-      filteredTemplates = transformedTemplates.filter((t: any) => t.category === category);
+      filteredTemplates = transformedTemplates.filter(
+        (t: any) => t.category === category,
+      );
     }
 
     return NextResponse.json(filteredTemplates);
@@ -90,7 +104,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching templates:", error);
     return NextResponse.json(
       { error: "Failed to fetch templates" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -98,12 +112,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { advisorId, advisorNumber, name, category, content, isGlobal } = body;
+    const { advisorId, advisorNumber, name, category, content, isGlobal } =
+      body;
 
     if (!name || !category || !content) {
       return NextResponse.json(
-        { error: "Missing required fields: name, category, and content are required" },
-        { status: 400 }
+        {
+          error:
+            "Missing required fields: name, category, and content are required",
+        },
+        { status: 400 },
       );
     }
 
@@ -114,7 +132,7 @@ export async function POST(request: NextRequest) {
       if (!advisor) {
         return NextResponse.json(
           { error: `Advisor not found: ${advisorNumber}` },
-          { status: 404 }
+          { status: 404 },
         );
       }
       resolvedAdvisorId = advisor.id;
@@ -123,7 +141,7 @@ export async function POST(request: NextRequest) {
     } else {
       return NextResponse.json(
         { error: "advisorId or advisorNumber is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -150,31 +168,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(transformedTemplate, { status: 201 });
     } catch (error: any) {
       // If templates table doesn't exist, return mock template
-      if (error.message?.includes("does not exist") || error.message?.includes("relation")) {
+      if (
+        error.message?.includes("does not exist") ||
+        error.message?.includes("relation")
+      ) {
         console.warn("Templates table not found, returning mock template");
-        return NextResponse.json({
-          id: `TPL-${Date.now()}`,
-          templateNumber: `TPL-${Date.now()}`,
-          name,
-          category,
-          content,
-          isGlobal: isGlobal || false,
-          usageCount: 0,
-        }, { status: 201 });
+        return NextResponse.json(
+          {
+            id: `TPL-${Date.now()}`,
+            templateNumber: `TPL-${Date.now()}`,
+            name,
+            category,
+            content,
+            isGlobal: isGlobal || false,
+            usageCount: 0,
+          },
+          { status: 201 },
+        );
       }
       throw error;
     }
   } catch (error) {
     console.error("Error creating template:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { 
+      {
         error: "Failed to create template",
         message: errorMessage,
         timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

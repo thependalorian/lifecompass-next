@@ -88,10 +88,18 @@ export default function AdvisorProfilePage() {
   }
 
   // Calculate progress percentage with safety checks
-  const currentSales = typeof persona.currentSales === 'number' ? persona.currentSales : 0;
-  const monthlyTarget = typeof persona.monthlyTarget === 'number' && persona.monthlyTarget > 0 ? persona.monthlyTarget : 1;
-  const progressPercentage = Math.min((currentSales / monthlyTarget) * 100, 100);
-  const conversionRate = typeof persona.conversionRate === 'number' ? persona.conversionRate : 0;
+  const currentSales =
+    typeof persona.currentSales === "number" ? persona.currentSales : 0;
+  const monthlyTarget =
+    typeof persona.monthlyTarget === "number" && persona.monthlyTarget > 0
+      ? persona.monthlyTarget
+      : 1;
+  const progressPercentage = Math.min(
+    (currentSales / monthlyTarget) * 100,
+    100,
+  );
+  const conversionRate =
+    typeof persona.conversionRate === "number" ? persona.conversionRate : 0;
 
   return (
     <CorporateLayout
@@ -128,7 +136,8 @@ export default function AdvisorProfilePage() {
                         target.style.display = "none";
                         const parent = target.parentElement;
                         if (parent) {
-                          parent.className = "w-24 h-24 rounded-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-3xl font-bold ring-4 ring-om-heritage-green/20 aspect-square";
+                          parent.className =
+                            "w-24 h-24 rounded-full bg-gradient-to-br from-om-heritage-green to-om-fresh-green flex items-center justify-center text-white text-3xl font-bold ring-4 ring-om-heritage-green/20 aspect-square";
                           parent.textContent = persona.name
                             .split(" ")
                             .map((n: string) => n[0])
@@ -168,14 +177,18 @@ export default function AdvisorProfilePage() {
                     <BriefcaseIcon className="w-5 h-5 text-om-heritage-green mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-sm text-om-grey">Specialization</p>
-                      <p className="font-semibold text-om-navy">{persona.specialization}</p>
+                      <p className="font-semibold text-om-navy">
+                        {persona.specialization}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <MapPinIcon className="w-5 h-5 text-om-heritage-green mt-1 flex-shrink-0" />
                     <div>
                       <p className="text-sm text-om-grey">Location</p>
-                      <p className="font-semibold text-om-navy">{persona.location}</p>
+                      <p className="font-semibold text-om-navy">
+                        {persona.location}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -183,7 +196,9 @@ export default function AdvisorProfilePage() {
                     <div>
                       <p className="text-sm text-om-grey">Active Clients</p>
                       <p className="font-semibold text-om-navy">
-                        {typeof persona.clients === 'number' ? persona.clients : persona.activeClients || 0}
+                        {typeof persona.clients === "number"
+                          ? persona.clients
+                          : persona.activeClients || 0}
                       </p>
                     </div>
                   </div>
@@ -191,15 +206,21 @@ export default function AdvisorProfilePage() {
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-om-grey mb-1">Experience</p>
-                    <p className="font-semibold text-om-navy">{persona.experience}</p>
+                    <p className="font-semibold text-om-navy">
+                      {persona.experience}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-om-grey mb-1">Monthly Sales Progress</p>
+                    <p className="text-sm text-om-grey mb-1">
+                      Monthly Sales Progress
+                    </p>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex-1 bg-om-light-grey rounded-full h-3">
                         <div
                           className="bg-om-heritage-green h-3 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.round(progressPercentage)}%` }}
+                          style={{
+                            width: `${Math.round(progressPercentage)}%`,
+                          }}
                         />
                       </div>
                       <span className="text-sm font-semibold text-om-navy whitespace-nowrap">
@@ -207,27 +228,34 @@ export default function AdvisorProfilePage() {
                       </span>
                     </div>
                     <p className="text-xs text-om-grey">
-                      N${currentSales.toLocaleString('en-US')} / N${monthlyTarget.toLocaleString('en-US')}
+                      N${currentSales.toLocaleString("en-US")} / N$
+                      {monthlyTarget.toLocaleString("en-US")}
                     </p>
                     {monthlyTarget > 0 && (
                       <p className="text-xs text-om-grey mt-1">
-                        N${(monthlyTarget - currentSales).toLocaleString('en-US')} remaining
+                        N$
+                        {(monthlyTarget - currentSales).toLocaleString("en-US")}{" "}
+                        remaining
                       </p>
                     )}
                   </div>
                   <div>
                     <p className="text-sm text-om-grey mb-1">Conversion Rate</p>
                     <p className="font-semibold text-om-navy">
-                      {typeof conversionRate === 'number' ? `${conversionRate.toFixed(1)}%` : 'N/A'}
+                      {typeof conversionRate === "number"
+                        ? `${conversionRate.toFixed(1)}%`
+                        : "N/A"}
                     </p>
                   </div>
                   {persona.satisfactionScore !== undefined && (
                     <div>
-                      <p className="text-sm text-om-grey mb-1">Satisfaction Score</p>
+                      <p className="text-sm text-om-grey mb-1">
+                        Satisfaction Score
+                      </p>
                       <p className="font-semibold text-om-navy">
-                        {typeof persona.satisfactionScore === 'number' 
-                          ? `${(persona.satisfactionScore / 20).toFixed(1)}/5.0` 
-                          : 'N/A'}
+                        {typeof persona.satisfactionScore === "number"
+                          ? `${(persona.satisfactionScore / 20).toFixed(1)}/5.0`
+                          : "N/A"}
                       </p>
                     </div>
                   )}
@@ -244,9 +272,7 @@ export default function AdvisorProfilePage() {
             className="card-om mb-8"
           >
             <div className="card-body">
-              <h2 className="text-2xl font-bold text-om-navy mb-4">
-                About
-              </h2>
+              <h2 className="text-2xl font-bold text-om-navy mb-4">About</h2>
               <p className="text-om-grey">{persona.description}</p>
             </div>
           </motion.div>
@@ -291,4 +317,3 @@ export default function AdvisorProfilePage() {
     </CorporateLayout>
   );
 }
-

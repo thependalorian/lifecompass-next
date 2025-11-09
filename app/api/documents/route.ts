@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAllDocuments, getDocumentByNumber } from "@/lib/db/neon";
 
 // Force dynamic rendering since we use request.url
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
     if (documentNumber) {
       // Get single document by number
       const document = await getDocumentByNumber(documentNumber);
-      
+
       if (!document) {
         return NextResponse.json(
           { error: "Document not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -48,7 +48,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all documents with optional filters
-    const documents = await getAllDocuments(category || undefined, documentType || undefined);
+    const documents = await getAllDocuments(
+      category || undefined,
+      documentType || undefined,
+    );
 
     // Transform to match frontend expected format
     const transformedDocuments = documents.map((doc: any) => ({
@@ -77,8 +80,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching documents:", error);
     return NextResponse.json(
       { error: "Failed to fetch documents" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

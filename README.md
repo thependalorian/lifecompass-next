@@ -14,14 +14,66 @@ TypeScript implementation of the LifeCompass AI agent system for Old Mutual Nami
 
 ## 🏗️ Architecture
 
+### Chat System Architecture
+
+LifeCompass uses a **dual chat system** with unified tool layer:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    User Interface Layer                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────┐         ┌──────────────────────┐    │
+│  │ FloatingChatWidget│         │  /chat page          │    │
+│  │ (CopilotKit)     │         │  (CopilotChat)        │    │
+│  │ ✅ ACTIVE        │         │  ✅ ACTIVE            │    │
+│  └────────┬─────────┘         └──────────┬────────────┘    │
+│           │                              │                  │
+│           └──────────────┬───────────────┘                  │
+│                          │                                  │
+│  ┌──────────────────────────────────────────────┐         │
+│  │         CopilotKitProvider                     │         │
+│  │  - Persona state management                    │         │
+│  │  - Frontend actions                            │         │
+│  └──────────────────┬───────────────────────────┘         │
+│                      │                                       │
+│  ┌──────────────────────────────────────────────┐         │
+│  │         ChatWidget (Legacy)                    │         │
+│  │  - Uses /api/chat endpoint                     │         │
+│  │  - ⚠️ Available but not used                   │         │
+│  └──────────────────────────────────────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                    API Layer                                │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────┐         ┌──────────────────────┐    │
+│  │ /api/copilotkit  │         │  /api/chat            │    │
+│  │ (CopilotRuntime) │         │  (LifeCompassAgent)  │    │
+│  │ ✅ ACTIVE        │         │  ✅ AVAILABLE        │    │
+│  └────────┬─────────┘         └──────────┬────────────┘    │
+│           │                              │                  │
+│           └──────────────┬───────────────┘                  │
+│                          │                                  │
+│  ┌──────────────────────────────────────────────┐         │
+│  │         Unified Tool Layer                     │         │
+│  │  lib/agent/tools.ts                            │         │
+│  │  - vectorSearchTool, hybridSearchTool          │         │
+│  │  - graphSearchTool                             │         │
+│  │  - getCustomerProfileTool, etc.                │         │
+│  └──────────────────┬───────────────────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ### Core Components
 
 ```
 lib/agent/
-├── index.ts          # Main agent orchestration
+├── index.ts          # Main agent orchestration (LifeCompassAgent)
 ├── prompts.ts        # System prompts (Customer, Advisor, Claims, etc.)
 ├── providers.ts      # DeepSeek LLM provider + embeddings
-├── tools.ts          # Search tools (vector, hybrid, graph)
+├── tools.ts          # Unified search tools (vector, hybrid, graph, CRM)
 └── models.ts         # TypeScript interfaces and types
 
 lib/db/
@@ -29,13 +81,45 @@ lib/db/
 └── vector-search.ts  # Search functions
 
 lib/graph/
-└── neo4j.ts          # Graph database operations
+├── neo4j.ts          # Graph database operations
+└── semantic-search.ts # Graph search implementation
+
+lib/hooks/
+└── usePersonaState.ts # Shared persona state management hook
+
+components/
+├── FloatingChatWidget.tsx  # ✅ Active CopilotKit chat widget
+└── ChatWidget.tsx         # ⚠️ Legacy component (available but unused)
+
+app/
+├── api/
+│   ├── copilotkit/route.ts  # ✅ CopilotKit runtime endpoint
+│   └── chat/route.ts        # ✅ Custom agent endpoint
+└── providers/
+    └── CopilotKitProvider.tsx # CopilotKit context provider
 ```
 
 ### API Endpoints
 
-- `POST /api/chat` - Standard chat with complete response
+- `POST /api/copilotkit` - CopilotKit runtime endpoint (used by FloatingChatWidget)
+- `POST /api/chat` - Custom agent endpoint (used by legacy ChatWidget)
 - `POST /api/chat/stream` - Streaming responses with server-sent events
+
+### Chat Widgets
+
+**FloatingChatWidget (Active):**
+
+- CopilotKit-based agentic chat interface
+- Tool call visibility and streaming responses
+- Dynamic AI-generated suggestions
+- Persona-aware context
+
+**ChatWidget (Legacy):**
+
+- Initial implementation before CopilotKit
+- Uses direct `/api/chat` endpoint
+- Available as fallback option
+- Not currently used in production
 
 ## 🛠️ Setup
 
@@ -313,12 +397,30 @@ npm run test
 
 ---
 
+## 🔐 Security & Access Control
+
+**Hackathon Demo Configuration:**
+
+- ⚠️ **No Authentication Required** - Intentionally omitted for demo purposes
+- ⚠️ **No Access Control** - All personas accessible for demonstration
+- ✅ **Session-Based Persona Selection** - Uses sessionStorage for persona context
+- ✅ **Persona Context Injection** - Automatic CRM data loading based on selected persona
+
+**Note:** Access control hooks are implemented but return `true` for demo purposes. For production deployment, implement proper authentication and authorization.
+
 ## 🎯 Next Steps
 
-1. **Complete Database Seeding Scripts** (TypeScript version)
-2. **Implement Advisor Dashboard** (7 pages)
-3. **Add Authentication Layer** (optional for demo)
-4. **Performance Optimization** (caching, indexing)
-5. **Deploy to Production**
+1. ✅ **Complete Database Seeding Scripts** (TypeScript version)
+2. ✅ **Implement Advisor Dashboard** (7 pages)
+3. ⚠️ **Add Authentication Layer** (skipped for hackathon demo)
+4. ✅ **Performance Optimization** (caching, indexing implemented)
+5. ✅ **Deploy to Production** (Vercel-ready)
+
+## 📚 Additional Documentation
+
+- `ARCHITECTURE_REVIEW.md` - Comprehensive architecture analysis
+- `IMPROVEMENTS_APPLIED.md` - Recent improvements and optimizations
+- `COPILOTKIT_FIXES_APPLIED.md` - CopilotKit integration fixes
+- `API_TEST_RESULTS.md` - API endpoint testing results
 
 This implementation provides a production-ready foundation for the LifeCompass platform, adapting your Python Pydantic AI agent to the Next.js/TypeScript ecosystem while maintaining all core functionality and compliance requirements.

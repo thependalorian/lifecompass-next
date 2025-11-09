@@ -7,16 +7,18 @@ import { getAdvisorClients, getAdvisorByNumber } from "@/lib/db/neon";
 import { maskCustomerPII, MaskingLevel } from "@/lib/utils/pii-mask";
 
 // Force dynamic rendering since we use request.url
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const advisorIdOrNumber = params.id;
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "50");
+
+    // Check cache first
 
     // Try to get advisor by number first (if it's ADV-001 format)
     let advisor;
@@ -28,7 +30,7 @@ export async function GET(
       if (!advisor) {
         return NextResponse.json(
           { error: "Advisor not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
       advisorId = advisor.id;
@@ -52,8 +54,12 @@ export async function GET(
         email: client.email,
         phone: client.phone_primary,
         segment: client.segment,
-        engagementScore: client.engagement_score ? parseFloat(client.engagement_score.toString()) : 0,
-        lifetimeValue: client.lifetime_value ? parseFloat(client.lifetime_value.toString()) : 0,
+        engagementScore: client.engagement_score
+          ? parseFloat(client.engagement_score.toString())
+          : 0,
+        lifetimeValue: client.lifetime_value
+          ? parseFloat(client.lifetime_value.toString())
+          : 0,
         churnRisk: client.churn_risk || "Low",
         primaryAdvisorId: client.primary_advisor_id,
         dateOfBirth: null, // Not in this query
@@ -65,17 +71,26 @@ export async function GET(
       };
 
       // Apply PII masking (advisor level - moderate masking)
-      const maskingLevel: MaskingLevel = 'advisor';
-      return maskCustomerPII(clientData, { level: maskingLevel });
+      // Advisors can see full names, but other PII is masked
+      const maskingLevel: MaskingLevel = "advisor";
+      return maskCustomerPII(clientData, {
+        level: maskingLevel,
+        maskName: false, // Advisors can see full customer names
+        maskEmail: true,
+        maskPhone: true,
+        maskDateOfBirth: true,
+        maskAddress: true,
+        maskIncome: true,
+      });
     });
 
+    // Cache the response for 5 minutes (client data changes moderately)
     return NextResponse.json(transformedClients);
   } catch (error) {
     console.error("Error fetching advisor clients:", error);
     return NextResponse.json(
       { error: "Failed to fetch advisor clients" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

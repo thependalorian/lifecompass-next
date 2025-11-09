@@ -62,7 +62,9 @@ export default function AdvisorTasksPage() {
   const [selectedType, setSelectedType] = useState("All Types");
   const [sortBy, setSortBy] = useState("dueDate");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [customers, setCustomers] = useState<Array<{ id: string; customerNumber: string; name: string }>>([]);
+  const [customers, setCustomers] = useState<
+    Array<{ id: string; customerNumber: string; name: string }>
+  >([]);
 
   useEffect(() => {
     // Check if persona is selected
@@ -75,7 +77,9 @@ export default function AdvisorTasksPage() {
     // Fetch advisor's clients for the create task modal
     const fetchClients = async () => {
       try {
-        const response = await fetch(`/api/advisors/${selectedPersona}/clients`);
+        const response = await fetch(
+          `/api/advisors/${selectedPersona}/clients`,
+        );
         if (response.ok) {
           const clientsData = await response.json();
           setCustomers(
@@ -83,7 +87,7 @@ export default function AdvisorTasksPage() {
               id: c.id || c.customerId,
               customerNumber: c.customerNumber,
               name: c.name || `${c.firstName || ""} ${c.lastName || ""}`.trim(),
-            }))
+            })),
           );
         }
       } catch (err) {
@@ -108,9 +112,9 @@ export default function AdvisorTasksPage() {
           // Filter client-side for "In Progress" since API returns both Open and In Progress for "open"
           // We'll filter after fetching
           const statusMap: Record<string, string> = {
-            "Open": "open",
-            "Completed": "completed",
-            "Cancelled": "cancelled",
+            Open: "open",
+            Completed: "completed",
+            Cancelled: "cancelled",
           };
           if (statusMap[selectedStatus]) {
             url += `&status=${statusMap[selectedStatus]}`;
@@ -118,10 +122,10 @@ export default function AdvisorTasksPage() {
         }
         if (selectedPriority !== "All Priorities") {
           const priorityMap: Record<string, string> = {
-            "High": "high",
-            "Medium": "medium",
-            "Low": "low",
-            "Urgent": "urgent",
+            High: "high",
+            Medium: "medium",
+            Low: "low",
+            Urgent: "urgent",
           };
           url += `&priority=${priorityMap[selectedPriority] || selectedPriority.toLowerCase()}`;
         }
@@ -151,19 +155,19 @@ export default function AdvisorTasksPage() {
         let url = `/api/tasks?advisorId=${selectedPersona}`;
         if (selectedStatus !== "All Statuses") {
           const statusMap: Record<string, string> = {
-            "Open": "open",
+            Open: "open",
             "In Progress": "open",
-            "Completed": "completed",
-            "Cancelled": "cancelled",
+            Completed: "completed",
+            Cancelled: "cancelled",
           };
           url += `&status=${statusMap[selectedStatus] || ""}`;
         }
         if (selectedPriority !== "All Priorities") {
           const priorityMap: Record<string, string> = {
-            "High": "high",
-            "Medium": "medium",
-            "Low": "low",
-            "Urgent": "urgent",
+            High: "high",
+            Medium: "medium",
+            Low: "low",
+            Urgent: "urgent",
           };
           url += `&priority=${priorityMap[selectedPriority] || selectedPriority.toLowerCase()}`;
         }
@@ -221,14 +225,18 @@ export default function AdvisorTasksPage() {
           if (!b.dueDate) return -1;
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
         case "priority":
-          const priorityOrder: Record<string, number> = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+          const priorityOrder: Record<string, number> = {
+            Urgent: 4,
+            High: 3,
+            Medium: 2,
+            Low: 1,
+          };
           return (
             (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0)
           );
         case "createdDate":
           return (
-            new Date(b.createdAt).getTime() -
-            new Date(a.createdAt).getTime()
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
         default:
           return 0;
@@ -236,15 +244,12 @@ export default function AdvisorTasksPage() {
     });
 
   const pendingTasks = filteredTasks.filter(
-    (task) =>
-      task.status === "Open" || task.status === "In Progress",
+    (task) => task.status === "Open" || task.status === "In Progress",
   ).length;
-  const overdueTasks = filteredTasks.filter(
-    (task) => {
-      if (!task.dueDate) return false;
-      return new Date(task.dueDate) < new Date() && task.status !== "Completed";
-    },
-  ).length;
+  const overdueTasks = filteredTasks.filter((task) => {
+    if (!task.dueDate) return false;
+    return new Date(task.dueDate) < new Date() && task.status !== "Completed";
+  }).length;
   const completedToday = filteredTasks.filter(
     (task) =>
       task.status === "Completed" &&
@@ -401,7 +406,7 @@ export default function AdvisorTasksPage() {
               <option value="client">Sort by Client</option>
               <option value="createdDate">Sort by Created Date</option>
             </select>
-            <button 
+            <button
               className="btn-om-primary"
               onClick={() => setIsCreateModalOpen(true)}
             >
@@ -454,7 +459,9 @@ export default function AdvisorTasksPage() {
                       </div>
                     </div>
 
-                    <p className="text-om-grey mb-3">{task.description || task.title}</p>
+                    <p className="text-om-grey mb-3">
+                      {task.description || task.title}
+                    </p>
 
                     <div className="grid md:grid-cols-4 gap-4 text-sm">
                       {task.customerNumber && (
@@ -539,9 +546,11 @@ export default function AdvisorTasksPage() {
 
       {/* Create Task Modal */}
       {(() => {
-        const selectedPersona = sessionStorage.getItem("selectedAdvisorPersona");
+        const selectedPersona = sessionStorage.getItem(
+          "selectedAdvisorPersona",
+        );
         if (!selectedPersona) return null;
-        
+
         return (
           <CreateTaskModal
             isOpen={isCreateModalOpen}
@@ -552,7 +561,6 @@ export default function AdvisorTasksPage() {
           />
         );
       })()}
-
     </CorporateLayout>
   );
 }

@@ -7,7 +7,7 @@ import { getAllAdvisors, getAdvisorByNumber } from "@/lib/db/neon";
 import { maskAdvisorPII, MaskingLevel } from "@/lib/utils/pii-mask";
 
 // Force dynamic rendering since we use request.url
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
     if (advisorNumber) {
       // Get single advisor by number
       const advisor = await getAdvisorByNumber(advisorNumber);
-      
+
       if (!advisor) {
         return NextResponse.json(
           { error: "Advisor not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -44,14 +44,16 @@ export async function GET(request: NextRequest) {
         monthlyTarget: parseFloat(advisor.monthly_target?.toString() || "0"),
         currentSales: parseFloat(advisor.monthly_sales?.toString() || "0"),
         conversionRate: parseFloat(advisor.conversion_rate?.toString() || "0"),
-        satisfactionScore: parseFloat(advisor.satisfaction_score?.toString() || "0"),
+        satisfactionScore: parseFloat(
+          advisor.satisfaction_score?.toString() || "0",
+        ),
         performanceRating: advisor.performance_rating,
         avatarUrl: advisor.avatar_url || null,
         type: "advisor",
       };
 
       // Apply PII masking (public level for demo)
-      const maskingLevel: MaskingLevel = 'public';
+      const maskingLevel: MaskingLevel = "public";
       const maskedData = maskAdvisorPII(advisorData, { level: maskingLevel });
 
       return NextResponse.json(maskedData);
@@ -80,14 +82,16 @@ export async function GET(request: NextRequest) {
         monthlyTarget: parseFloat(advisor.monthly_target?.toString() || "0"),
         currentSales: parseFloat(advisor.monthly_sales?.toString() || "0"),
         conversionRate: parseFloat(advisor.conversion_rate?.toString() || "0"),
-        satisfactionScore: parseFloat(advisor.satisfaction_score?.toString() || "0"),
+        satisfactionScore: parseFloat(
+          advisor.satisfaction_score?.toString() || "0",
+        ),
         performanceRating: advisor.performance_rating,
         avatarUrl: advisor.avatar_url || null,
         type: "advisor",
       };
 
       // Apply PII masking (public level for demo)
-      const maskingLevel: MaskingLevel = 'public';
+      const maskingLevel: MaskingLevel = "public";
       return maskAdvisorPII(advisorData, { level: maskingLevel });
     });
 
@@ -96,8 +100,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching advisors:", error);
     return NextResponse.json(
       { error: "Failed to fetch advisors" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

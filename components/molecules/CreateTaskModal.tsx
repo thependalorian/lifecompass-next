@@ -74,7 +74,9 @@ export function CreateTaskModal({
           status: formData.status,
           dueDate: formData.dueDate || undefined,
           customerId: formData.customerId || undefined,
-          estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : undefined,
+          estimatedHours: formData.estimatedHours
+            ? parseFloat(formData.estimatedHours)
+            : undefined,
         }),
       });
 
@@ -146,7 +148,9 @@ export function CreateTaskModal({
               type="text"
               className="input input-bordered input-om w-full"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
               required
               placeholder="e.g., Follow up with customer on policy renewal"
             />
@@ -160,7 +164,9 @@ export function CreateTaskModal({
             <textarea
               className="textarea textarea-bordered input-om w-full"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               rows={3}
               placeholder="Additional details about the task..."
             />
@@ -175,7 +181,9 @@ export function CreateTaskModal({
               <select
                 className="select select-bordered input-om w-full"
                 value={formData.taskType}
-                onChange={(e) => setFormData({ ...formData, taskType: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, taskType: e.target.value })
+                }
                 required
               >
                 {taskTypes.map((type) => (
@@ -193,7 +201,9 @@ export function CreateTaskModal({
               <select
                 className="select select-bordered input-om w-full"
                 value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, priority: e.target.value })
+                }
                 required
               >
                 {priorities.map((priority) => (
@@ -214,7 +224,9 @@ export function CreateTaskModal({
               <select
                 className="select select-bordered input-om w-full"
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, status: e.target.value })
+                }
               >
                 {statuses.map((status) => (
                   <option key={status} value={status}>
@@ -232,7 +244,9 @@ export function CreateTaskModal({
                 type="date"
                 className="input input-bordered input-om w-full"
                 value={formData.dueDate}
-                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, dueDate: e.target.value })
+                }
                 min={new Date().toISOString().split("T")[0]}
               />
             </div>
@@ -242,12 +256,16 @@ export function CreateTaskModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label">
-                <span className="label-text font-semibold">Customer (Optional)</span>
+                <span className="label-text font-semibold">
+                  Customer (Optional)
+                </span>
               </label>
               <select
                 className="select select-bordered input-om w-full"
                 value={formData.customerId}
-                onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, customerId: e.target.value })
+                }
               >
                 <option value="">No customer assigned</option>
                 {customers.map((customer) => (
@@ -260,13 +278,17 @@ export function CreateTaskModal({
 
             <div>
               <label className="label">
-                <span className="label-text font-semibold">Estimated Hours</span>
+                <span className="label-text font-semibold">
+                  Estimated Hours
+                </span>
               </label>
               <input
                 type="number"
                 className="input input-bordered input-om w-full"
                 value={formData.estimatedHours}
-                onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, estimatedHours: e.target.value })
+                }
                 min="0"
                 step="0.5"
                 placeholder="e.g., 2.5"
@@ -304,4 +326,3 @@ export function CreateTaskModal({
     </div>
   );
 }
-

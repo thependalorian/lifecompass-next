@@ -103,7 +103,8 @@ export default function ToolsPage() {
                     N${Math.round((coverageAmount / 10000) * 1.2 + 40)}
                   </div>
                   <div className="text-xs text-om-grey mt-2">
-                    Based on OMP Severe Illness Cover (N$40 base + coverage-based premium)
+                    Based on OMP Severe Illness Cover (N$40 base +
+                    coverage-based premium)
                   </div>
                 </div>
 
@@ -195,8 +196,8 @@ export default function ToolsPage() {
                     N${Math.round(calculateRetirement()).toLocaleString()}
                   </div>
                   <div className="text-xs text-om-grey mt-2">
-                    Based on Old Mutual Income Fund returns (7.2% annual) over {retirementAge - currentAge}{" "}
-                    years
+                    Based on Old Mutual Income Fund returns (7.2% annual) over{" "}
+                    {retirementAge - currentAge} years
                   </div>
                 </div>
 
@@ -338,7 +339,8 @@ export default function ToolsPage() {
                     N$40 - N$80
                   </div>
                   <div className="text-xs text-om-grey mt-2">
-                    Based on OMP Funeral Care Range - Claims paid within 48 hours
+                    Based on OMP Funeral Care Range - Claims paid within 48
+                    hours
                   </div>
                 </div>
 
@@ -426,10 +428,12 @@ export default function ToolsPage() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   className="btn btn-om-primary w-full"
                   onClick={() => {
-                    alert("Your risk profile has been calculated! Based on your answers, you are classified as a 'Moderate' risk investor. This means you're comfortable with some market volatility in exchange for potentially higher returns over the long term.");
+                    alert(
+                      "Your risk profile has been calculated! Based on your answers, you are classified as a 'Moderate' risk investor. This means you're comfortable with some market volatility in exchange for potentially higher returns over the long term.",
+                    );
                   }}
                 >
                   Calculate Risk Profile
@@ -455,7 +459,6 @@ export default function ToolsPage() {
           </Link>
         </div>
       </section>
-
     </CorporateLayout>
   );
 }

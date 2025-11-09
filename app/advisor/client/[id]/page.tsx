@@ -26,9 +26,10 @@ interface Client {
   id: string;
   customerNumber: string;
   name: string;
+  displayName?: string; // Masked name for advisors (customer number or initials)
   email: string;
   phone: string;
-  dateOfBirth: string;
+  dateOfBirth: string | null; // May be masked as age
   occupation: string;
   city: string;
   region: string;
@@ -75,7 +76,9 @@ export default function Client360Page() {
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "policies" | "interactions" | "notes">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "policies" | "interactions" | "notes"
+  >("overview");
 
   useEffect(() => {
     if (!customerNumber) return;
@@ -84,20 +87,26 @@ export default function Client360Page() {
       setLoading(true);
       try {
         // Fetch client data
-        const clientResponse = await fetch(`/api/customers?number=${customerNumber}`);
+        const clientResponse = await fetch(
+          `/api/customers?number=${customerNumber}`,
+        );
         if (!clientResponse.ok) throw new Error("Failed to fetch client");
         const clientData = await clientResponse.json();
         setClient(clientData);
 
         // Fetch policies
-        const policiesResponse = await fetch(`/api/policies?customerNumber=${customerNumber}`);
+        const policiesResponse = await fetch(
+          `/api/policies?customerNumber=${customerNumber}`,
+        );
         if (policiesResponse.ok) {
           const policiesData = await policiesResponse.json();
           setPolicies(policiesData);
         }
 
         // Fetch interactions
-        const interactionsResponse = await fetch(`/api/interactions?customerNumber=${customerNumber}&limit=10`);
+        const interactionsResponse = await fetch(
+          `/api/interactions?customerNumber=${customerNumber}&limit=10`,
+        );
         if (interactionsResponse.ok) {
           const interactionsData = await interactionsResponse.json();
           setInteractions(interactionsData);
@@ -157,7 +166,10 @@ export default function Client360Page() {
         { label: "Advisor", href: "/advisor/select" },
         { label: "Dashboard", href: "/advisor" },
         { label: "Clients", href: "/advisor/clients" },
-        { label: client.name, href: `/advisor/client/${client.customerNumber}` },
+        {
+          label: client.name,
+          href: `/advisor/client/${client.customerNumber}`,
+        },
       ]}
     >
       {/* Action Buttons */}
@@ -165,14 +177,24 @@ export default function Client360Page() {
         <div className="container mx-auto px-4">
           <div className="flex justify-end gap-3">
             {client.primaryAdvisorId ? (
-              <Link href={`/advisors/${client.primaryAdvisorId}/book?client=${encodeURIComponent(client.customerNumber)}`}>
-                <OMButton variant="outline" size="sm" className="border-white text-white hover:bg-white hover:text-om-heritage-green">
+              <Link
+                href={`/advisors/${client.primaryAdvisorId}/book?client=${encodeURIComponent(client.customerNumber)}`}
+              >
+                <OMButton
+                  variant="outline"
+                  size="sm"
+                  className="border-white text-white hover:bg-white hover:text-om-heritage-green"
+                >
                   Schedule Meeting
                 </OMButton>
               </Link>
             ) : (
               <Link href={`/advisors`}>
-                <OMButton variant="outline" size="sm" className="border-white text-white hover:bg-white hover:text-om-heritage-green">
+                <OMButton
+                  variant="outline"
+                  size="sm"
+                  className="border-white text-white hover:bg-white hover:text-om-heritage-green"
+                >
                   Find Advisor
                 </OMButton>
               </Link>
@@ -193,7 +215,11 @@ export default function Client360Page() {
             {[
               { id: "overview", label: "Overview", icon: ChartBarIcon },
               { id: "policies", label: "Policies", icon: ShieldCheckIcon },
-              { id: "interactions", label: "Interactions", icon: ChatBubbleLeftRightIcon },
+              {
+                id: "interactions",
+                label: "Interactions",
+                icon: ChatBubbleLeftRightIcon,
+              },
               { id: "notes", label: "Notes", icon: DocumentTextIcon },
             ].map((tab) => (
               <button
@@ -222,28 +248,38 @@ export default function Client360Page() {
               <>
                 {/* Key Metrics */}
                 <div className="card-om p-6">
-                  <h2 className="text-xl font-bold text-om-navy mb-4">Key Metrics</h2>
+                  <h2 className="text-xl font-bold text-om-navy mb-4">
+                    Key Metrics
+                  </h2>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                      <div className="text-sm text-om-grey-60 mb-1">Total Policies</div>
+                      <div className="text-sm text-om-grey-60 mb-1">
+                        Total Policies
+                      </div>
                       <div className="text-2xl font-bold text-om-heritage-green">
                         {totalPolicies}
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-om-grey-60 mb-1">Total Premium</div>
+                      <div className="text-sm text-om-grey-60 mb-1">
+                        Total Premium
+                      </div>
                       <div className="text-2xl font-bold text-om-heritage-green">
                         N$ {totalPremium.toLocaleString()}
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-om-grey-60 mb-1">Lifetime Value</div>
+                      <div className="text-sm text-om-grey-60 mb-1">
+                        Lifetime Value
+                      </div>
                       <div className="text-2xl font-bold text-om-heritage-green">
                         N$ {Math.round(client.lifetimeValue / 1000)}K
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-om-grey-60 mb-1">Engagement Score</div>
+                      <div className="text-sm text-om-grey-60 mb-1">
+                        Engagement Score
+                      </div>
                       <div className="text-2xl font-bold text-om-heritage-green">
                         {Math.round(client.engagementScore)}%
                       </div>
@@ -261,23 +297,39 @@ export default function Client360Page() {
                     <div>
                       <div className="flex justify-between mb-2">
                         <span className="text-om-grey-80">Monthly Premium</span>
-                        <span className="font-bold text-om-navy">N$ {totalPremium.toLocaleString()}</span>
+                        <span className="font-bold text-om-navy">
+                          N$ {totalPremium.toLocaleString()}
+                        </span>
                       </div>
                       <div className="w-full bg-om-grey-15 rounded-full h-2">
-                        <div className="bg-om-heritage-green h-2 rounded-full" style={{ width: `${Math.min(client.engagementScore, 100)}%` }} />
+                        <div
+                          className="bg-om-heritage-green h-2 rounded-full"
+                          style={{
+                            width: `${Math.min(client.engagementScore, 100)}%`,
+                          }}
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-om-grey-15">
                       <div>
                         <div className="text-sm text-om-grey-60">Segment</div>
-                        <div className="font-bold text-om-navy">{client.segment}</div>
+                        <div className="font-bold text-om-navy">
+                          {client.segment}
+                        </div>
                       </div>
                       <div>
-                        <div className="text-sm text-om-grey-60">Churn Risk</div>
-                        <div className={`font-bold ${
-                          client.churnRisk === "Low" ? "text-om-fresh-green" :
-                          client.churnRisk === "Medium" ? "text-om-naartjie" : "text-om-cerise"
-                        }`}>
+                        <div className="text-sm text-om-grey-60">
+                          Churn Risk
+                        </div>
+                        <div
+                          className={`font-bold ${
+                            client.churnRisk === "Low"
+                              ? "text-om-fresh-green"
+                              : client.churnRisk === "Medium"
+                                ? "text-om-naartjie"
+                                : "text-om-cerise"
+                          }`}
+                        >
                           {client.churnRisk}
                         </div>
                       </div>
@@ -294,12 +346,21 @@ export default function Client360Page() {
                     <div key={policy.id} className="card-om p-6">
                       <div className="flex justify-between items-start mb-4">
                         <div>
-                          <h3 className="text-lg font-bold text-om-navy">{policy.type} {policy.subtype ? `- ${policy.subtype}` : ""}</h3>
-                          <p className="text-sm text-om-grey-60">{policy.policyNumber}</p>
+                          <h3 className="text-lg font-bold text-om-navy">
+                            {policy.type}{" "}
+                            {policy.subtype ? `- ${policy.subtype}` : ""}
+                          </h3>
+                          <p className="text-sm text-om-grey-60">
+                            {policy.policyNumber}
+                          </p>
                         </div>
-                        <span className={`badge ${
-                          policy.status === "Active" ? "badge-om-active" : "badge-om-inactive"
-                        }`}>
+                        <span
+                          className={`badge ${
+                            policy.status === "Active"
+                              ? "badge-om-active"
+                              : "badge-om-inactive"
+                          }`}
+                        >
                           {policy.status}
                         </span>
                       </div>
@@ -307,19 +368,34 @@ export default function Client360Page() {
                         <div>
                           <div className="text-sm text-om-grey-60">Premium</div>
                           <div className="font-bold text-om-navy">
-                            N$ {policy.premiumAmount ? policy.premiumAmount.toLocaleString() : "0"} / {policy.premiumFrequency || "Monthly"}
+                            N${" "}
+                            {policy.premiumAmount
+                              ? policy.premiumAmount.toLocaleString()
+                              : "0"}{" "}
+                            / {policy.premiumFrequency || "Monthly"}
                           </div>
                         </div>
                         <div>
-                          <div className="text-sm text-om-grey-60">Coverage</div>
+                          <div className="text-sm text-om-grey-60">
+                            Coverage
+                          </div>
                           <div className="font-bold text-om-navy">
-                            N$ {policy.coverageAmount ? policy.coverageAmount.toLocaleString() : "N/A"}
+                            N${" "}
+                            {policy.coverageAmount
+                              ? policy.coverageAmount.toLocaleString()
+                              : "N/A"}
                           </div>
                         </div>
                         <div>
-                          <div className="text-sm text-om-grey-60">Renewal Date</div>
+                          <div className="text-sm text-om-grey-60">
+                            Renewal Date
+                          </div>
                           <div className="font-bold text-om-navy">
-                            {policy.renewalDate ? new Date(policy.renewalDate).toLocaleDateString() : "N/A"}
+                            {policy.renewalDate
+                              ? new Date(
+                                  policy.renewalDate,
+                                ).toLocaleDateString()
+                              : "N/A"}
                           </div>
                         </div>
                       </div>
@@ -340,15 +416,28 @@ export default function Client360Page() {
                     <div key={interaction.id} className="card-om p-6">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="font-bold text-om-navy">{interaction.subject || "No subject"}</h3>
+                          <h3 className="font-bold text-om-navy">
+                            {interaction.subject || "No subject"}
+                          </h3>
                           <p className="text-sm text-om-grey-60">
-                            {new Date(interaction.createdAt).toLocaleDateString()} at {new Date(interaction.createdAt).toLocaleTimeString()}
+                            {new Date(
+                              interaction.createdAt,
+                            ).toLocaleDateString()}{" "}
+                            at{" "}
+                            {new Date(
+                              interaction.createdAt,
+                            ).toLocaleTimeString()}
                           </p>
                         </div>
-                        <span className={`badge ${
-                          interaction.sentiment === "Positive" ? "badge-om-success" :
-                          interaction.sentiment === "Negative" ? "badge-om-error" : "badge-om-info"
-                        }`}>
+                        <span
+                          className={`badge ${
+                            interaction.sentiment === "Positive"
+                              ? "badge-om-success"
+                              : interaction.sentiment === "Negative"
+                                ? "badge-om-error"
+                                : "badge-om-info"
+                          }`}
+                        >
                           {interaction.sentiment || "Neutral"}
                         </span>
                       </div>
@@ -359,10 +448,14 @@ export default function Client360Page() {
                         <span>•</span>
                         <span>{interaction.direction}</span>
                         <span>•</span>
-                        <span className="font-semibold text-om-heritage-green">{interaction.outcome || "N/A"}</span>
+                        <span className="font-semibold text-om-heritage-green">
+                          {interaction.outcome || "N/A"}
+                        </span>
                       </div>
                       {interaction.content && (
-                        <p className="text-sm text-om-grey-80 mt-2">{interaction.content}</p>
+                        <p className="text-sm text-om-grey-80 mt-2">
+                          {interaction.content}
+                        </p>
                       )}
                     </div>
                   ))
@@ -378,7 +471,9 @@ export default function Client360Page() {
               <div className="space-y-4">
                 {/* Add Note */}
                 <div className="card-om p-6">
-                  <h3 className="font-bold text-om-navy mb-4">Add Private Note</h3>
+                  <h3 className="font-bold text-om-navy mb-4">
+                    Add Private Note
+                  </h3>
                   <textarea
                     placeholder="Add a note about this client..."
                     className="textarea textarea-bordered w-full input-om mb-3"
@@ -396,7 +491,10 @@ export default function Client360Page() {
 
                 {/* Existing Notes */}
                 <div className="text-center py-12 text-om-grey">
-                  <p>Notes feature coming soon. Notes will be stored in the database.</p>
+                  <p>
+                    Notes feature coming soon. Notes will be stored in the
+                    database.
+                  </p>
                 </div>
               </div>
             )}
@@ -408,11 +506,24 @@ export default function Client360Page() {
             <div className="card-om p-6">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 rounded-full bg-om-heritage-green text-white flex items-center justify-center font-bold text-xl aspect-square">
-                  {client.name.split(" ").map(n => n[0]).join("")}
+                  {client.customerNumber ||
+                    client.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
                 </div>
                 <div>
-                  <h3 className="font-bold text-om-navy">{client.name}</h3>
-                  <p className="text-sm text-om-grey-60">{client.segment} Segment</p>
+                  <h3 className="font-bold text-om-navy">
+                    {client.name || client.displayName || client.customerNumber}
+                  </h3>
+                  <p className="text-sm text-om-grey-60">
+                    {client.segment} Segment
+                  </p>
+                  {client.customerNumber && (
+                    <p className="text-xs text-om-grey-60 mt-1">
+                      Customer Number: {client.customerNumber}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2 text-sm">
@@ -429,20 +540,36 @@ export default function Client360Page() {
 
             {/* Contact Information */}
             <div className="card-om p-6">
-              <h3 className="font-bold text-om-navy mb-4">Contact Information</h3>
+              <h3 className="font-bold text-om-navy mb-4">
+                Contact Information
+              </h3>
               <div className="space-y-2 text-sm">
                 <div>
+                  <div className="text-om-grey-60">Customer Number</div>
+                  <div className="font-semibold text-om-navy">
+                    {client.customerNumber || "N/A"}
+                  </div>
+                </div>
+                <div>
                   <div className="text-om-grey-60">Email</div>
-                  <div className="font-semibold text-om-navy">{client.email}</div>
+                  <div className="font-semibold text-om-navy">
+                    {client.email || "Masked"}
+                  </div>
                 </div>
                 <div>
                   <div className="text-om-grey-60">Phone</div>
-                  <div className="font-semibold text-om-navy">{client.phone}</div>
+                  <div className="font-semibold text-om-navy">
+                    {client.phone || "Masked"}
+                  </div>
                 </div>
-                <div>
-                  <div className="text-om-grey-60">Date of Birth</div>
-                  <div className="font-semibold text-om-navy">{client.dateOfBirth}</div>
-                </div>
+                {client.dateOfBirth && (
+                  <div>
+                    <div className="text-om-grey-60">Age</div>
+                    <div className="font-semibold text-om-navy">
+                      {client.dateOfBirth}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -455,12 +582,16 @@ export default function Client360Page() {
               <div className="space-y-2 text-sm">
                 <div>
                   <div className="text-om-grey-60">Customer Number</div>
-                  <div className="font-semibold text-om-navy">{client.customerNumber}</div>
+                  <div className="font-semibold text-om-navy">
+                    {client.customerNumber}
+                  </div>
                 </div>
                 <div>
                   <div className="text-om-grey-60">Date of Birth</div>
                   <div className="font-semibold text-om-navy">
-                    {client.dateOfBirth ? new Date(client.dateOfBirth).toLocaleDateString() : "N/A"}
+                    {client.dateOfBirth
+                      ? new Date(client.dateOfBirth).toLocaleDateString()
+                      : "N/A"}
                   </div>
                 </div>
               </div>
@@ -468,8 +599,6 @@ export default function Client360Page() {
           </div>
         </div>
       </section>
-
     </CorporateLayout>
   );
 }
-

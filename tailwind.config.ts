@@ -63,11 +63,15 @@ const config: Config = {
         "gradient-conic":
           "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
         // Old Mutual Vignette Gradients (Primary)
-        "om-vignette-primary-90": "linear-gradient(90deg, #8dc63f 40%, #009677 60%)",
-        "om-vignette-primary-45": "linear-gradient(45deg, #8dc63f 40%, #009677 60%)",
+        "om-vignette-primary-90":
+          "linear-gradient(90deg, #8dc63f 40%, #009677 60%)",
+        "om-vignette-primary-45":
+          "linear-gradient(45deg, #8dc63f 40%, #009677 60%)",
         // Old Mutual Vignette Gradients (Secondary)
-        "om-vignette-secondary-90": "linear-gradient(90deg, #009677 30%, #8dc63f 55%, #f37021 15%)",
-        "om-vignette-secondary-45": "linear-gradient(45deg, #009677 30%, #8dc63f 55%, #f37021 15%)",
+        "om-vignette-secondary-90":
+          "linear-gradient(90deg, #009677 30%, #8dc63f 55%, #f37021 15%)",
+        "om-vignette-secondary-45":
+          "linear-gradient(45deg, #009677 30%, #8dc63f 55%, #f37021 15%)",
       },
     },
   },
@@ -76,41 +80,41 @@ const config: Config = {
     themes: [
       {
         lifecompass: {
-          "primary": "#009677",        // Heritage Green
-          "primary-focus": "#007d63",  // Darker Heritage Green
+          primary: "#009677", // Heritage Green
+          "primary-focus": "#007d63", // Darker Heritage Green
           "primary-content": "#ffffff", // White text on primary
 
-          "secondary": "#50b848",      // Fresh Green
+          secondary: "#50b848", // Fresh Green
           "secondary-focus": "#429a3c", // Darker Fresh Green
           "secondary-content": "#ffffff",
 
-          "accent": "#8dc63f",         // Future Green
-          "accent-focus": "#7ab035",   // Darker Future Green
+          accent: "#8dc63f", // Future Green
+          "accent-focus": "#7ab035", // Darker Future Green
           "accent-content": "#000000",
 
-          "neutral": "#000000",        // Black
-          "neutral-focus": "#575757",  // Grey 80
+          neutral: "#000000", // Black
+          "neutral-focus": "#575757", // Grey 80
           "neutral-content": "#ffffff",
 
-          "base-100": "#ffffff",       // White background
-          "base-200": "#f6f6f6",       // Grey 5
-          "base-300": "#e3e3e3",       // Grey 15
-          "base-content": "#000000",   // Black text
+          "base-100": "#ffffff", // White background
+          "base-200": "#f6f6f6", // Grey 5
+          "base-300": "#e3e3e3", // Grey 15
+          "base-content": "#000000", // Black text
 
-          "info": "#00c0e8",           // Sky
+          info: "#00c0e8", // Sky
           "info-content": "#ffffff",
 
-          "success": "#50b848",        // Fresh Green
+          success: "#50b848", // Fresh Green
           "success-content": "#ffffff",
 
-          "warning": "#fff200",        // Sun
+          warning: "#fff200", // Sun
           "warning-content": "#000000",
 
-          "error": "#ed0080",          // Cerise
+          error: "#ed0080", // Cerise
           "error-content": "#ffffff",
 
-          "--rounded-box": "0.5rem",   // 8px (cards)
-          "--rounded-btn": "0.25rem",  // 4px (buttons per brand guide)
+          "--rounded-box": "0.5rem", // 8px (cards)
+          "--rounded-btn": "0.25rem", // 4px (buttons per brand guide)
           "--rounded-badge": "0.75rem", // 12px
 
           "--animation-btn": "0.3s",
@@ -122,10 +126,10 @@ const config: Config = {
           "--border-btn": "2px",
           "--tab-border": "2px",
 
-          "--padding-card": "1.5rem",  // 24px
-        }
-      }
-    ]
+          "--padding-card": "1.5rem", // 24px
+        },
+      },
+    ],
   },
 };
 export default config;

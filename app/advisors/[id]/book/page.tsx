@@ -8,7 +8,11 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { CorporateLayout } from "@/components/templates/CorporateLayout";
 import { motion } from "framer-motion";
-import { CalendarDaysIcon, CpuChipIcon, PhoneIcon } from "@/components/atoms/icons";
+import {
+  CalendarDaysIcon,
+  CpuChipIcon,
+  PhoneIcon,
+} from "@/components/atoms/icons";
 import { ClockIcon } from "@heroicons/react/24/outline";
 import { OMButton } from "@/components/atoms/brand";
 
@@ -21,16 +25,16 @@ function generateAvailableSlots() {
     type: string;
     available: boolean;
   }> = [];
-  
+
   const today = new Date();
   const timeSlots = ["09:00", "10:30", "11:00", "14:00", "15:30", "16:00"];
   const types = ["In-Person", "Video Call", "Phone Call"];
-  
+
   for (let day = 0; day < 7; day++) {
     const date = new Date(today);
     date.setDate(today.getDate() + day);
     const dateStr = date.toISOString().split("T")[0];
-    
+
     types.forEach((type) => {
       timeSlots.forEach((time) => {
         // Randomly make some slots unavailable (20% chance)
@@ -45,14 +49,29 @@ function generateAvailableSlots() {
       });
     });
   }
-  
+
   return slots;
 }
 
 const consultationTypes = [
-  { id: "in-person", name: "In-Person", icon: CalendarDaysIcon, description: "Meet at advisor's office" },
-  { id: "video", name: "Video Call", icon: CpuChipIcon, description: "Video conference via Zoom" },
-  { id: "phone", name: "Phone Call", icon: PhoneIcon, description: "Telephone consultation" },
+  {
+    id: "in-person",
+    name: "In-Person",
+    icon: CalendarDaysIcon,
+    description: "Meet at advisor's office",
+  },
+  {
+    id: "video",
+    name: "Video Call",
+    icon: CpuChipIcon,
+    description: "Video conference via Zoom",
+  },
+  {
+    id: "phone",
+    name: "Phone Call",
+    icon: PhoneIcon,
+    description: "Telephone consultation",
+  },
 ];
 
 export default function BookConsultationPage() {
@@ -69,7 +88,9 @@ export default function BookConsultationPage() {
   });
   const [customerPersona, setCustomerPersona] = useState<any>(null);
   const [advisorData, setAdvisorData] = useState<any>(null);
-  const [availableSlots, setAvailableSlots] = useState(generateAvailableSlots());
+  const [availableSlots, setAvailableSlots] = useState(
+    generateAvailableSlots(),
+  );
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -109,7 +130,9 @@ export default function BookConsultationPage() {
 
     // Auto-populate customer information from selected persona
     if (typeof window !== "undefined") {
-      const selectedCustomerId = sessionStorage.getItem("selectedCustomerPersona");
+      const selectedCustomerId = sessionStorage.getItem(
+        "selectedCustomerPersona",
+      );
       if (selectedCustomerId) {
         // Fetch customer from API
         fetch(`/api/customers?number=${selectedCustomerId}`)
@@ -155,7 +178,12 @@ export default function BookConsultationPage() {
   }, [advisorId]);
 
   const handleSubmit = async () => {
-    if (!selectedSlot || !contactDetails.name || !contactDetails.email || !contactDetails.phone) {
+    if (
+      !selectedSlot ||
+      !contactDetails.name ||
+      !contactDetails.email ||
+      !contactDetails.phone
+    ) {
       return;
     }
 
@@ -164,7 +192,7 @@ export default function BookConsultationPage() {
     try {
       // Get selected slot details
       const slot = availableSlots.find((s) => s.id === selectedSlot);
-      
+
       // In production, submit booking to API
       // For now, simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -177,7 +205,7 @@ export default function BookConsultationPage() {
         contactDetails,
         timestamp: new Date().toISOString(),
       };
-      
+
       sessionStorage.setItem("lastBooking", JSON.stringify(bookingData));
 
       // Redirect to advisor profile with success message
@@ -224,7 +252,10 @@ export default function BookConsultationPage() {
       breadcrumbItems={[
         { label: "Customer", href: "/customer/select" },
         { label: "Advisors", href: "/advisors" },
-        { label: advisorData?.name || "Advisor", href: `/advisors/${advisorId}` },
+        {
+          label: advisorData?.name || "Advisor",
+          href: `/advisors/${advisorId}`,
+        },
         { label: "Book", href: `/advisors/${advisorId}/book` },
       ]}
     >
@@ -250,8 +281,12 @@ export default function BookConsultationPage() {
                       }`}
                     >
                       <Icon className="w-8 h-8 text-om-heritage-green mb-3" />
-                      <h3 className="font-bold text-om-navy mb-2 text-om-heading">{type.name}</h3>
-                      <p className="text-sm text-om-grey text-om-body">{type.description}</p>
+                      <h3 className="font-bold text-om-navy mb-2 text-om-heading">
+                        {type.name}
+                      </h3>
+                      <p className="text-sm text-om-grey text-om-body">
+                        {type.description}
+                      </p>
                     </button>
                   );
                 })}
@@ -269,8 +304,8 @@ export default function BookConsultationPage() {
                     // Map selectedType to slot type
                     const typeMap: Record<string, string> = {
                       "in-person": "In-Person",
-                      "video": "Video Call",
-                      "phone": "Phone Call",
+                      video: "Video Call",
+                      phone: "Phone Call",
                     };
                     return slot.type === typeMap[selectedType];
                   })
@@ -279,7 +314,9 @@ export default function BookConsultationPage() {
                     return (
                       <button
                         key={slot.id}
-                        onClick={() => slot.available && setSelectedSlot(slot.id)}
+                        onClick={() =>
+                          slot.available && setSelectedSlot(slot.id)
+                        }
                         disabled={!slot.available}
                         className={`card-om p-4 text-left transition-all ${
                           selectedSlot === slot.id
@@ -294,11 +331,14 @@ export default function BookConsultationPage() {
                             <Icon className="w-6 h-6 text-om-heritage-green" />
                             <div>
                               <div className="font-semibold text-om-navy text-om-body">
-                                {new Date(slot.date).toLocaleDateString("en-US", {
-                                  weekday: "long",
-                                  month: "short",
-                                  day: "numeric",
-                                })}
+                                {new Date(slot.date).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    weekday: "long",
+                                    month: "short",
+                                    day: "numeric",
+                                  },
+                                )}
                               </div>
                               <div className="text-sm text-om-grey text-om-body">
                                 <ClockIcon className="w-4 h-4 inline mr-1" />
@@ -307,7 +347,9 @@ export default function BookConsultationPage() {
                             </div>
                           </div>
                           {!slot.available && (
-                            <div className="badge badge-om-inactive">Unavailable</div>
+                            <div className="badge badge-om-inactive">
+                              Unavailable
+                            </div>
                           )}
                         </div>
                       </button>
@@ -325,8 +367,8 @@ export default function BookConsultationPage() {
               >
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-om-navy text-om-heading">
-                  Your Contact Details
-                </h2>
+                    Your Contact Details
+                  </h2>
                   {customerPersona && (
                     <div className="badge badge-om-active">
                       Auto-filled from {customerPersona.name}'s profile
@@ -349,15 +391,17 @@ export default function BookConsultationPage() {
                       ></path>
                     </svg>
                     <span>
-                      Your information has been automatically populated from your profile. 
-                      Feel free to update any fields if needed.
+                      Your information has been automatically populated from
+                      your profile. Feel free to update any fields if needed.
                     </span>
                   </div>
                 )}
                 <div className="space-y-6">
                   <div>
                     <label className="label">
-                      <span className="label-text font-semibold text-om-navy">Full Name</span>
+                      <span className="label-text font-semibold text-om-navy">
+                        Full Name
+                      </span>
                     </label>
                     <input
                       type="text"
@@ -365,13 +409,18 @@ export default function BookConsultationPage() {
                       placeholder="Enter your full name"
                       value={contactDetails.name}
                       onChange={(e) =>
-                        setContactDetails({ ...contactDetails, name: e.target.value })
+                        setContactDetails({
+                          ...contactDetails,
+                          name: e.target.value,
+                        })
                       }
                     />
                   </div>
                   <div>
                     <label className="label">
-                      <span className="label-text font-semibold text-om-navy">Email Address</span>
+                      <span className="label-text font-semibold text-om-navy">
+                        Email Address
+                      </span>
                     </label>
                     <input
                       type="email"
@@ -379,13 +428,18 @@ export default function BookConsultationPage() {
                       placeholder="your.email@example.com"
                       value={contactDetails.email}
                       onChange={(e) =>
-                        setContactDetails({ ...contactDetails, email: e.target.value })
+                        setContactDetails({
+                          ...contactDetails,
+                          email: e.target.value,
+                        })
                       }
                     />
                   </div>
                   <div>
                     <label className="label">
-                      <span className="label-text font-semibold text-om-navy">Phone Number</span>
+                      <span className="label-text font-semibold text-om-navy">
+                        Phone Number
+                      </span>
                     </label>
                     <input
                       type="tel"
@@ -393,7 +447,10 @@ export default function BookConsultationPage() {
                       placeholder="+264 81 123 4567"
                       value={contactDetails.phone}
                       onChange={(e) =>
-                        setContactDetails({ ...contactDetails, phone: e.target.value })
+                        setContactDetails({
+                          ...contactDetails,
+                          phone: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -409,7 +466,10 @@ export default function BookConsultationPage() {
                       placeholder="Any specific topics you'd like to discuss?"
                       value={contactDetails.notes}
                       onChange={(e) =>
-                        setContactDetails({ ...contactDetails, notes: e.target.value })
+                        setContactDetails({
+                          ...contactDetails,
+                          notes: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -425,7 +485,13 @@ export default function BookConsultationPage() {
               <OMButton
                 variant="primary"
                 onClick={handleSubmit}
-                disabled={!selectedSlot || !contactDetails.name || !contactDetails.email || !contactDetails.phone || submitting}
+                disabled={
+                  !selectedSlot ||
+                  !contactDetails.name ||
+                  !contactDetails.email ||
+                  !contactDetails.phone ||
+                  submitting
+                }
               >
                 {submitting ? (
                   <>
@@ -443,4 +509,3 @@ export default function BookConsultationPage() {
     </CorporateLayout>
   );
 }
-

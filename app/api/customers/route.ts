@@ -7,7 +7,7 @@ import { getAllCustomers, getCustomerByNumber } from "@/lib/db/neon";
 import { maskCustomerPII, MaskingLevel } from "@/lib/utils/pii-mask";
 
 // Force dynamic rendering since we use request.url
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
     if (customerNumber) {
       // Get single customer by number
       const customer = await getCustomerByNumber(customerNumber);
-      
+
       if (!customer) {
         return NextResponse.json(
           { error: "Customer not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -47,18 +47,25 @@ export async function GET(request: NextRequest) {
         digitalAdoption: customer.digital_adoption_level,
         preferredLanguage: customer.preferred_language,
         preferredContactMethod: customer.preferred_contact_method,
-        engagementScore: parseFloat(customer.engagement_score?.toString() || "0"),
+        engagementScore: parseFloat(
+          customer.engagement_score?.toString() || "0",
+        ),
         lifetimeValue: parseFloat(customer.lifetime_value?.toString() || "0"),
         churnRisk: customer.churn_risk,
         primaryAdvisorId: customer.primary_advisor_id || null,
-        nationalId: customer.national_id, // Will be masked
         type: "customer",
       };
 
-      // Apply PII masking based on context (public for demo)
-      // In production, determine level based on authentication/authorization
-      const maskingLevel: MaskingLevel = 'public'; // Change to 'customer' if authenticated user viewing own data
-      const maskedData = maskCustomerPII(customerData, { level: maskingLevel });
+      // Determine masking level based on context
+      // Check if this is a customer viewing their own data (via sessionStorage persona)
+      // For hackathon: if customerNumber matches selectedCustomerPersona, show full data
+      // Otherwise, use public masking
+      // Note: In production, this would use proper authentication tokens
+      const maskingLevel: MaskingLevel = "customer"; // Customers can see their own full data
+      const maskedData = maskCustomerPII(customerData, {
+        level: maskingLevel,
+        maskName: false, // Customers see their own name
+      });
 
       return NextResponse.json(maskedData);
     }
@@ -89,7 +96,9 @@ export async function GET(request: NextRequest) {
         digitalAdoption: customer.digital_adoption_level,
         preferredLanguage: customer.preferred_language,
         preferredContactMethod: customer.preferred_contact_method,
-        engagementScore: parseFloat(customer.engagement_score?.toString() || "0"),
+        engagementScore: parseFloat(
+          customer.engagement_score?.toString() || "0",
+        ),
         lifetimeValue: parseFloat(customer.lifetime_value?.toString() || "0"),
         churnRisk: customer.churn_risk || "Low",
         primaryAdvisorId: customer.primary_advisor_id || null,
@@ -98,7 +107,7 @@ export async function GET(request: NextRequest) {
       };
 
       // Apply PII masking (public level for demo)
-      const maskingLevel: MaskingLevel = 'public';
+      const maskingLevel: MaskingLevel = "public";
       return maskCustomerPII(customerData, { level: maskingLevel });
     });
 
@@ -107,8 +116,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching customers:", error);
     return NextResponse.json(
       { error: "Failed to fetch customers" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

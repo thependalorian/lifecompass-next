@@ -66,21 +66,25 @@ export default function HomePage() {
       {/* The Problem - Custom Asymmetric Layout */}
       <Section background="white" pattern>
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <SectionHeader
-            badge="The Challenge"
-            title="What We're Solving"
-          />
+          <SectionHeader badge="The Challenge" title="What We're Solving" />
 
           {/* Problem Cards - Custom Layout */}
           <div className="space-y-6">
             <ProblemCard
-              icon={<BriefcaseIcon className="w-7 h-7 text-om-heritage-green" />}
+              icon={
+                <BriefcaseIcon className="w-7 h-7 text-om-heritage-green" />
+              }
               iconBg="bg-om-heritage-green/10"
               gradientFrom="from-om-heritage-green/20"
               gradientTo="to-om-fresh-green/20"
             >
               <p className="text-base sm:text-lg md:text-xl text-om-grey-80 leading-relaxed">
-                <strong className="text-om-heritage-green">Namibians struggle</strong> with complex financial products, slow support, and a lack of trust in digital tools. They want answers quickly, in plain language, without the runaround.
+                <strong className="text-om-heritage-green">
+                  Namibians struggle
+                </strong>{" "}
+                with complex financial products, slow support, and a lack of
+                trust in digital tools. They want answers quickly, in plain
+                language, without the runaround.
               </p>
             </ProblemCard>
 
@@ -92,17 +96,25 @@ export default function HomePage() {
               delay={0.1}
             >
               <p className="text-base sm:text-lg md:text-xl text-om-grey-80 leading-relaxed">
-                <strong className="text-om-naartjie">Advisors are overwhelmed</strong> with admin tasks—10 hours per week on paperwork. They want to focus on building relationships, not filling forms.
+                <strong className="text-om-naartjie">
+                  Advisors are overwhelmed
+                </strong>{" "}
+                with admin tasks—10 hours per week on paperwork. They want to
+                focus on building relationships, not filling forms.
               </p>
             </ProblemCard>
 
             {/* Impact Callout - Custom Styling */}
             <div className="mt-8 p-4 sm:p-6 bg-gradient-to-r from-om-cerise/10 via-om-naartjie/10 to-om-cerise/10 rounded-2xl border-l-4 border-om-cerise">
               <p className="text-sm sm:text-base text-om-grey-80 font-medium">
-                <strong className="text-om-cerise">The result:</strong> New business profitability down 50%, value of new business margin at 1.3% (below 2-3% target), poor customer experience (NPS 35), and advisors spending more time on admin than helping clients.
+                <strong className="text-om-cerise">The result:</strong> New
+                business profitability down 50%, value of new business margin at
+                1.3% (below 2-3% target), poor customer experience (NPS 35), and
+                advisors spending more time on admin than helping clients.
               </p>
               <p className="text-xs sm:text-sm text-om-grey-60 mt-3 italic">
-                Source: Old Mutual Group Interim Results for the six months ended 30 June 2025
+                Source: Old Mutual Group Interim Results for the six months
+                ended 30 June 2025
               </p>
             </div>
           </div>
@@ -128,7 +140,8 @@ export default function HomePage() {
                 How We Solve It
               </h2>
               <p className="text-sm sm:text-base md:text-lg lg:text-xl text-om-grey-80 max-w-3xl mx-auto leading-relaxed px-4">
-                Three powerful innovations working together to transform financial services in Namibia.
+                Three powerful innovations working together to transform
+                financial services in Namibia.
               </p>
             </motion.div>
 
@@ -166,12 +179,15 @@ export default function HomePage() {
       </section>
 
       {/* Knowledge Graph - Why LifeCompass Wins */}
-      <section id="knowledge-graph" className="bg-gradient-to-br from-om-heritage-green via-om-fresh-green to-om-heritage-green text-white py-12 sm:py-16 md:py-24 relative overflow-hidden">
+      <section
+        id="knowledge-graph"
+        className="bg-gradient-to-br from-om-heritage-green via-om-fresh-green to-om-heritage-green text-white py-12 sm:py-16 md:py-24 relative overflow-hidden"
+      >
         {/* Custom Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,_white_2px,_transparent_2px)] bg-[length:60px_60px]" />
         </div>
-        
+
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="max-w-6xl mx-auto">
             <motion.div
@@ -185,7 +201,8 @@ export default function HomePage() {
                 Our Knowledge Graph Strategy
               </h2>
               <p className="text-base sm:text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-3 sm:mb-4 px-4">
-                Transforming financial services through intelligent knowledge mapping
+                Transforming financial services through intelligent knowledge
+                mapping
               </p>
               <div className="mb-6 sm:mb-8">
                 <span className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white font-semibold text-xs sm:text-sm">
@@ -193,12 +210,14 @@ export default function HomePage() {
                 </span>
               </div>
               <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-3xl mx-auto mb-6 sm:mb-8 px-4">
-                Our knowledge graph technology creates an interconnected understanding of financial products, 
-                customer relationships, and regulatory requirements. By mapping how everything connects, 
-                our AI assistant can provide instant, accurate answers that understand context, not just keywords.
+                Our knowledge graph technology creates an interconnected
+                understanding of financial products, customer relationships, and
+                regulatory requirements. By mapping how everything connects, our
+                AI assistant can provide instant, accurate answers that
+                understand context, not just keywords.
               </p>
             </motion.div>
-            
+
             {/* Knowledge Graph Component - Innovation Showcase */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -212,7 +231,8 @@ export default function HomePage() {
                   Interactive Knowledge Graph
                 </h3>
                 <p className="text-white/70 text-xs sm:text-sm px-2">
-                  Explore connected entities, relationships, and facts extracted from Old Mutual documentation
+                  Explore connected entities, relationships, and facts extracted
+                  from Old Mutual documentation
                 </p>
               </div>
               <KnowledgeGraph />
@@ -232,17 +252,24 @@ export default function HomePage() {
                 </div>
                 <div className="h-px sm:h-12 w-12 sm:w-px bg-white/30"></div>
                 <div className="text-center sm:text-left">
-                  <p className="font-bold text-xl sm:text-2xl mb-1">LifeCompass</p>
-                  <p className="text-xs sm:text-sm text-white/80 font-medium">by Old Mutual</p>
+                  <p className="font-bold text-xl sm:text-2xl mb-1">
+                    LifeCompass
+                  </p>
+                  <p className="text-xs sm:text-sm text-white/80 font-medium">
+                    by Old Mutual
+                  </p>
                 </div>
               </div>
             </div>
-            </div>
           </div>
+        </div>
       </section>
 
       {/* Privacy & Security - PII Masking Trust Section */}
-      <section id="privacy" className="bg-gradient-to-br from-om-navy via-om-navy/95 to-om-heritage-green/20 text-white py-12 sm:py-16 md:py-24 relative overflow-hidden">
+      <section
+        id="privacy"
+        className="bg-gradient-to-br from-om-navy via-om-navy/95 to-om-heritage-green/20 text-white py-12 sm:py-16 md:py-24 relative overflow-hidden"
+      >
         {/* Custom Background Pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,_white_2px,_transparent_2px)] bg-[length:80px_80px]" />
@@ -266,8 +293,9 @@ export default function HomePage() {
                 Your Data, Protected
               </h2>
               <p className="text-base sm:text-lg md:text-xl text-white/90 max-w-3xl mx-auto px-4">
-                We take your privacy seriously. Every piece of personal information is automatically masked and protected, 
-                ensuring your data remains secure while you enjoy seamless financial services.
+                We take your privacy seriously. Every piece of personal
+                information is automatically masked and protected, ensuring your
+                data remains secure while you enjoy seamless financial services.
               </p>
             </motion.div>
 
@@ -277,25 +305,31 @@ export default function HomePage() {
                 {
                   icon: <LockClosedIcon className="w-8 h-8 sm:w-10 sm:h-10" />,
                   title: "Email Protection",
-                  description: "Email addresses are automatically masked (e.g., j***@example.com)",
+                  description:
+                    "Email addresses are automatically masked (e.g., j***@example.com)",
                   gradient: "from-blue-500/20 to-blue-600/10",
                 },
                 {
                   icon: <EyeSlashIcon className="w-8 h-8 sm:w-10 sm:h-10" />,
                   title: "Phone Privacy",
-                  description: "Phone numbers show only last 4 digits (+264 *** *** 4567)",
+                  description:
+                    "Phone numbers show only last 4 digits (+264 *** *** 4567)",
                   gradient: "from-purple-500/20 to-purple-600/10",
                 },
                 {
                   icon: <KeyIcon className="w-8 h-8 sm:w-10 sm:h-10" />,
                   title: "ID Protection",
-                  description: "National ID numbers are never exposed in any API response",
+                  description:
+                    "National ID numbers are never exposed in any API response",
                   gradient: "from-red-500/20 to-red-600/10",
                 },
                 {
-                  icon: <DocumentCheckIcon className="w-8 h-8 sm:w-10 sm:h-10" />,
+                  icon: (
+                    <DocumentCheckIcon className="w-8 h-8 sm:w-10 sm:h-10" />
+                  ),
                   title: "GDPR/POPIA Compliant",
-                  description: "Built with compliance in mind, following international privacy standards",
+                  description:
+                    "Built with compliance in mind, following international privacy standards",
                   gradient: "from-green-500/20 to-green-600/10",
                 },
               ].map((feature, idx) => (
@@ -307,11 +341,17 @@ export default function HomePage() {
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
                   className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-white/10 hover:border-white/20 transition-all hover:bg-white/10"
                 >
-                  <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center text-white mb-4`}>
+                  <div
+                    className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center text-white mb-4`}
+                  >
                     {feature.icon}
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold mb-2">{feature.title}</h3>
-                  <p className="text-sm sm:text-base text-white/70 leading-relaxed">{feature.description}</p>
+                  <h3 className="text-lg sm:text-xl font-bold mb-2">
+                    {feature.title}
+                  </h3>
+                  <p className="text-sm sm:text-base text-white/70 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </motion.div>
               ))}
             </div>
@@ -326,19 +366,37 @@ export default function HomePage() {
             >
               <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
                 <div className="text-center sm:text-left">
-                  <div className="text-3xl sm:text-4xl font-bold text-om-fresh-green mb-2">100%</div>
-                  <p className="text-sm sm:text-base text-white/80">National IDs Protected</p>
-                  <p className="text-xs sm:text-sm text-white/60 mt-1">Never exposed in any response</p>
+                  <div className="text-3xl sm:text-4xl font-bold text-om-fresh-green mb-2">
+                    100%
+                  </div>
+                  <p className="text-sm sm:text-base text-white/80">
+                    National IDs Protected
+                  </p>
+                  <p className="text-xs sm:text-sm text-white/60 mt-1">
+                    Never exposed in any response
+                  </p>
                 </div>
                 <div className="text-center sm:text-left">
-                  <div className="text-3xl sm:text-4xl font-bold text-om-fresh-green mb-2">4 Levels</div>
-                  <p className="text-sm sm:text-base text-white/80">Context-Aware Masking</p>
-                  <p className="text-xs sm:text-sm text-white/60 mt-1">Public, Advisor, Customer, Admin</p>
+                  <div className="text-3xl sm:text-4xl font-bold text-om-fresh-green mb-2">
+                    4 Levels
+                  </div>
+                  <p className="text-sm sm:text-base text-white/80">
+                    Context-Aware Masking
+                  </p>
+                  <p className="text-xs sm:text-sm text-white/60 mt-1">
+                    Public, Advisor, Customer, Admin
+                  </p>
                 </div>
                 <div className="text-center sm:text-left">
-                  <div className="text-3xl sm:text-4xl font-bold text-om-fresh-green mb-2">Compliant</div>
-                  <p className="text-sm sm:text-base text-white/80">GDPR & POPIA Ready</p>
-                  <p className="text-xs sm:text-sm text-white/60 mt-1">Built for international standards</p>
+                  <div className="text-3xl sm:text-4xl font-bold text-om-fresh-green mb-2">
+                    Compliant
+                  </div>
+                  <p className="text-sm sm:text-base text-white/80">
+                    GDPR & POPIA Ready
+                  </p>
+                  <p className="text-xs sm:text-sm text-white/60 mt-1">
+                    Built for international standards
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -352,8 +410,9 @@ export default function HomePage() {
               className="text-center mt-8 sm:mt-12"
             >
               <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
-                Privacy isn't an afterthought—it's built into every interaction. 
-                Experience financial services with confidence, knowing your personal information is always protected.
+                Privacy isn't an afterthought—it's built into every interaction.
+                Experience financial services with confidence, knowing your
+                personal information is always protected.
               </p>
             </motion.div>
           </div>
@@ -380,65 +439,73 @@ export default function HomePage() {
               Experience the platform through a simple, intuitive demo journey
             </p>
           </motion.div>
-          
+
           {/* Custom Step Cards */}
           <div className="space-y-3 sm:space-y-4">
-            {([
-              {
-                step: "1",
-                label: "Select Your Experience",
-                description: "Choose Customer Experience to explore 100 realistic profiles, or Advisor Experience to access 20 specialized advisor dashboards",
-                action: "Choose Experience",
-                href: "/customer/select",
-                color: "from-om-heritage-green to-om-fresh-green"
-              },
-              {
-                step: "2",
-                label: "View Your Profile",
-                description: "Access complete profiles with policies, claims, interactions, and CRM data—all seamlessly integrated and instantly available",
-                action: "View Profile",
-                href: "/customer/select", // Will redirect to profile if persona already selected
-                color: "from-om-fresh-green to-om-future-green",
-                onClick: () => {
-                  // Check if persona is already selected
-                  const selectedPersona = sessionStorage.getItem("selectedCustomerPersona");
-                  if (selectedPersona) {
-                    try {
-                      const persona = JSON.parse(selectedPersona);
-                      window.location.href = `/customer/profile/${persona.customerNumber || persona.id}`;
-                    } catch {
+            {(
+              [
+                {
+                  step: "1",
+                  label: "Select Your Experience",
+                  description:
+                    "Choose Customer Experience to explore 10 realistic profiles, or Advisor Experience to access 5 specialized advisor dashboards",
+                  action: "Choose Experience",
+                  href: "/customer/select",
+                  color: "from-om-heritage-green to-om-fresh-green",
+                },
+                {
+                  step: "2",
+                  label: "View Your Profile",
+                  description:
+                    "Access complete profiles with policies, claims, interactions, and CRM data—all seamlessly integrated and instantly available",
+                  action: "View Profile",
+                  href: "/customer/select", // Will redirect to profile if persona already selected
+                  color: "from-om-fresh-green to-om-future-green",
+                  onClick: () => {
+                    // Check if persona is already selected
+                    const selectedPersona = sessionStorage.getItem(
+                      "selectedCustomerPersona",
+                    );
+                    if (selectedPersona) {
+                      try {
+                        const persona = JSON.parse(selectedPersona);
+                        window.location.href = `/customer/profile/${persona.customerNumber || persona.id}`;
+                      } catch {
+                        window.location.href = "/customer/select";
+                      }
+                    } else {
                       window.location.href = "/customer/select";
                     }
-                  } else {
-                    window.location.href = "/customer/select";
-                  }
-                }
-              },
-              {
-                step: "3",
-                label: "Chat with AI Assistant",
-                description: "Ask questions naturally. Our assistant searches documents, accesses your data, performs calculations, and understands context—no technical jargon needed",
-                action: "Start Chat",
-                href: "/chat",
-                color: "from-om-future-green to-om-sky"
-              },
-              {
-                step: "4",
-                label: "Explore the Knowledge Graph",
-                description: "You've already seen it above! This visual map shows how our AI understands relationships between products, processes, and regulations",
-                action: "Scroll Up",
-                href: "#knowledge-graph",
-                color: "from-om-sky to-om-heritage-green"
-              }
-            ] as Array<{
-              step: string;
-              label: string;
-              description: string;
-              action: string;
-              href: string;
-              color: string;
-              onClick?: () => void;
-            }>).map((step, idx) => (
+                  },
+                },
+                {
+                  step: "3",
+                  label: "Chat with AI Assistant",
+                  description:
+                    "Ask questions naturally. Our assistant searches documents, accesses your data, performs calculations, and understands context—no technical jargon needed",
+                  action: "Start Chat",
+                  href: "/chat",
+                  color: "from-om-future-green to-om-sky",
+                },
+                {
+                  step: "4",
+                  label: "Explore the Knowledge Graph",
+                  description:
+                    "You've already seen it above! This visual map shows how our AI understands relationships between products, processes, and regulations",
+                  action: "Scroll Up",
+                  href: "#knowledge-graph",
+                  color: "from-om-sky to-om-heritage-green",
+                },
+              ] as Array<{
+                step: string;
+                label: string;
+                description: string;
+                action: string;
+                href: string;
+                color: string;
+                onClick?: () => void;
+              }>
+            ).map((step, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, x: idx % 2 === 0 ? -30 : 30 }}
@@ -447,10 +514,14 @@ export default function HomePage() {
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
                 className="group relative"
               >
-                <div className={`absolute -inset-0.5 bg-gradient-to-r ${step.color} rounded-2xl blur opacity-0 group-hover:opacity-30 transition-opacity duration-300`} />
+                <div
+                  className={`absolute -inset-0.5 bg-gradient-to-r ${step.color} rounded-2xl blur opacity-0 group-hover:opacity-30 transition-opacity duration-300`}
+                />
                 <div className="relative bg-white p-4 sm:p-6 rounded-2xl border border-om-grey-15 shadow-sm hover:shadow-md transition-all">
                   <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-                    <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br ${step.color} text-white flex items-center justify-center font-bold text-lg sm:text-xl flex-shrink-0 shadow-lg mx-auto sm:mx-0`}>
+                    <div
+                      className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br ${step.color} text-white flex items-center justify-center font-bold text-lg sm:text-xl flex-shrink-0 shadow-lg mx-auto sm:mx-0`}
+                    >
                       {step.step}
                     </div>
                     <div className="flex-1 text-center sm:text-left">
@@ -461,9 +532,9 @@ export default function HomePage() {
                         {step.description}
                       </p>
                       {step.onClick ? (
-                        <OMButton 
-                          variant="outline" 
-                          size="sm" 
+                        <OMButton
+                          variant="outline"
+                          size="sm"
                           className="rounded-full text-center w-full sm:w-auto"
                           onClick={step.onClick}
                         >
@@ -471,7 +542,11 @@ export default function HomePage() {
                         </OMButton>
                       ) : (
                         <Link href={step.href} className="inline-block">
-                          <OMButton variant="outline" size="sm" className="rounded-full text-center w-full sm:w-auto">
+                          <OMButton
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full text-center w-full sm:w-auto"
+                          >
                             {step.action}
                           </OMButton>
                         </Link>
@@ -485,13 +560,27 @@ export default function HomePage() {
 
           {/* Main CTAs */}
           <div className="text-center mt-8 sm:mt-12 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-            <Link href="/customer/select" className="w-full sm:w-auto inline-flex">
-              <OMButton variant="primary" size="lg" className="px-6 sm:px-10 py-4 sm:py-5 text-base sm:text-lg shadow-xl hover:shadow-2xl rounded-full w-full sm:w-auto justify-center">
+            <Link
+              href="/customer/select"
+              className="w-full sm:w-auto inline-flex"
+            >
+              <OMButton
+                variant="primary"
+                size="lg"
+                className="px-6 sm:px-10 py-4 sm:py-5 text-base sm:text-lg shadow-xl hover:shadow-2xl rounded-full w-full sm:w-auto justify-center"
+              >
                 Try Customer Experience
               </OMButton>
             </Link>
-            <Link href="/advisor/select" className="w-full sm:w-auto inline-flex">
-              <OMButton variant="outline" size="lg" className="px-6 sm:px-10 py-4 sm:py-5 text-base sm:text-lg shadow-xl hover:shadow-2xl rounded-full w-full sm:w-auto border-2 border-om-heritage-green justify-center">
+            <Link
+              href="/advisor/select"
+              className="w-full sm:w-auto inline-flex"
+            >
+              <OMButton
+                variant="outline"
+                size="lg"
+                className="px-6 sm:px-10 py-4 sm:py-5 text-base sm:text-lg shadow-xl hover:shadow-2xl rounded-full w-full sm:w-auto border-2 border-om-heritage-green justify-center"
+              >
                 Try Advisor Experience
               </OMButton>
             </Link>

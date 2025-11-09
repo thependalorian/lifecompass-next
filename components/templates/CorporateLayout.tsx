@@ -10,7 +10,6 @@
 import { ReactNode } from "react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import ChatWidget from "@/components/ChatWidget";
 import { Breadcrumbs } from "@/components/molecules/Breadcrumbs";
 
 interface CorporateLayoutProps {
@@ -97,7 +96,8 @@ export function CorporateLayout({
               <h1
                 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 drop-shadow-lg text-om-heading"
                 style={{
-                  fontFamily: "Montserrat, Century Gothic, system-ui, sans-serif",
+                  fontFamily:
+                    "Montserrat, Century Gothic, system-ui, sans-serif",
                   fontWeight: 700,
                 }}
               >
@@ -137,7 +137,10 @@ export function CorporateLayout({
             </div>
 
             {/* Legal Disclaimer */}
-            <div className="text-om-caption text-base-content/70 text-center md:text-right" style={{ maxWidth: "400px" }}>
+            <div
+              className="text-om-caption text-base-content/70 text-center md:text-right"
+              style={{ maxWidth: "400px" }}
+            >
               Old Mutual Life Assurance Company (SA) Limited is a licensed FSP
               and Life Insurer.
             </div>
@@ -145,11 +148,10 @@ export function CorporateLayout({
         </div>
       </div>
 
-      {/* Chat Widget */}
-      {showChat && <ChatWidget />}
+      {/* Chat is now provided by CopilotKitProvider via CopilotSidebar */}
+      {/* The CopilotSidebar is available throughout the app and can be toggled */}
 
       <Footer />
     </div>
   );
 }
-
